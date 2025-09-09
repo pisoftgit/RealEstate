@@ -13,120 +13,194 @@ import {
   ScrollView,
   Keyboard,
   TouchableWithoutFeedback,
+  Dimensions,
 } from "react-native";
 import LottieView from "lottie-react-native";
 import { Feather, AntDesign, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Dimensions } from "react-native";
 import { useNavigation } from 'expo-router';
-import { getAllEmployees, getAllEmployeesbyId } from "../../../services/api";
 
 const screenHeight = Dimensions.get("window").height;
 
+const dummyProperties = [
+  {
+    id: "1",
+    projectName: "Greenwood Residency",
+    builderName: "Eco Builders",
+    address: "123 Oak St, Springfield",
+    propertyNature: "residential",
+    residentialPropertyType: "housing_group",
+    isGated: true,
+    pic: "https://via.placeholder.com/150/5aaf57/FFFFFF?text=HG",
+  },
+  {
+    id: "2",
+    projectName: "Lakeview Apartments",
+    builderName: "Urban Homes Inc.",
+    address: "456 Pine Ave, Lakeside",
+    propertyNature: "residential",
+    residentialPropertyType: "apartments",
+    isGated: true,
+    pic: "https://via.placeholder.com/150/5aaf57/FFFFFF?text=APT",
+  },
+  {
+    id: "3",
+    projectName: "The Cedars Villa",
+    builderName: "Luxury Estates Co.",
+    address: "789 Cedar Rd, Hilltop",
+    propertyNature: "residential",
+    residentialPropertyType: "house_villa",
+    isGated: false,
+    pic: "https://via.placeholder.com/150/5aaf57/FFFFFF?text=VILLA",
+  },
+  {
+    id: "4",
+    projectName: "Sunset Farmhouse",
+    builderName: "Country Living Ltd.",
+    address: "101 Countryside Lane",
+    propertyNature: "residential",
+    residentialPropertyType: "farmhouse",
+    isGated: false,
+    pic: "https://via.placeholder.com/150/5aaf57/FFFFFF?text=FH",
+  },
+  {
+    id: "5",
+    projectName: "Tech Park Office Spaces",
+    builderName: "Corporate Devs",
+    address: "202 Business Blvd, Metropolis",
+    propertyNature: "commercial",
+    commercialPropertyType: "office_space",
+    isGated: true,
+    pic: "https://via.placeholder.com/150/5aaf57/FFFFFF?text=OFFICE",
+  },
+];
+
 const ViewProperties = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [employeeModalVisible, setEmployeeModalVisible] = useState(false);
-  const [employees, setEmployees] = useState([]);
-  const Router = useRouter();
+  const [properties, setProperties] = useState([]);
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [actionsModalVisible, setActionsModalVisible] = useState(false);
   const navigation = useNavigation();
+  const router = useRouter();
 
   useEffect(() => {
-    const fetchEmployees = async () => {
-      const data = await getAllEmployees();
-      const employeesWithPhotos = data.map((emp) => ({
-        id: emp.id.toString(),
-        usercode: emp.usercode,
-        name: emp.name,
-        department: emp.designation?.department?.department || "N/A",
-        email: emp.officialEmail || "N/A",
-        phone: emp.officialContact || "N/A",
-        gender: emp.gender,
-        age: emp.age,
-        category: emp.category?.category,
-        designation: emp.designation?.name || "N/A",
-        employeeType: emp.employeeType?.employeeType || "N/A",
-        employeeId: emp.employeeType?.id || "N/A",
-        pincode: emp.employeeAddress?.id || "N/A",
-        pic: emp.employeePic || "https://randomuser.me/api/portraits/lego/1.jpg",
-      }));
-      setEmployees(employeesWithPhotos);
-    };
-    fetchEmployees();
+    setProperties(dummyProperties);
   }, []);
 
-  const onSelectEmployeeDetails = async (item) => {
-    try {
-      const emp = await getAllEmployeesbyId(item.id);
-      const detailedEmployee = {
-        ...item,
-        email: emp.email || item.email || "N/A",
-        phone: emp.contact || item.phone || "N/A",
-        gender: emp.gender || item.gender || "N/A",
-        age: emp.age || "N/A",
-        category: emp.category || item.category || "N/A",
-        department: emp.department || item.department || "N/A",
-        designation: emp.designation || item.designation || "N/A",
-        employeeType: emp.employeeType || item.employeeType || "N/A",
-        employeeId: emp.employeeTypeId || item.employeeId || "N/A",
-        address: emp.employeeAddress?.[0]?.address1 || "N/A",
-        pincode: emp.employeeAddress?.[0]?.pincode || "N/A",
-        spouseName: emp.employeeSpouses?.[0]?.name || "N/A",
-        childName: emp.employeeChilds?.[0]?.name || "N/A",
-        education: emp.employeeEducations?.[0]?.classsName || "N/A",
-        experience: emp.employeeExperiences?.[0]?.position || "N/A",
-        pic:
-          emp.employeePic && emp.employeePic.length < 1000
-            ? `data:${emp.employeeDocuments?.[0]?.documentType};base64,${emp.employeePic}`
-            : item.pic,
-      };
-      setSelectedEmployee(detailedEmployee);
-      setEmployeeModalVisible(true);
-    } catch (error) {
-      console.error("Error fetching employee details:", error);
+  const handleSearch = (text) => {
+    setSearchQuery(text);
+  };
+
+  const handleActionsPress = (property) => {
+    setSelectedProperty(property);
+    setActionsModalVisible(true);
+  };
+
+  const handleActionOptionPress = (option) => {
+    let route = '';
+    switch (option) {
+      case 'Group':
+        route = '/(drawer)/InventoryManagement/AddGroup';
+        break;
+      case 'Block':
+        route = '/(drawer)/InventoryManagement/AddBlock';
+        break;
+      case 'Floor':
+        route = '/(drawer)/InventoryManagement/AddFloor';
+        break;
+      case 'Flat':
+        route = '/(drawer)/InventoryManagement/AddFlat';
+        break;
+      case 'Room':
+        route = '/(drawer)/InventoryManagement/AddRoom';
+        break;
+      default:
+        console.log(`No route defined for option: ${option}`);
+        setActionsModalVisible(false);
+        return;
     }
+
+    router.push({
+      pathname: route,
+      params: { propertyData: JSON.stringify(selectedProperty) },
+    });
+    setActionsModalVisible(false);
   };
 
-  const handleSearch = () => {
-    console.log("Search query:", searchQuery);
+  const renderActionOptions = () => {
+    if (!selectedProperty) return null;
+
+    const { propertyNature, residentialPropertyType } = selectedProperty;
+    let options = [];
+
+    if (propertyNature === "residential") {
+      switch (residentialPropertyType) {
+        case "housing_group":
+          options = ["Group", "Block", "Floor", "Flat", "Room"];
+          break;
+        case "house_villa":
+          options = ["Block", "Floor", "Room"];
+          break;
+        case "apartments":
+          options = ["Block", "Floor", "Flat", "Room"];
+          break;
+        case "farmhouse":
+          options = ["Block", "Floor", "Room"];
+          break;
+        default:
+          options = [];
+          break;
+      }
+    } else {
+      options = ["Block", "Floor", "Room"];
+    }
+
+    return (
+      <View style={styles.actionOptionsContainer}>
+        {options.map((option, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.actionOptionBtn}
+            onPress={() => handleActionOptionPress(option)}
+          >
+            <Text style={styles.actionOptionText}>{option}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
   };
 
-  const handleEmployeePress = (employee) => {
-    setSelectedEmployee(employee);
-    setEmployeeModalVisible(true);
-  };
-
-  const navigateToEdit = (id) => {
-    console.log("Navigating to Edit Employee");
-    // Router.push({
-    //   pathname: "/(drawer)/HR/E-Manage/AddEmp",
-    //   params: { id, isEdit: true },
-    // });
-  };
-
-  const renderEmployee = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => handleEmployeePress(item)}
-    >
+  const renderProperty = ({ item }) => (
+    <View style={styles.item}>
       <Image
-        source={{ uri: `data:image/jpeg;base64,${item.pic}` }}
+        source={{ uri: item.pic }}
         style={styles.avatar}
       />
-      <View style={styles.cardText}>
-        <Text style={styles.empName}>{item.name}</Text>
-        <Text style={styles.empDept}>{item.department}</Text>
-        <TouchableOpacity style={styles.iconContainer}>
-          <Feather
-            name="search"
-            size={20}
-            color="#5aaf57"
-            style={styles.searchIcon}
-          />
+      <View style={styles.nameDeptWrapper}>
+        <Text style={styles.name} numberOfLines={1}>{item.projectName}</Text>
+        <Text style={styles.department} numberOfLines={1}>{item.builderName}</Text>
+        <Text style={styles.address} numberOfLines={1}>{item.address}</Text>
+      </View>
+      <View style={styles.actionIcons}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => console.log('Edit property:', item.id)}>
+          <Feather name="edit" size={20} color="#5aaf57" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => console.log('Delete property:', item.id)}>
+          <Feather name="trash-2" size={20} color="#ff6b6b" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => handleActionsPress(item)}>
+          <Feather name="more-horizontal" size={20} color="#555" />
         </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </View>
   );
+
+  const filteredProperties = properties.filter((prop) => {
+    const lowerCaseQuery = searchQuery?.toLowerCase() || "";
+    const lowerCaseName = prop.projectName?.toLowerCase() || "";
+    const lowerCaseBuilder = prop.builderName?.toLowerCase() || "";
+    return lowerCaseName.includes(lowerCaseQuery) || lowerCaseBuilder.includes(lowerCaseQuery);
+  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -137,10 +211,10 @@ const ViewProperties = () => {
       </View>
       <View style={styles.headerRow}>
         <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>View</Text>
-          <Text style={styles.headerSubTitle}>Employees</Text>
+          <Text style={styles.headerTitle}>Manage</Text>
+          <Text style={styles.headerSubTitle}>Properties</Text>
           <Text style={styles.headerDesc}>
-            Search for the employee in the Search Bar!
+            Search for a property by name or builder!
           </Text>
         </View>
         <LottieView
@@ -159,13 +233,10 @@ const ViewProperties = () => {
         />
         <TextInput
           style={styles.searchBar}
-          placeholder="Search by name, department..."
+          placeholder="Search properties..."
           placeholderTextColor="#aaa"
           value={searchQuery}
-          onChangeText={(text) => {
-            setSearchQuery(text);
-            handleSearch();
-          }}
+          onChangeText={handleSearch}
         />
         {searchQuery?.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery("")}>
@@ -174,106 +245,26 @@ const ViewProperties = () => {
         )}
       </View>
       <FlatList
-        data={employees.filter((e) => {
-          const lowerCaseSearchQuery = searchQuery?.toLowerCase() || "";
-          const lowerCaseName = e.name?.toLowerCase() || "";
-          const lowerCaseDepartment = e.department?.toLowerCase() || "";
-          return (
-            lowerCaseName.includes(lowerCaseSearchQuery) ||
-            lowerCaseDepartment.includes(lowerCaseSearchQuery)
-          );
-        })}
+        data={filteredProperties}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        renderItem={({ item, index }) => (
-          <TouchableOpacity
-            style={styles.item}
-            onPress={() => onSelectEmployeeDetails(item)}
-          >
-            <Text style={styles.index}>{index + 1}</Text>
-            <View style={styles.imageWrapper}>
-              <Image
-                source={
-                  item.pic
-                    ? { uri: `data:image/jpeg;base64,${item.pic}` }
-                    : { uri: "https://randomuser.me/api/portraits/lego/1.jpg" }
-                }
-                style={styles.avatar}
-              />
-            </View>
-            <View style={styles.nameDeptWrapper}>
-              <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.department} numberOfLines={1}>
-                {item.department}
-              </Text>
-            </View>
-            <Feather
-              name="edit"
-              size={20}
-              color="#5aaf57"
-              style={styles.icon}
-              onPress={() => navigateToEdit(item.id)}
-            />
-          </TouchableOpacity>
-        )}
+        renderItem={renderProperty}
       />
       <Modal
-        visible={employeeModalVisible}
+        visible={actionsModalVisible}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setEmployeeModalVisible(false)}
+        onRequestClose={() => setActionsModalVisible(false)}
       >
-        <TouchableWithoutFeedback
-          onPress={() => setEmployeeModalVisible(false)}
-        >
+        <TouchableWithoutFeedback onPress={() => setActionsModalVisible(false)}>
           <View style={styles.modalBackground}>
             <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={[styles.modalContainer]}>
-                <View style={styles.headerSection}>
-                  <Image
-                    source={{
-                      uri: `data:image/jpeg;base64,${selectedEmployee?.pic}`,
-                    }}
-                    style={styles.modalAvatar}
-                  />
-                  <Text style={styles.modalName}>{selectedEmployee?.name}</Text>
-                  <Text style={styles.modalInfo}>
-                    Usercode: {selectedEmployee?.usercode}
-                  </Text>
-                </View>
-                <FlatList
-                  data={[
-                    { label: "Department", value: selectedEmployee?.department },
-                    { label: "Designation", value: selectedEmployee?.designation },
-                    { label: "Employee Type", value: selectedEmployee?.employeeType },
-                    { label: "Email", value: selectedEmployee?.email },
-                    { label: "Phone", value: selectedEmployee?.phone },
-                    { label: "Gender", value: selectedEmployee?.gender },
-                    { label: "Category", value: selectedEmployee?.category },
-                    { label: "Age", value: selectedEmployee?.age },
-                    { label: "Spouse", value: selectedEmployee?.spouseName },
-                    { label: "Child", value: selectedEmployee?.childName },
-                    { label: "Education", value: selectedEmployee?.education },
-                    { label: "Experience", value: selectedEmployee?.experience },
-                    { label: "Address", value: selectedEmployee?.address },
-                    { label: "Pincode", value: selectedEmployee?.pincode },
-                  ]}
-                  keyExtractor={(item, index) => index.toString()}
-                  contentContainerStyle={styles.scrollContainer}
-                  showsVerticalScrollIndicator={true}
-                  renderItem={({ item }) => (
-                    <View style={styles.infoRow}>
-                      <Text style={styles.infoLabel}>{item.label}:</Text>
-                      <Text style={styles.infoValue}>
-                        {item.value || "N/A"}
-                      </Text>
-                    </View>
-                  )}
-                  style={styles.flatListContainer}
-                />
+              <View style={styles.modalContainer}>
+                <Text style={styles.modalTitle}>Add:</Text>
+                {renderActionOptions()}
                 <TouchableOpacity
                   style={styles.closeBtn}
-                  onPress={() => setEmployeeModalVisible(false)}
+                  onPress={() => setActionsModalVisible(false)}
                 >
                   <Text style={styles.closeBtnText}>Close</Text>
                 </TouchableOpacity>
@@ -354,16 +345,6 @@ const styles = StyleSheet.create({
   searchIcon: {
     marginRight: 5,
   },
-  iconContainer: {
-    width: 45,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  icon: {
-    marginLeft: "auto",
-    paddingLeft: 10,
-    marginTop: -10,
-  },
   list: {
     paddingHorizontal: 16,
     paddingBottom: 20,
@@ -373,148 +354,93 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 13,
-    borderBottomWidth: 1,
-    borderColor: "#eee",
+    backgroundColor: "#fefefe",
+    borderRadius: 10,
+    marginBottom: 10,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 15,
+    backgroundColor: "#eee",
   },
   nameDeptWrapper: {
     flex: 1,
-    alignItems: "center",
-  },
-  index: {
-    fontSize: 13,
-    color: "#888",
-    textAlign: "center",
-  },
-  imageWrapper: {
-    flex: 1,
-    alignItems: "center",
   },
   name: {
-    width: 200,
     fontSize: 16,
-    color: "#111",
-    fontFamily: "PlusR",
-    textAlign: "center",
-    marginRight: 92,
+    fontWeight: "bold",
+    color: "#333",
   },
   department: {
-    width: 52,
-    fontSize: 11,
+    fontSize: 14,
     color: "#5aaf57",
-    fontFamily: "PlusR",
-    textAlign: "center",
-    marginRight: 92,
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    marginRight: 30,
+  address: {
+    fontSize: 12,
+    color: "#888",
+    marginTop: 2,
+  },
+  actionIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconBtn: {
+    padding: 8,
+    marginLeft: 5,
   },
   modalBackground: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
   },
   modalContainer: {
-    width: "85%",
-    height: "70%",
+    width: "70%",
     backgroundColor: "white",
-    borderRadius: 30,
-    padding: 16,
-    justifyContent: "space-between",
-  },
-  headerSection: {
+    borderRadius: 15,
+    padding: 20,
     alignItems: "center",
-    marginBottom: 8,
   },
-  modalAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 10,
-  },
-  modalName: {
+  modalTitle: {
     fontSize: 18,
-    fontFamily: "PlusSB",
-    marginBottom: 4,
+    fontWeight: "bold",
+    marginBottom: 15,
   },
-  modalInfo: {
-    fontSize: 14,
-    fontFamily: "PlusR",
-    color: "#555",
+  actionOptionsContainer: {
+    width: "100%",
   },
-  scrollContainer: {
-    paddingBottom: 10,
+  actionOptionBtn: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    width: "100%",
+    alignItems: "center",
   },
-  flatListContainer: {
-    maxHeight: "60%",
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 4,
-    paddingHorizontal: 6,
-  },
-  infoLabel: {
-    fontFamily: "PlusR",
-    fontSize: 14,
+  actionOptionText: {
+    fontSize: 16,
     color: "#444",
-    fontWeight: "600",
-    width: "50%",
-  },
-  infoValue: {
-    fontFamily: "PlusR",
-    fontSize: 14,
-    color: "#666",
-    width: "50%",
-    textAlign: "right",
   },
   closeBtn: {
-    alignSelf: "center",
-    backgroundColor: "#5aaf57",
+    marginTop: 20,
     paddingVertical: 10,
-    paddingHorizontal: 25,
+    paddingHorizontal: 30,
+    backgroundColor: "#ff6b6b",
     borderRadius: 8,
-    marginTop: 8,
   },
   closeBtnText: {
-    color: "#fff",
-    fontSize: 14,
-    fontFamily: "PlusR",
+    color: "white",
+    fontSize: 16,
   },
   header: {
     paddingHorizontal: 16,
     paddingBottom: 10,
-  },
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 10,
-    elevation: 3,
-    shadowColor: "#32cd32",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  cardText: {
-    flex: 1,
-    marginLeft: 15,
-  },
-  empName: {
-    fontSize: 16,
-    fontFamily: "PlusSB",
-    color: "#333",
-  },
-  empDept: {
-    fontSize: 14,
-    fontFamily: "PlusR",
-    color: "#5aaf57",
-    marginTop: 4,
   },
 });
 

@@ -8,7 +8,6 @@ export const defaultModules   = [
       name: "Home",
       path: "/(drawer)/(tabs)/Home",
       title: "Home",
-    //   icon: "home-outline",
       icon: Property,
       alwaysVisible: true
      
@@ -17,7 +16,6 @@ export const defaultModules   = [
       name: "HR",
       path: "/(drawer)/HR",
       title: "HR",
-    //   icon: "briefcase-outline",
       icon: Brief,
       children: [
        
@@ -138,7 +136,6 @@ export const defaultModules   = [
         name: "AddLeads",
         path: "/(drawer)/CRM/AddLeads",
         title: "Add Leads",
-        // alwaysVisible: true
       },
       {
         name: "ManageLeads",
@@ -190,21 +187,6 @@ export const defaultModules   = [
             path: "/(drawer)/InventoryManagement/FollowUp",
             title: "Follow Up",
           },
-          // {
-          //   name: "ViewLeads",
-          //   path: "/(drawer)/InventoryManagement/ViewLeads",
-          //   title: "View Leads",
-          // },
-          // {
-          //   name: "AssignLead",
-          //   path: "/(drawer)/InventoryManagement/AssignLead",
-          //   title: "Assign Lead",
-          // },
-          // {
-          //   name: "AddLead",
-          //   path: "/(drawer)/InventoryManagement/AddLead",
-          //   title: "Add Lead",
-          // },
         ],
       },
 
@@ -212,14 +194,12 @@ export const defaultModules   = [
         name: "Geolocation",
         path: "/(drawer)/Geolocation",
         title: "Geolocation",
-        // icon: "person-outline",
         icon: Loc,
       },
       {
         name: "MarkAttendence",
         path: "/(drawer)/MarkAttendence",
         title: "My Attendance",
-        // icon: "person-outline",
         icon: CRM,
         alwaysVisible: true
       },

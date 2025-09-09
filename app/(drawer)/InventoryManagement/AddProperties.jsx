@@ -73,12 +73,11 @@ const AddProperties = () => {
   const [districtOpen, setDistrictOpen] = useState(false);
   const [districtValue, setDistrictValue] = useState(null);
   const [districtItems, setDistrictItems] = useState([]);
-  
+
   const [gated, setGated] = useState(null);
 
-  // Form state
+  // Form state - 'propertyId' is removed
   const [form, setForm] = useState({
-    propertyId: '',
     projectName: '',
     builderName: '',
     housingGroupName: '',
@@ -90,6 +89,7 @@ const AddProperties = () => {
   const [errors, setErrors] = useState({});
   const [refreshing, setRefreshing] = useState(false);
 
+  // Restored: Fetching countries from API
   const fetchInitialData = async () => {
     try {
       const secretKey = await SecureStore.getItemAsync('auth_token');
@@ -112,6 +112,7 @@ const AddProperties = () => {
     fetchInitialData();
   }, []);
 
+  // Restored: Fetching states from API based on country
   useEffect(() => {
     const fetchStates = async () => {
       if (!countryValue) return;
@@ -135,6 +136,7 @@ const AddProperties = () => {
     fetchStates();
   }, [countryValue]);
 
+  // Restored: Fetching districts from API based on state
   useEffect(() => {
     const fetchDistricts = async () => {
       if (!stateValue) return;
@@ -170,8 +172,8 @@ const AddProperties = () => {
       const fileExtension = selectedAsset.uri.split('.').pop().toLowerCase();
       const mimeType = fileExtension === 'jpg' || fileExtension === 'jpeg' ? 'image/jpeg'
         : fileExtension === 'png' ? 'image/png'
-        : fileExtension === 'webp' ? 'image/webp'
-        : 'image/*';
+          : fileExtension === 'webp' ? 'image/webp'
+            : 'image/*';
       setImageType(mimeType);
     }
   };
@@ -185,7 +187,7 @@ const AddProperties = () => {
 
   const validateForm = () => {
     let newErrors = {};
-    if (!form.propertyId.trim()) newErrors.propertyId = 'Property ID is required';
+    // 'propertyId' validation removed as per your request
     if (!builderNatureValue) newErrors.builderNature = 'Builder nature is required';
     if (!propertyNatureValue) newErrors.propertyNature = 'Property nature is required';
     if (propertyNatureValue === 'residential' && !residentialPropertyValue) {
@@ -216,7 +218,6 @@ const AddProperties = () => {
     setDistrictValue(null);
     setGated(null);
     setForm({
-      propertyId: '',
       projectName: '',
       builderName: '',
       housingGroupName: '',
@@ -234,63 +235,115 @@ const AddProperties = () => {
     setRefreshing(false);
   };
 
+  // const handleSubmit = async () => {
+  //   if (!validateForm()) {
+  //     Alert.alert('Validation Error', 'Please correct the errors in the form');
+  //     return;
+  //   }
+
+  //   try {
+  //     const secretKey = await SecureStore.getItemAsync('auth_token');
+  //     const payload = {
+  //       dp: imageBytes,
+  //       dpDocumentType: imageType,
+  //       builderNature: builderNatureValue,
+  //       propertyNature: propertyNatureValue,
+  //       project: form.projectName,
+  //       builder: form.builderName,
+  //       residentialPropertyType: residentialPropertyValue,
+  //       commercialPropertyType: commercialPropertyValue,
+  //       housingGroupName: form.housingGroupName,
+  //       isGated: gated,
+  //       addressDetails: {
+  //         addressType: 'property',
+  //         address1: form.addressLine1,
+  //         address2: form.addressLine2,
+  //         city: form.city,
+  //         district: {
+  //           id: districtValue,
+  //           state: {
+  //             id: stateValue,
+  //             country: {
+  //               id: countryValue,
+  //             },
+  //           },
+  //         },
+  //       },
+  //     };
+
+  //     const response = await axios.post(
+  //       `${API_BASE_URL}/realestateProperty/addRealestateProperty`,
+  //       payload,
+  //       {
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //           'secret_key': secretKey,
+  //         },
+  //       }
+  //     );
+
+  //     if (response.status === 200 || response.status === 201) {
+  //       Alert.alert('Success', 'Property added successfully!');
+  //       resetForm();
+  //     }
+  //   } catch (error) {
+  //     console.error('Error submitting property:', error);
+  //     Alert.alert('Error', 'Failed to add property. Please try again.');
+  //   }
+  // };
+
+
+
   const handleSubmit = async () => {
     if (!validateForm()) {
       Alert.alert('Validation Error', 'Please correct the errors in the form');
       return;
     }
 
-    try {
-      const secretKey = await SecureStore.getItemAsync('auth_token');
-      const payload = {
-        dp: imageBytes,
-        dpDocumentType: imageType,
-        propertyId: form.propertyId,
-        builderNature: builderNatureValue,
-        propertyNature: propertyNatureValue,
-        project: form.projectName,
-        builder: form.builderName,
-        residentialPropertyType: residentialPropertyValue,
-        commercialPropertyType: commercialPropertyValue,
-        housingGroupName: form.housingGroupName,
-        isGated: gated,
-        addressDetails: {
-          addressType: 'property',
-          address1: form.addressLine1,
-          address2: form.addressLine2,
-          city: form.city,
-          district: {
-            id: districtValue,
-            state: {
-              id: stateValue,
-              country: {
-                id: countryValue,
-              },
+    // Create the payload with the form data
+    const payload = {
+      dp: imageBytes,
+      dpDocumentType: imageType,
+      builderNature: builderNatureValue,
+      propertyNature: propertyNatureValue,
+      project: form.projectName,
+      builder: form.builderName,
+      residentialPropertyType: residentialPropertyValue,
+      commercialPropertyType: commercialPropertyValue,
+      housingGroupName: form.housingGroupName,
+      isGated: gated,
+      addressDetails: {
+        addressType: 'property',
+        address1: form.addressLine1,
+        address2: form.addressLine2,
+        city: form.city,
+        district: {
+          id: districtValue,
+          state: {
+            id: stateValue,
+            country: {
+              id: countryValue,
             },
           },
         },
-      };
+      },
+    };
 
-      const response = await axios.post(
-        `${API_BASE_URL}/realestateProperty/addRealestateProperty`,
-        payload,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'secret_key': secretKey,
-          },
-        }
-      );
-
-      if (response.status === 200 || response.status === 201) {
-        Alert.alert('Success', 'Property added successfully!');
-        resetForm();
-      }
-    } catch (error) {
-      console.error('Error submitting property:', error);
-      Alert.alert('Error', 'Failed to add property. Please try again.');
-    }
+    console.log('Submitting the following data:', payload);
+    const alertMessage = `
+    Form Submitted! 
+    
+    Builder Nature: ${builderNatureValue || 'N/A'}
+    Property Nature: ${propertyNatureValue || 'N/A'}
+    Project Name: ${form.projectName || 'N/A'}
+    Builder Name: ${form.builderName || 'N/A'}
+    Is Gated: ${gated !== null ? (gated ? 'Yes' : 'No') : 'N/A'}
+    Address: ${form.addressLine1 || 'N/A'}, ${form.city || 'N/A'}
+    `;
+    Alert.alert('Form Data Submitted', alertMessage);
+    resetForm();
   };
+
 
   const RequiredLabel = ({ text, isRequired }) => (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -332,7 +385,7 @@ const AddProperties = () => {
           {/* Property Details Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Property Details</Text>
-            
+
             <RequiredLabel text="Property Nature" isRequired={true} />
             <DropDownPicker
               open={propertyNatureOpen}
@@ -372,7 +425,7 @@ const AddProperties = () => {
                   zIndex={4000}
                 />
                 {errors.residentialProperty && <Text style={styles.errorText}>{errors.residentialProperty}</Text>}
-                
+
                 {residentialPropertyValue && (
                   <>
                     <RequiredLabel text={`${residentialPropertyValue.replace(/_/g, ' ')} Name`} isRequired={false} />
@@ -428,7 +481,7 @@ const AddProperties = () => {
               zIndex={3000}
             />
             {errors.builderNature && <Text style={styles.errorText}>{errors.builderNature}</Text>}
-            
+
             <RequiredLabel text="Project Name" isRequired={false} />
             <TextInput
               placeholder="Enter Project Name"
@@ -436,7 +489,7 @@ const AddProperties = () => {
               onChangeText={text => handleChange('projectName', text)}
               style={styles.input}
             />
-            
+
             <RequiredLabel text="Builder Name" isRequired={false} />
             <TextInput
               placeholder="Enter Builder Name"
@@ -444,7 +497,7 @@ const AddProperties = () => {
               onChangeText={text => handleChange('builderName', text)}
               style={styles.input}
             />
-            
+
             <RequiredLabel text="Gated Community" isRequired={true} />
             <View style={styles.radioGroup}>
               <TouchableOpacity
@@ -468,7 +521,7 @@ const AddProperties = () => {
             </View>
             {errors.gated && <Text style={styles.errorText}>{errors.gated}</Text>}
           </View>
-          
+
           {/* Address Details Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Address Details</Text>
@@ -551,7 +604,7 @@ const AddProperties = () => {
               style={styles.input}
             />
           </View>
-          
+
           <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
             <Text style={styles.submitBtnText}>Add Property</Text>
           </TouchableOpacity>
@@ -576,7 +629,7 @@ const styles = {
   },
   headerText: {
     fontSize: 32,
-    fontFamily: 'PlusSB',
+    // fontFamily: 'PlusSB',
     marginLeft: 16,
     color: '#333',
   },
@@ -628,7 +681,7 @@ const styles = {
     borderRadius: 8,
     marginVertical: 8,
     backgroundColor: '#fff',
-    fontFamily: 'PlusR',
+    // fontFamily: 'PlusR',
     color: '#333',
   },
   inputError: {
@@ -638,7 +691,7 @@ const styles = {
     fontSize: 14,
     marginTop: 10,
     color: '#555',
-    fontFamily: 'PlusR',
+    // fontFamily: 'PlusR',
   },
   requiredMark: {
     color: 'red',
@@ -685,7 +738,7 @@ const styles = {
   submitBtnText: {
     color: '#fff',
     fontSize: 18,
-    fontFamily: 'PlusSB',
+    // fontFamily: 'PlusSB',
   },
   dropDownContainer: {
     borderColor: '#ddd',
