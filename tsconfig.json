@@ -1,0 +1,18 @@
+{
+  
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+, "hooks/useThemeColor.js", "hooks/useColorScheme.web.js", "hooks/useColorScheme.js", "constants/Colors.js", "app/_layout.jsx", "app/(drawer)/(tabs)/_layout.jsx"  ]
+}
