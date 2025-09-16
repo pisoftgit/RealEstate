@@ -155,7 +155,6 @@ export const updateEmployee = async (id, payload, image) => {
     // build multipart form data
     const formData = new FormData();
     Object.entries(payload).forEach(([k, v]) => {
-      // append every field, substituting empty string for null/undefined
       formData.append(k, v ?? "");
     });
 
