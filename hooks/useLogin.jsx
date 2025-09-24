@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '../services/api';
-import { Alert } from 'react-native';
 import { useUser } from '../context/UserContext';
 import { useModules } from '../context/ModuleContext';
 
@@ -21,13 +20,25 @@ const useLogin = () => {
         body: JSON.stringify({ usercode, password }),
       });
 
-      const data = await response.json();
+      const rawResponse = await response.text();
+      console.log('Raw login response:', rawResponse);
+
+      // Check if the response is JSON
+      const contentType = response.headers.get('Content-Type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error('Expected JSON response, but got: ' + contentType);
+      }
+
+      let data;
+      try {
+        data = JSON.parse(rawResponse);
+      } catch (parseError) {
+        throw new Error('Failed to parse JSON: ' + parseError.message);
+      }
 
       if (response.ok && data.secretKey) {
-        // Ensure privileges is an array
         const privileges = Array.isArray(data.privileges) ? data.privileges : [];
 
-        // Log values to debug types
         console.log('Storing values:', {
           secretKey: typeof data.secretKey,
           userCategoryCode: typeof data.user.userCategoryCode,
@@ -41,7 +52,7 @@ const useLogin = () => {
           designation: data.user.designation,
         });
 
-        // Store values in SecureStore, ensuring strings
+        // Store values securely
         await SecureStore.setItemAsync('ggender', String(data.user.gender));
         await SecureStore.setItemAsync('auth_token', String(data.secretKey));
         await SecureStore.setItemAsync('userType', String(data.user.userCategoryCode || ''));
@@ -53,10 +64,9 @@ const useLogin = () => {
         await SecureStore.setItemAsync('branch', String(data.branch || ''));
         await SecureStore.setItemAsync('designation', JSON.stringify(data.user.designation || {}));
 
-        // Update UserContext
+        // Update User Context
         setUser({
-
-          gender :data.user.gender??null,
+          gender: data.user.gender ?? null,
           id: data.user.id ?? null,
           userCategoryCode: data.user.userCategoryCode || null,
           name: data.user.name || null,
@@ -67,7 +77,7 @@ const useLogin = () => {
         setdate(data.currentDay || null);
         setbranch(data.branch || null);
 
-        // Fetch modules after successful login
+        // Fetch modules after login
         console.log('Fetching modules in login...');
         await refreshModules();
         console.log('Modules fetched in login');
@@ -76,9 +86,9 @@ const useLogin = () => {
 
         return { success: true, privileges };
       } else {
-        // Clear SecureStore on failed login
+        // Login failed, clear storage
         await SecureStore.deleteItemAsync('auth_token');
-         await SecureStore.deleteItemAsync('ggender');
+        await SecureStore.deleteItemAsync('ggender');
         await SecureStore.deleteItemAsync('userType');
         await SecureStore.deleteItemAsync('userid');
         await SecureStore.deleteItemAsync('userName');
@@ -102,12 +112,9 @@ const useLogin = () => {
     setLoading(true);
     try {
       const token = await SecureStore.getItemAsync('auth_token');
-      if (!token) {
-        return { isAuthenticated: false };
-      }
+      if (!token) return { isAuthenticated: false };
 
-      // Load user data from SecureStore
-      const gen=await SecureStore.getItemAsync('ggender');
+      const gen = await SecureStore.getItemAsync('ggender');
       const userType = await SecureStore.getItemAsync('userType');
       const userid = await SecureStore.getItemAsync('userid');
       const userName = await SecureStore.getItemAsync('userName');
@@ -117,7 +124,6 @@ const useLogin = () => {
       const branch = await SecureStore.getItemAsync('branch');
       const designationRaw = await SecureStore.getItemAsync('designation');
 
-      // Parse privileges with robust error handling
       let privileges = [];
       if (privilegesRaw) {
         try {
@@ -134,7 +140,6 @@ const useLogin = () => {
         }
       }
 
-      // Parse designation with error handling
       let designation = null;
       if (designationRaw) {
         try {
@@ -154,28 +159,21 @@ const useLogin = () => {
       console.log('Retrieved privileges:', privileges);
       console.log('Retrieved designation:', designation);
 
-      // Update UserContext
+      // Update User Context
       setUserType(userType || null);
       setimg(employeePic || null);
       setdate(currentDayDate || null);
       setbranch(branch || null);
       setUser({
-        gender:gen,
+        gender: gen,
         id: userid ? JSON.parse(userid) : null,
         userCategoryCode: userType || null,
         name: userName || null,
         designation,
       });
 
-      // Fetch modules after successful auth check
-      console.log('Fetching modules in checkAuth...');
       await refreshModules();
-      console.log('Modules fetched in checkAuth');
-
-      return {
-        isAuthenticated: true,
-        privileges,
-      };
+      return { isAuthenticated: true, privileges };
     } catch (error) {
       console.error('Check auth error:', error.message);
       return { isAuthenticated: false };
@@ -192,7 +190,7 @@ const useLogin = () => {
         const response = await fetch(`${API_BASE_URL}/logout`, {
           method: 'POST',
           headers: {
-            "secret_key":token,
+            "secret_key": token,
             'Content-Type': 'application/json',
           },
         });
@@ -202,8 +200,9 @@ const useLogin = () => {
         }
       }
 
-      // Clear SecureStore
+      // Clear all SecureStore items
       await SecureStore.deleteItemAsync('auth_token');
+      await SecureStore.deleteItemAsync('ggender');
       await SecureStore.deleteItemAsync('userType');
       await SecureStore.deleteItemAsync('userid');
       await SecureStore.deleteItemAsync('userName');
@@ -213,7 +212,6 @@ const useLogin = () => {
       await SecureStore.deleteItemAsync('branch');
       await SecureStore.deleteItemAsync('designation');
 
-      // Reset UserContext
       setUser(null);
       setUserType(null);
       setimg(null);
