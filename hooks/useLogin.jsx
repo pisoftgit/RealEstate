@@ -27,7 +27,7 @@ const useLogin = () => {
       const contentType = response.headers.get('Content-Type') || '';
       if (!contentType.includes('application/json')) {
         throw new Error('Expected JSON response, but got: ' + contentType);
-      }
+      } //
 
       let data;
       try {
