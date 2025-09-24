@@ -190,6 +190,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   centerTextContainer: {
     marginTop: Platform.OS === 'ios' ? HEADER_MIN_HEIGHT - 10 : HEADER_MIN_HEIGHT - 40,

@@ -5,6 +5,7 @@ import LottieView from 'lottie-react-native';
 import moment from 'moment';
 import usePostAttendance from '../hooks/usePostAttendence';
 import useFetchAttendance from '../hooks/useFetchAttendance';
+import useSaveLocation from '../hooks/useSaveLocation';
 import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get('window');
@@ -16,10 +17,13 @@ const AttendanceCard = () => {
   const [clickInTime, setClickInTime] = useState(null);
   const [clickOutTime, setClickOutTime] = useState(null);
   const [hoursWorked, setHoursWorked] = useState('');
-  const animationRef = useRef(null);
+  const [locationLogs, setLocationLogs] = useState([]); // 👈 for storing location + timestamp
+  const intervalRef = useRef(null);
 
+  const animationRef = useRef(null);
   const { postAttendance } = usePostAttendance();
   const { attendance, loading, error, refetch } = useFetchAttendance();
+  const { saveLocation } = useSaveLocation();
 
   const loadDate = async () => {
     try {
@@ -48,15 +52,13 @@ const AttendanceCard = () => {
       const hasCheckOut = !!attendance.checkOut;
 
       if (hasCheckOut) {
-        // Checked out: grey and disabled (frame 60)
         setClickedIn(false);
         animationRef.current?.play(30, 60);
+        clearInterval(intervalRef.current); // 👈 stop tracking if already checked out
       } else if (hasCheckIn) {
-        // Checked in: blue (frame 30)
         setClickedIn(true);
         animationRef.current?.play(0, 30);
       } else {
-        // No attendance: grey (frame 0)
         setClickedIn(false);
         animationRef.current?.reset();
       }
@@ -93,13 +95,43 @@ const AttendanceCard = () => {
     const { latitude, longitude } = location.coords;
 
     if (!clickedIn) {
-      // Clicking in: play grey to blue
+      // ✅ Check In
       animationRef.current?.play(0, 30);
       setClickedIn(true);
+
+      // Start 1-minute interval tracking
+      intervalRef.current = setInterval(async () => {
+        try {
+          const loc = await Location.getCurrentPositionAsync({});
+          const { latitude, longitude } = loc.coords;
+          
+          // Save location to API instead of cache
+          await saveLocation(latitude, longitude);
+          
+          const log = {
+            latitude,
+            longitude,
+            timestamp: moment().format("hh:mm:ss A"),
+          };
+          console.log("Location Log saved to API:", log);
+
+          setLocationLogs(prev => [...prev, log]);
+        } catch (error) {
+          console.error("Error saving location:", error);
+        }
+      }, 60000);
+
     } else {
-      // Clicking out: play blue to grey
+      // ✅ Check Out
       animationRef.current?.play(30, 60);
       setClickedIn(false);
+
+      // Stop interval tracking
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+
+      console.log("Location tracking stopped. All locations saved to API:", locationLogs.length, "entries");
     }
 
     await postAttendance({ latitude, longitude });
@@ -129,10 +161,9 @@ const AttendanceCard = () => {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.mark} > <Text style={styles.mark1}>Mark </Text  > Attendance</Text>
+      <Text style={styles.mark}><Text style={styles.mark1}>Mark </Text> Attendance</Text>
       <Text style={styles.clock}>{clock}</Text>
       <Text style={styles.date}>{date}</Text>
-
 
       <TouchableOpacity
         onPress={handleClick}
@@ -146,13 +177,6 @@ const AttendanceCard = () => {
           loop={false}
           style={styles.lottie}
         />
-        {/* <Text style={[styles.clickText, isButtonDisabled && { color: '#999' }]}>
-          {isButtonDisabled
-            ? attendance?.message || 'Attendance Completed'
-            : clickedIn
-            ? 'Click Out'
-            : 'Click In'}
-        </Text> */}
       </TouchableOpacity>
 
       <View style={styles.footerRow}>
@@ -196,31 +220,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
     justifyContent: 'center',
   },
-  clock: {
-    fontSize: 26,
-    fontFamily: 'PlusSB',
-    marginBottom: 6,
-  },
-  date: {
-    fontSize: 14,
-    fontFamily: 'PlusR',
-    color: '#444',
-    marginBottom: 10,
-  },
-  button: {
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  lottie: {
-    width: 100,
-    height: 100,
-  },
-  clickText: {
-    fontSize: 22,
-    fontFamily: 'PlusSB',
-    color: '#5aaf57',
-    marginTop: 8,
-  },
+  clock: { fontSize: 26, fontFamily: 'PlusSB', marginBottom: 6 },
+  date: { fontSize: 14, fontFamily: 'PlusR', color: '#444', marginBottom: 10 },
+  button: { alignItems: 'center', marginBottom: 12 },
+  lottie: { width: 100, height: 100 },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -228,21 +231,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     marginTop: 8,
   },
-  footerItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  footerLabel: {
-    fontSize: 13,
-    color: '#666',
-    fontFamily: 'PlusR',
-  },
-  footerValue: {
-    fontSize: 16,
-    fontFamily: 'PlusSB',
-    color: '#222',
-    marginTop: 4,
-  },
+  footerItem: { alignItems: 'center', flex: 1 },
+  footerLabel: { fontSize: 13, color: '#666', fontFamily: 'PlusR' },
+  footerValue: { fontSize: 16, fontFamily: 'PlusSB', color: '#222', marginTop: 4 },
   errorText: {
     fontSize: 16,
     color: '#FF0000',
@@ -256,29 +247,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 8,
   },
-  mark:{
-    // alignSelf:"flex-start",
-    padding:10,
-    color:"#333",
-    fontSize:22,
-    fontFamily:"PlusSB"
-    
-
-  },
-   mark1:{
-    // alignSelf:"flex-start",
-    padding:10,
-    color:"#5aaf57",
-    fontSize:22,
-    fontFamily:"PlusSB"
-    
-
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontFamily: 'PlusSB',
-  },
+  mark: { padding: 10, color: "#333", fontSize: 22, fontFamily: "PlusSB" },
+  mark1: { padding: 10, color: "#5aaf57", fontSize: 22, fontFamily: "PlusSB" },
+  retryButtonText: { color: '#fff', fontSize: 16, fontFamily: 'PlusSB' },
 });
 
 export default AttendanceCard;
