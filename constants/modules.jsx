@@ -209,8 +209,22 @@ export const defaultModules   = [
           },
         ],
       },
-
-    {
+      {
+        name: "EmployeeLocation",
+        path: "/(drawer)/EmployeeLocation",
+        title: "Employee Location",
+        
+        icon: Brief,
+        children: [
+      {
+        name: "location",
+        path: "/(drawer)/EmployeeLocation/ViewEmpLocation",
+        title: "Employee Location",
+        icon: Loc,
+      },
+    ]
+      },
+      {
         name: "Geolocation",
         path: "/(drawer)/Geolocation",
         title: "Geolocation",
