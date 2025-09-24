@@ -183,6 +183,26 @@ export const defaultModules   = [
             title: "Manage Properties",
           },
           {
+            name: "AddProjects",
+            path: "/(drawer)/InventoryManagement/AddProjects",
+            title: "Add Projects",
+          },
+          {
+            name: "ManageProjects",
+            path: "/(drawer)/InventoryManagement/ManageProjects",
+            title: "Manage Projects",
+          },
+          {
+            name: "AddBuilder",
+            path: "/(drawer)/InventoryManagement/AddBuilder",
+            title: "Add Builder",
+          },
+          {
+            name: "ManageBuilder",
+            path: "/(drawer)/InventoryManagement/ManageBuilder",
+            title: "Manage Builder",
+          },
+          {
             name: "FollowUp",
             path: "/(drawer)/InventoryManagement/FollowUp",
             title: "Follow Up",
