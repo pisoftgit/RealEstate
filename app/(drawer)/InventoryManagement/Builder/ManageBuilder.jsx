@@ -231,7 +231,7 @@ const ViewProperties = () => {
           </Text>
         </View>
         <LottieView
-          source={require("../../../assets/svg/EMP.json")}
+          source={require("../../../../assets/svg/EMP.json")}
           autoPlay
           loop
           style={styles.lottie}
@@ -307,17 +307,18 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 30,
-    fontWeight: "bold",
+    fontFamily: "PlusSB",
     color: "#004d40",
   },
   headerSubTitle: {
     fontSize: 26,
-    fontWeight: "bold",
+    fontFamily: "PlusSB",
     color: "#000",
     marginTop: -5,
   },
   headerDesc: {
     fontSize: 13,
+    fontFamily: "PlusR",
     color: "#666",
     marginTop: 5,
   },
@@ -341,6 +342,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 45,
     fontSize: 15,
+    fontFamily: "PlusR",
     color: "#004d40",
     paddingLeft: 8,
   },
@@ -379,16 +381,18 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: "PlusR",
     color: "#fff",
   },
   department: {
     fontSize: 12,
+    fontFamily: "PlusL",
     color: "#fff",
     marginTop: 1,
   },
   address: {
     fontSize: 11,
+    fontFamily: "PlusL",
     color: "#fff",
     marginTop: 3,
   },
@@ -427,7 +431,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontFamily: "PlusSB",
     marginBottom: 15,
     color: "#064226ff",
   },
@@ -446,7 +450,7 @@ const styles = StyleSheet.create({
   },
   actionOptionText: {
     fontSize: 15,
-    fontWeight: "600",
+    fontFamily: "PlusR",
     color: "#fff",
   },
 });

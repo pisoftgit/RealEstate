@@ -18,18 +18,9 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { API_BASE_URL } from '../../../services/api';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-} from 'react-native-reanimated';
+import { API_BASE_URL } from '../../../../services/api';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const BANNER_IMAGE_URL = 'https://images.pexels.com/photos/1546168/pexels-photo-1546168.jpeg';
-
-// --- ADVANCED COLOR PALETTE ---
 const COLORS = {
   primary: '#2e7d32',
   primaryLight: '#58b26e', 
@@ -42,187 +33,6 @@ const COLORS = {
   placeholder: '#66bb6a',
   error: '#d32f2f', 
 };
-
-const STYLES = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollViewContent: {
-    paddingBottom: 40,
-  },
-  inputContainer: {
-    marginBottom: 15,
-  },
-  label: {
-    fontSize: 14,
-    color: COLORS.text,
-    marginBottom: 5,
-    marginTop: 10,
-    fontWeight: '600',
-  },
-  requiredMark: {
-    color: COLORS.error,
-    marginLeft: 4,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: COLORS.input,
-    color: COLORS.text,
-    fontSize: 16,
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  errorText: {
-    color: COLORS.error,
-    fontSize: 12,
-    marginTop: 4,
-  },
-  card: {
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    borderLeftWidth: 2,
-    borderLeftColor: COLORS.primary,
-    padding: 10,
-    marginHorizontal: 10,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  cardTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-    marginBottom: 15,
-  },
-  submitButton: {
-    marginHorizontal: 20,
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 12,
-  },
-  submitButtonGradient: {
-    padding: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
-  bannerContainer: {
-    height: 250,
-    width: '100%',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    overflow: 'hidden',
-    position: 'relative',
-    marginBottom: 10,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-  bannerImage: {
-    ...StyleSheet.absoluteFillObject,
-    resizeMode: 'cover',
-  },
-  headerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: COLORS.card,
-    textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 20,
-    top: 50,
-    zIndex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 20,
-    padding: 8,
-  },
-  imagePicker: {
-    height: 120,
-    width: 120,
-    backgroundColor: COLORS.input,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 60,
-    borderWidth: 2,
-    borderColor: COLORS.secondary,
-    borderStyle: 'dashed',
-    alignSelf: 'center',
-    marginBottom: 20,
-    overflow: 'hidden',
-  },
-  logo: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-    borderRadius: 60,
-  },
-  logoPlaceholder: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoText: {
-    color: COLORS.placeholder,
-    marginTop: 5,
-    fontSize: 12,
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  checkboxText: {
-    marginLeft: 10,
-    color: COLORS.text,
-    fontSize: 16,
-  },
-  dropdown: {
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    backgroundColor: COLORS.input,
-  },
-  dropdownContainer: {
-    borderColor: COLORS.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    backgroundColor: COLORS.card,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-});
 
 const CustomHeader = ({ navigation, title }) => (
   <View style={STYLES.bannerContainer}>
@@ -242,14 +52,14 @@ const CustomHeader = ({ navigation, title }) => (
   </View>
 );
 
-const CustomCard = ({ children, title, icon, animatedStyle }) => (
-  <Animated.View style={[STYLES.card, animatedStyle]}>
+const CustomCard = ({ children, title, icon }) => (
+  <View style={STYLES.card}>
     <View style={STYLES.cardHeader}>
       <Ionicons name={icon} size={24} color={COLORS.primary} />
       <Text style={[STYLES.cardTitle, { marginLeft: 10 }]}>{title}</Text>
     </View>
     {children}
-  </Animated.View>
+  </View>
 );
 
 const RequiredLabel = ({ text }) => (
@@ -259,50 +69,9 @@ const RequiredLabel = ({ text }) => (
   </View>
 );
 
-// --- MAIN COMPONENT ---
 const AddBuilder = () => {
   const navigation = useNavigation();
 
-  // Animations using Reanimated
-  const card1Offset = useSharedValue(500);
-  const card2Offset = useSharedValue(500);
-  const card3Offset = useSharedValue(500);
-  const buttonOffset = useSharedValue(500);
-
-  const card1Style = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: withSpring(card1Offset.value, { damping: 12 }) }],
-      opacity: withTiming(card1Offset.value === 0 ? 1 : 0, { duration: 500 }),
-    };
-  });
-  const card2Style = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: withSpring(card2Offset.value, { damping: 12 }) }],
-      opacity: withTiming(card2Offset.value === 0 ? 1 : 0, { duration: 500 }),
-    };
-  });
-  const card3Style = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: withSpring(card3Offset.value, { damping: 12 }) }],
-      opacity: withTiming(card3Offset.value === 0 ? 1 : 0, { duration: 500 }),
-    };
-  });
-  const buttonStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: withSpring(buttonOffset.value, { damping: 12 }) }],
-      opacity: withTiming(buttonOffset.value === 0 ? 1 : 0, { duration: 500 }),
-    };
-  });
-
-  useEffect(() => {
-    // Staggered animation on mount
-    card1Offset.value = 0;
-    setTimeout(() => (card2Offset.value = 0), 200);
-    setTimeout(() => (card3Offset.value = 0), 400);
-    setTimeout(() => (buttonOffset.value = 0), 600);
-  }, []);
-
-  // ... (rest of your state and functions, including API mocks)
   const [builderLogo, setBuilderLogo] = useState(null);
   const [logoBytes, setLogoBytes] = useState(null);
   const [logoType, setLogoType] = useState(null);
@@ -474,7 +243,7 @@ const AddBuilder = () => {
         <ScrollView contentContainerStyle={STYLES.scrollViewContent}>
 
           {/* Basic Information Card */}
-          <CustomCard animatedStyle={card1Style} title="Basic Information" icon="person-add-outline">
+          <CustomCard title="Basic Information" icon="person-add-outline">
             <RequiredLabel text="Builder Name" />
             <TextInput
               style={STYLES.input}
@@ -524,7 +293,7 @@ const AddBuilder = () => {
           </CustomCard>
 
           {/* Logo and Office Card */}
-          <CustomCard animatedStyle={card2Style} title="Logo & Office" icon="business-outline">
+          <CustomCard title="Logo & Office" icon="business-outline">
             <RequiredLabel text="Builder Logo" />
             <TouchableOpacity onPress={pickLogo} style={STYLES.imagePicker}>
               {builderLogo ? (
@@ -546,7 +315,7 @@ const AddBuilder = () => {
           </CustomCard>
 
           {/* Address Details Card */}
-          <CustomCard animatedStyle={card3Style} title="Address Details" icon="location-outline">
+          <CustomCard title="Address Details" icon="location-outline">
             <RequiredLabel text="Country" />
             <DropDownPicker
               open={countryOpen}
@@ -618,7 +387,8 @@ const AddBuilder = () => {
             />
           </CustomCard>
 
-          <Animated.View style={[STYLES.submitButton, buttonStyle]}>
+          {/* Submit Button */}
+          <View style={STYLES.submitButton}>
             <TouchableOpacity onPress={handleSubmit} disabled={loading} style={{ width: '100%' }}>
               <LinearGradient
                 colors={[COLORS.primary, COLORS.secondary]}
@@ -636,7 +406,7 @@ const AddBuilder = () => {
                 )}
               </LinearGradient>
             </TouchableOpacity>
-          </Animated.View>
+          </View>
 
         </ScrollView>
       </KeyboardAvoidingView>
@@ -645,3 +415,188 @@ const AddBuilder = () => {
 };
 
 export default AddBuilder;
+
+const STYLES = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  scrollViewContent: {
+    paddingBottom: 40,
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 14,
+    color: COLORS.text,
+    marginBottom: 5,
+    marginTop: 10,
+    fontFamily: "PlusR",
+  },
+  requiredMark: {
+    color: COLORS.error,
+    marginLeft: 4,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: COLORS.input,
+    color: COLORS.text,
+    fontSize: 16,
+    fontFamily: "PlusR",
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  errorText: {
+    color: COLORS.error,
+    fontSize: 12,
+    fontFamily: "PlusR",
+    marginTop: 4,
+  },
+  card: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    borderLeftWidth: 2,
+    borderLeftColor: COLORS.primary,
+    padding: 10,
+    marginHorizontal: 10,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontFamily: "PlusSB",
+    color: COLORS.primary,
+    marginBottom: 15,
+  },
+  submitButton: {
+    marginHorizontal: 20,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 12,
+  },
+  submitButtonGradient: {
+    padding: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontFamily: "PlusSB",
+    textTransform: 'uppercase',
+  },
+  bannerContainer: {
+    height: 250,
+    width: '100%',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    overflow: 'hidden',
+    position: 'relative',
+    marginBottom: 10,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  bannerImage: {
+    ...StyleSheet.absoluteFillObject,
+    resizeMode: 'cover',
+  },
+  headerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerText: {
+    fontSize: 32,
+    fontFamily: "PlusSB",
+    color: COLORS.card,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  backButton: {
+    position: 'absolute',
+    left: 20,
+    top: 50,
+    zIndex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    padding: 8,
+  },
+  imagePicker: {
+    height: 120,
+    width: 120,
+    backgroundColor: COLORS.input,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 60,
+    borderWidth: 2,
+    borderColor: COLORS.secondary,
+    borderStyle: 'dashed',
+    alignSelf: 'center',
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  logo: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    borderRadius: 60,
+  },
+  logoPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoText: {
+    color: COLORS.placeholder,
+    marginTop: 5,
+    fontSize: 12,
+    fontFamily: "PlusR",
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  checkboxText: {
+    marginLeft: 10,
+    color: COLORS.text,
+    fontSize: 16,
+    fontFamily: "PlusR",
+  },
+  dropdown: {
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    backgroundColor: COLORS.input,
+  },
+  dropdownContainer: {
+    borderColor: COLORS.border,
+    borderWidth: 1,
+    borderRadius: 8,
+    backgroundColor: COLORS.card,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+});
