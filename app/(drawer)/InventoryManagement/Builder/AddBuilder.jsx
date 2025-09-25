@@ -227,9 +227,9 @@ const AddBuilder = () => {
 
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
-      Alert.alert('Success! 🎉', 'Builder data submitted successfully! Check console for payload.');
+      Alert.alert('Success! 🎉', 'Realtor data submitted successfully! Check console for payload.');
     } catch (err) {
-      Alert.alert('Error', 'Failed to submit builder data.');
+      Alert.alert('Error', 'Failed to submit Realtor data.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -239,7 +239,7 @@ const AddBuilder = () => {
   return (
     <SafeAreaView style={STYLES.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <CustomHeader navigation={navigation} title="Add New Builder" />
+        <CustomHeader navigation={navigation} title="Add New Realtor" />
         <ScrollView contentContainerStyle={STYLES.scrollViewContent}>
 
           {/* Basic Information Card */}
