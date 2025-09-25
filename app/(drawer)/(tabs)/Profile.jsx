@@ -7,11 +7,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import useLogin from '../../../hooks/useLogin';
 import { useRouter } from 'expo-router';
 
-
 const { width } = Dimensions.get("screen");
-const Router=useRouter();
 
 const Profile = () => {
+  const Router = useRouter();
   const { user, img } = useUser() || {};
   const {logout,loading}=useLogin();
   console.log(user)
