@@ -56,7 +56,7 @@ const STYLES = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
     marginBottom: 10,
-    
+
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4, // Increased shadow opacity for a thicker effect
     shadowRadius: 15, // Increased shadow radius for a thicker effect
@@ -67,7 +67,7 @@ const STYLES = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     resizeMode: 'cover',
   },
-  
+
   headerOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -92,19 +92,19 @@ const STYLES = StyleSheet.create({
     borderRadius: 20,
     padding: 8,
   },
-  
+
   card: {
     backgroundColor: COLORS.card,
     borderRadius: 16,
-    
+
     padding: 10,
     marginHorizontal: 10,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    
-   
+
+
     shadowRadius: 6,
     elevation: 5,
   },
@@ -269,7 +269,7 @@ const RequiredLabel = ({ text, isRequired }) => (
 const AddProject = () => {
   const navigation = useNavigation();
   const params = useLocalSearchParams();
-  
+
   // Check if we're in edit mode
   const isEditMode = params.editMode === 'true';
   const editingProperty = isEditMode && params.propertyData ? JSON.parse(params.propertyData) : null;
@@ -613,9 +613,6 @@ const AddProject = () => {
             />
             {errors.startDate && <Text style={STYLES.errorText}>{errors.startDate}</Text>}
 
-            
-            
-
             <RequiredLabel text="Completion Date" isRequired={false} />
             <TextInput
               placeholder="e.g., 2025-12-31"
@@ -633,7 +630,7 @@ const AddProject = () => {
               style={STYLES.input}
               placeholderTextColor={COLORS.placeholder}
             />
-             <Text style={STYLES.label}>Description</Text>
+            <Text style={STYLES.label}>Description</Text>
             <TextInput
               placeholder="Enter a detailed description of the project"
               value={form.description}
@@ -664,8 +661,6 @@ const AddProject = () => {
               />
             </View>
           </View>
-         
-          
           {/* RERA Card (conditional) */}
           {showReraCard && (
             <View style={STYLES.card}>
@@ -699,8 +694,6 @@ const AddProject = () => {
               <Ionicons name="location-outline" size={20} color={COLORS.primary} />
               <Text style={STYLES.cardTitle}>Address Details</Text>
             </View>
-
-           
 
             <RequiredLabel text="Country" isRequired={true} />
             <DropDownPicker
@@ -760,7 +753,7 @@ const AddProject = () => {
               disabled={!stateValue}
             />
             {errors.district && <Text style={STYLES.errorText}>{errors.district}</Text>}
-           <RequiredLabel text="City" isRequired={false} />
+            <RequiredLabel text="City" isRequired={false} />
             <TextInput
               placeholder="Enter city"
               value={form.city}
@@ -786,7 +779,6 @@ const AddProject = () => {
               style={STYLES.input}
               placeholderTextColor={COLORS.placeholder}
             />
-          
           </View>
 
 
@@ -798,11 +790,11 @@ const AddProject = () => {
             </View>
             <RequiredLabel text="Media Files (Images/PDFs)" isRequired={true} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
-              <TouchableOpacity onPress={pickMediaFiles} style={[STYLES.imagePicker, { flex: 1, marginRight: 5 }]}> 
+              <TouchableOpacity onPress={pickMediaFiles} style={[STYLES.imagePicker, { flex: 1, marginRight: 5 }]}>
                 <Ionicons name="image-outline" size={24} color={COLORS.primary} />
                 <Text style={STYLES.imagePlaceholderText}>Pick Images</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={pickPdfFiles} style={[STYLES.imagePicker, { flex: 1, marginLeft: 5 }]}> 
+              <TouchableOpacity onPress={pickPdfFiles} style={[STYLES.imagePicker, { flex: 1, marginLeft: 5 }]}>
                 <Ionicons name="document-outline" size={24} color={COLORS.primary} />
                 <Text style={STYLES.imagePlaceholderText}>Pick PDFs</Text>
               </TouchableOpacity>
@@ -846,11 +838,11 @@ const AddProject = () => {
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <>
-                    <Ionicons 
-                      name={isEditMode ? "checkmark-circle-outline" : "add-circle-outline"} 
-                      size={20} 
-                      color="#fff" 
-                      style={{ marginRight: 8 }} 
+                    <Ionicons
+                      name={isEditMode ? "checkmark-circle-outline" : "add-circle-outline"}
+                      size={20}
+                      color="#fff"
+                      style={{ marginRight: 8 }}
                     />
                     <Text style={STYLES.submitButtonText}>
                       {isEditMode ? 'Update Project' : 'Add Project'}
@@ -860,7 +852,6 @@ const AddProject = () => {
               </LinearGradient>
             </TouchableOpacity>
           </View>
-
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

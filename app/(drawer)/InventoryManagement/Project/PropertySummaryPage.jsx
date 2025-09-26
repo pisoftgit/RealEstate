@@ -61,14 +61,12 @@ const PropertySummaryPage = () => {
       </View>
 
       {/* Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        
-        
+      <View style={styles.content}>
         <PropertySummary 
           onSave={handlePropertySummarySave}
           initialData={{}}
         />
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
