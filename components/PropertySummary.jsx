@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import DropDownPicker from 'react-native-dropdown-picker';
 import { Ionicons } from '@expo/vector-icons';
 
 const PropertySummary = ({ onSave, initialData = {} }) => {
@@ -12,6 +12,17 @@ const PropertySummary = ({ onSave, initialData = {} }) => {
   const [blockTower, setBlockTower] = useState(initialData.blockTower || '');
   const [totalFloors, setTotalFloors] = useState(initialData.totalFloors || '');
   const [floorData, setFloorData] = useState(initialData.floorData || {});
+  const [commercialProperty, setCommercialProperty] = useState(initialData.commercialProperty || '');
+  const [commercialQuantity, setCommercialQuantity] = useState(initialData.commercialQuantity || '1');
+
+  // Dropdown open states for react-native-dropdown-picker
+  const [propertyNatureOpen, setPropertyNatureOpen] = useState(false);
+  const [propertyTypeOpen, setPropertyTypeOpen] = useState(false);
+  const [residentialPropertyOpen, setResidentialPropertyOpen] = useState(false);
+  const [isGatedOpen, setIsGatedOpen] = useState(false);
+  // For dynamic floor property items and structures
+  const [floorItemOpen, setFloorItemOpen] = useState({});
+  const [structureOpen, setStructureOpen] = useState({});
 
   const propertyNatureOptions = [
     { label: 'Select Property Nature', value: '' },
@@ -34,11 +45,17 @@ const PropertySummary = ({ onSave, initialData = {} }) => {
   const residentialPropertyOptions = [
     { label: 'Select Residential Property', value: '' },
     { label: 'Apartment', value: 'apartment' },
-    { label: 'Villa', value: 'villa' },
-    { label: 'House', value: 'house' },
-    { label: 'Flat', value: 'flat' },
-    { label: 'Bungalow', value: 'bungalow' },
-    { label: 'Duplex', value: 'duplex' },
+    { label: 'House/Villa', value: 'house_villa' },
+    { label: 'Residential Plot/Land', value: 'plot_land' },
+  ];
+
+  const commercialPropertyOptions = [
+    { label: 'Select Commercial Property', value: '' },
+    { label: 'Shop', value: 'shop' },
+    { label: 'Office', value: 'office' },
+    { label: 'Warehouse', value: 'warehouse' },
+    { label: 'Showroom', value: 'showroom' },
+    // Add more as needed
   ];
 
   // Dropdown options for Property Item and Structure
@@ -123,6 +140,8 @@ const PropertySummary = ({ onSave, initialData = {} }) => {
       blockTower,
       totalFloors,
       floorData,
+      commercialProperty,
+      commercialQuantity,
     };
     
     if (onSave) {
@@ -132,98 +151,88 @@ const PropertySummary = ({ onSave, initialData = {} }) => {
 
   const isFormValid = propertyNature && propertyType && 
     (propertyType !== 'residential' || (isGated && residentialProperty && blockTower.trim() && totalFloors)) &&
-    (propertyType === 'residential' || (propertyName.trim() && blockTower.trim() && totalFloors)) &&
-    propertyName.trim();
+    (propertyType === 'residential' || (propertyType === 'commercial' ? commercialProperty : propertyName.trim() && blockTower.trim() && totalFloors)) &&
+    (propertyType === 'commercial' ? commercialQuantity : propertyName.trim());
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-    
-      
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled" nestedScrollEnabled={true}>
       {/* Basic Details Section */}
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Basic Details</Text>
-        
         {/* Property Nature */}
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>Property Nature *</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={propertyNature}
-              onValueChange={setPropertyNature}
-              style={styles.picker}
-            >
-              {propertyNatureOptions.map((option) => (
-                <Picker.Item 
-                  key={option.value} 
-                  label={option.label} 
-                  value={option.value} 
-                />
-              ))}
-            </Picker>
-          </View>
+          <DropDownPicker
+            open={propertyNatureOpen}
+            value={propertyNature}
+            items={propertyNatureOptions}
+            setOpen={setPropertyNatureOpen}
+            setValue={setPropertyNature}
+            setItems={() => {}}
+            style={styles.dropdown}
+            textStyle={styles.dropdownText}
+            labelStyle={styles.dropdownLabel}
+            containerStyle={{ marginBottom: 10 }}
+            zIndex={100}
+            listMode="SCROLLVIEW"
+          />
         </View>
-
         {/* Property Type */}
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>Property Type *</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={propertyType}
-              onValueChange={setPropertyType}
-              style={styles.picker}
-            >
-              {propertyTypeOptions.map((option) => (
-                <Picker.Item 
-                  key={option.value} 
-                  label={option.label} 
-                  value={option.value} 
-                />
-              ))}
-            </Picker>
-          </View>
+          <DropDownPicker
+            open={propertyTypeOpen}
+            value={propertyType}
+            items={propertyTypeOptions}
+            setOpen={setPropertyTypeOpen}
+            setValue={setPropertyType}
+            setItems={() => {}}
+            style={styles.dropdown}
+            textStyle={styles.dropdownText}
+            labelStyle={styles.dropdownLabel}
+            containerStyle={{ marginBottom: 10 }}
+            zIndex={99}
+            listMode="SCROLLVIEW"
+          />
         </View>
-
         {/* Residential Property - Only show for Residential */}
         {propertyType === 'residential' && (
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Residential Property *</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={residentialProperty}
-                onValueChange={setResidentialProperty}
-                style={styles.picker}
-              >
-                {residentialPropertyOptions.map((option) => (
-                  <Picker.Item 
-                    key={option.value} 
-                    label={option.label} 
-                    value={option.value} 
-                  />
-                ))}
-              </Picker>
-            </View>
+            <DropDownPicker
+              open={residentialPropertyOpen}
+              value={residentialProperty}
+              items={residentialPropertyOptions}
+              setOpen={setResidentialPropertyOpen}
+              setValue={setResidentialProperty}
+              setItems={() => {}}
+              style={styles.dropdown}
+              textStyle={styles.dropdownText}
+              labelStyle={styles.dropdownLabel}
+              containerStyle={{ marginBottom: 10 }}
+              zIndex={98}
+              listMode="SCROLLVIEW"
+            />
           </View>
         )}
-
         {/* Gated Option - Only show for Residential */}
         {propertyType === 'residential' && (
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Gated Property? *</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={isGated}
-                onValueChange={setIsGated}
-                style={styles.picker}
-              >
-                {gatedOptions.map((option) => (
-                  <Picker.Item 
-                    key={option.value} 
-                    label={option.label} 
-                    value={option.value} 
-                  />
-                ))}
-              </Picker>
-            </View>
+            <DropDownPicker
+              open={isGatedOpen}
+              value={isGated}
+              items={gatedOptions}
+              setOpen={setIsGatedOpen}
+              setValue={setIsGated}
+              setItems={() => {}}
+              style={styles.dropdown}
+              textStyle={styles.dropdownText}
+              labelStyle={styles.dropdownLabel}
+              containerStyle={{ marginBottom: 10 }}
+              zIndex={97}
+              listMode="SCROLLVIEW"
+            />
           </View>
         )}
 
@@ -240,11 +249,10 @@ const PropertySummary = ({ onSave, initialData = {} }) => {
         </View>
       </View>
 
-      {/* Property Details Section - Only show when residential property is selected */}
-      {residentialProperty && (
+      {/* Property Details Section - Only show for apartment */}
+      {residentialProperty === 'apartment' && (
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Property Details</Text>
-          
           {/* Block/Tower */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Block/Tower *</Text>
@@ -256,7 +264,6 @@ const PropertySummary = ({ onSave, initialData = {} }) => {
               placeholderTextColor="#999"
             />
           </View>
-
           {/* Total Floors */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Total Floors *</Text>
@@ -272,50 +279,53 @@ const PropertySummary = ({ onSave, initialData = {} }) => {
         </View>
       )}
 
-      {/* Floor-wise Property Summary - Only show when total floors is entered */}
-      {residentialProperty && totalFloors && parseInt(totalFloors) > 0 && (
+      {/* Property Summary Section */}
+      {(residentialProperty === 'apartment' && totalFloors && parseInt(totalFloors) > 0) && (
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Property Summary</Text>
-          
           {Array.from({ length: parseInt(totalFloors) }, (_, index) => {
             const floorNumber = index + 1;
             const floorItems = floorData[floorNumber] || [];
-            
             return (
               <View key={floorNumber} style={styles.floorContainer}>
                 <Text style={styles.floorTitle}>Floor-{floorNumber}</Text>
-                
                 {floorItems.map((item, itemIndex) => (
                   <View key={itemIndex} style={styles.propertyItemContainer}>
                     {/* Row for Property Item and Structure dropdowns */}
                     <View style={styles.propertyItemRow}>
                       <View style={styles.propertyItemField}>
                         <Text style={styles.smallLabel}>Property Item</Text>
-                        <View style={styles.pickerContainer}>
-                          <Picker
-                            selectedValue={item.propertyItem}
-                            onValueChange={(value) => updatePropertyItem(floorNumber, itemIndex, 'propertyItem', value)}
-                            style={styles.picker}
-                          >
-                            {propertyItemOptions.map((option) => (
-                              <Picker.Item key={option.value} label={option.label} value={option.value} />
-                            ))}
-                          </Picker>
-                        </View>
+                        <DropDownPicker
+                          open={floorItemOpen[`${floorNumber}-${itemIndex}`] || false}
+                          value={item.propertyItem}
+                          items={propertyItemOptions}
+                          setOpen={(open) => setFloorItemOpen((prev) => ({ ...prev, [`${floorNumber}-${itemIndex}`]: open }))}
+                          setValue={(value) => updatePropertyItem(floorNumber, itemIndex, 'propertyItem', value())}
+                          setItems={() => {}}
+                          style={styles.dropdown}
+                          textStyle={styles.dropdownText}
+                          labelStyle={styles.dropdownLabel}
+                          containerStyle={{ marginBottom: 10 }}
+                          zIndex={96 - itemIndex}
+                          listMode="SCROLLVIEW"
+                        />
                       </View>
                       <View style={styles.propertyItemField}>
                         <Text style={styles.smallLabel}>Structure</Text>
-                        <View style={styles.pickerContainer}>
-                          <Picker
-                            selectedValue={item.structure}
-                            onValueChange={(value) => updatePropertyItem(floorNumber, itemIndex, 'structure', value)}
-                            style={styles.picker}
-                          >
-                            {structureOptions.map((option) => (
-                              <Picker.Item key={option.value} label={option.label} value={option.value} />
-                            ))}
-                          </Picker>
-                        </View>
+                        <DropDownPicker
+                          open={structureOpen[`${floorNumber}-${itemIndex}`] || false}
+                          value={item.structure}
+                          items={structureOptions}
+                          setOpen={(open) => setStructureOpen((prev) => ({ ...prev, [`${floorNumber}-${itemIndex}`]: open }))}
+                          setValue={(value) => updatePropertyItem(floorNumber, itemIndex, 'structure', value())}
+                          setItems={() => {}}
+                          style={styles.dropdown}
+                          textStyle={styles.dropdownText}
+                          labelStyle={styles.dropdownLabel}
+                          containerStyle={{ marginBottom: 10 }}
+                          zIndex={95 - itemIndex}
+                          listMode="SCROLLVIEW"
+                        />
                       </View>
                     </View>
                     {/* Quantity below both dropdowns */}
@@ -362,7 +372,6 @@ const PropertySummary = ({ onSave, initialData = {} }) => {
                     )}
                   </View>
                 ))}
-                
                 {/* Add Item Button */}
                 <TouchableOpacity
                   style={styles.addItemButton}
@@ -377,6 +386,247 @@ const PropertySummary = ({ onSave, initialData = {} }) => {
         </View>
       )}
 
+      {/* For house/villa and plot/land, show direct property summary (single summary, no floors) */}
+      {residentialProperty === 'house_villa' && (
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Property Summary</Text>
+          <View style={styles.floorContainer}>
+            <Text style={styles.floorTitle}>Property</Text>
+            {(floorData[1] || [{ structure: '', quantity: '1' }]).map((item, itemIndex) => (
+              <View key={itemIndex} style={styles.propertyItemContainer}>
+                {/* Only Structure and Quantity for house/villa */}
+                <View style={styles.propertyItemRow}>
+                  <View style={styles.propertyItemField}>
+                    <Text style={styles.smallLabel}>Structure</Text>
+                    <DropDownPicker
+                      open={structureOpen[`1-${itemIndex}`] || false}
+                      value={item.structure}
+                      items={structureOptions}
+                      setOpen={(open) => setStructureOpen((prev) => ({ ...prev, [`1-${itemIndex}`]: open }))}
+                      setValue={(value) => updatePropertyItem(1, itemIndex, 'structure', value())}
+                      setItems={() => {}}
+                      style={styles.dropdown}
+                      textStyle={styles.dropdownText}
+                      labelStyle={styles.dropdownLabel}
+                      containerStyle={{ marginBottom: 10 }}
+                      zIndex={95 - itemIndex}
+                      listMode="SCROLLVIEW"
+                    />
+                  </View>
+                </View>
+                {/* Quantity below dropdown */}
+                <View style={{ marginTop: 8 }}>
+                  <Text style={styles.smallLabel}>Quantity</Text>
+                  <View style={styles.quantityContainer}>
+                    <TouchableOpacity
+                      style={styles.quantityButton}
+                      onPress={() => {
+                        const currentQty = parseInt(item.quantity) || 1;
+                        if (currentQty > 1) {
+                          updatePropertyItem(1, itemIndex, 'quantity', (currentQty - 1).toString());
+                        }
+                      }}
+                    >
+                      <Text style={styles.quantityButtonText}>-</Text>
+                    </TouchableOpacity>
+                    <TextInput
+                      style={styles.quantityInput}
+                      value={item.quantity}
+                      onChangeText={(value) => updatePropertyItem(1, itemIndex, 'quantity', value)}
+                      keyboardType="numeric"
+                      textAlign="center"
+                    />
+                    <TouchableOpacity
+                      style={styles.quantityButton}
+                      onPress={() => {
+                        const currentQty = parseInt(item.quantity) || 1;
+                        updatePropertyItem(1, itemIndex, 'quantity', (currentQty + 1).toString());
+                      }}
+                    >
+                      <Text style={styles.quantityButtonText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                {/* Remove Button */}
+                {floorData[1] && floorData[1].length > 1 && (
+                  <TouchableOpacity
+                    style={styles.removeItemButton}
+                    onPress={() => removePropertyItem(1, itemIndex)}
+                  >
+                    <Ionicons name="trash-outline" size={16} color="#ff4444" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+            <TouchableOpacity
+              style={styles.addItemButton}
+              onPress={() => addPropertyItem(1)}
+            >
+              <Ionicons name="add-circle-outline" size={20} color="#007bff" />
+              <Text style={styles.addItemText}>Add Structure</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* For plot/land, show property item, structure, quantity */}
+      {residentialProperty === 'plot_land' && (
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Property Summary</Text>
+          <View style={styles.floorContainer}>
+            <Text style={styles.floorTitle}>Property</Text>
+            {(floorData[1] || [{ area: '', units: '', quantity: '1' }]).map((item, itemIndex) => (
+              <View key={itemIndex} style={styles.propertyItemContainer}>
+                {/* Area and Units for plot/land */}
+                <View style={styles.propertyItemRow}>
+                  <View style={styles.propertyItemField}>
+                    <View style={{paddingBottom: 10 }}>
+                    <Text style={styles.smallLabel}>Area</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="Enter area"
+                      value={item.area}
+                      onChangeText={(value) => updatePropertyItem(1, itemIndex, 'area', value)}
+                      keyboardType="numeric"
+                      placeholderTextColor="#999"
+                    />
+                    </View>
+                  </View>
+                  <View style={styles.propertyItemField}>
+                    
+                    <Text style={styles.smallLabel}>Units</Text>
+                    <DropDownPicker
+                      open={structureOpen[`1-${itemIndex}`] || false}
+                      value={item.units}
+                      items={[{ label: 'Select', value: '' }, { label: 'sq ft', value: 'sq_ft' }, { label: 'sq m', value: 'sq_m' }, { label: 'acre', value: 'acre' }, { label: 'hectare', value: 'hectare' }]}
+                      setOpen={(open) => setStructureOpen((prev) => ({ ...prev, [`1-${itemIndex}`]: open }))}
+                      setValue={(value) => updatePropertyItem(1, itemIndex, 'units', value())}
+                      setItems={() => {}}
+                      style={styles.dropdown}
+                      textStyle={styles.dropdownText}
+                      labelStyle={styles.dropdownLabel}
+                      containerStyle={{ marginBottom: 10 }}
+                      zIndex={95 - itemIndex}
+                      listMode="SCROLLVIEW"
+                    />
+                  </View>
+                </View>
+                {/* Quantity below area/units */}
+                <View style={{ marginTop: 8 }}>
+                  <Text style={styles.smallLabel}>Quantity</Text>
+                  <View style={styles.quantityContainer}>
+                    <TouchableOpacity
+                      style={styles.quantityButton}
+                      onPress={() => {
+                        const currentQty = parseInt(item.quantity) || 1;
+                        if (currentQty > 1) {
+                          updatePropertyItem(1, itemIndex, 'quantity', (currentQty - 1).toString());
+                        }
+                      }}
+                    >
+                      <Text style={styles.quantityButtonText}>-</Text>
+                    </TouchableOpacity>
+                    <TextInput
+                      style={styles.quantityInput}
+                      value={item.quantity}
+                      onChangeText={(value) => updatePropertyItem(1, itemIndex, 'quantity', value)}
+                      keyboardType="numeric"
+                      textAlign="center"
+                    />
+                    <TouchableOpacity
+                      style={styles.quantityButton}
+                      onPress={() => {
+                        const currentQty = parseInt(item.quantity) || 1;
+                        updatePropertyItem(1, itemIndex, 'quantity', (currentQty + 1).toString());
+                      }}
+                    >
+                      <Text style={styles.quantityButtonText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                {/* Remove Button */}
+                {floorData[1] && floorData[1].length > 1 && (
+                  <TouchableOpacity
+                    style={styles.removeItemButton}
+                    onPress={() => removePropertyItem(1, itemIndex)}
+                  >
+                    <Ionicons name="trash-outline" size={16} color="#ff4444" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+            <TouchableOpacity
+              style={styles.addItemButton}
+              onPress={() => addPropertyItem(1)}
+            >
+              <Ionicons name="add-circle-outline" size={20} color="#007bff" />
+              <Text style={styles.addItemText}>Add Area</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+      {/* For commercial property, show direct property summary */}
+      {propertyType === 'commercial' && (
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Property Summary</Text>
+          <View style={styles.floorContainer}>
+            <Text style={styles.floorTitle}>Property</Text>
+            <View style={styles.propertyItemContainer}>
+              <View style={styles.propertyItemRow}>
+                <View style={styles.propertyItemField}>
+                  <Text style={styles.smallLabel}>Commercial Property Type</Text>
+                  <DropDownPicker
+                    open={structureOpen['commercial-0'] || false}
+                    value={commercialProperty}
+                    items={commercialPropertyOptions}
+                    setOpen={(open) => setStructureOpen((prev) => ({ ...prev, ['commercial-0']: open }))}
+                    setValue={setCommercialProperty}
+                    setItems={() => {}}
+                    style={styles.dropdown}
+                    textStyle={styles.dropdownText}
+                    labelStyle={styles.dropdownLabel}
+                    containerStyle={{ marginBottom: 10 }}
+                    zIndex={95}
+                    listMode="SCROLLVIEW"
+                  />
+                </View>
+              </View>
+              <View style={{ marginTop: 8 }}>
+                <Text style={styles.smallLabel}>Quantity</Text>
+                <View style={styles.quantityContainer}>
+                  <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => {
+                      const currentQty = parseInt(commercialQuantity) || 1;
+                      if (currentQty > 1) {
+                        setCommercialQuantity((currentQty - 1).toString());
+                      }
+                    }}
+                  >
+                    <Text style={styles.quantityButtonText}>-</Text>
+                  </TouchableOpacity>
+                  <TextInput
+                    style={styles.quantityInput}
+                    value={commercialQuantity}
+                    onChangeText={setCommercialQuantity}
+                    keyboardType="numeric"
+                    textAlign="center"
+                  />
+                  <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => {
+                      const currentQty = parseInt(commercialQuantity) || 1;
+                      setCommercialQuantity((currentQty + 1).toString());
+                    }}
+                  >
+                    <Text style={styles.quantityButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
       {/* Save Button */}
       <TouchableOpacity 
         style={[styles.saveButton, !isFormValid && styles.saveButtonDisabled]}
@@ -445,9 +695,22 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#fff',
   },
-  picker: {
-    height: 50,
+  dropdown: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    minHeight: 50,
+  },
+  dropdownText: {
+    fontFamily: 'PlusL',
     color: '#333',
+    fontSize: 16,
+  },
+  dropdownLabel: {
+    fontFamily: 'PlusR',
+    color: '#333',
+    fontSize: 16,
   },
   textInput: {
     borderWidth: 1,

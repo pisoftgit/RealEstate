@@ -84,6 +84,8 @@ const AttendanceCard = () => {
     }
   };
 
+
+  
   const proceedWithAttendance = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
@@ -93,6 +95,15 @@ const AttendanceCard = () => {
 
     const location = await Location.getCurrentPositionAsync({});
     const { latitude, longitude } = location.coords;
+
+    // Fetch currentDayDate from SecureStore for API payload
+    let currentDayDate = await SecureStore.getItemAsync('currentDayDate');
+    // Fallback to today if not found
+    if (!currentDayDate) {
+      currentDayDate = moment().format('YYYY-MM-DD');
+    } else {
+      currentDayDate = moment(currentDayDate).format('YYYY-MM-DD');
+    }
 
     if (!clickedIn) {
       // ✅ Check In
@@ -104,17 +115,13 @@ const AttendanceCard = () => {
         try {
           const loc = await Location.getCurrentPositionAsync({});
           const { latitude, longitude } = loc.coords;
-          
-          // Save location to API instead of cache
           await saveLocation(latitude, longitude);
-          
           const log = {
             latitude,
             longitude,
-            timestamp: moment().format("hh:mm:ss A"),
+            timestamp: moment().format("YYYY-MM-DD hh:mm:ss A"),
           };
-          console.log("Location Log saved to API:", log);
-
+         
           setLocationLogs(prev => [...prev, log]);
         } catch (error) {
           console.error("Error saving location:", error);
@@ -125,16 +132,19 @@ const AttendanceCard = () => {
       // ✅ Check Out
       animationRef.current?.play(30, 60);
       setClickedIn(false);
-
-      // Stop interval tracking
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
-
       console.log("Location tracking stopped. All locations saved to API:", locationLogs.length, "entries");
     }
 
-    await postAttendance({ latitude, longitude });
+    // Use SecureStore date for day, device time for timestamp
+    await postAttendance({
+      day: currentDayDate,
+      latitude,
+      longitude,
+      timestamp: moment().toISOString(),
+    });
     await refetch();
   };
 
