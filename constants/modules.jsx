@@ -13,6 +13,118 @@ export const defaultModules = [
 
   },
   {
+    name: "Administrative",
+    path: "/(drawer)/Administrative",
+    title: "Administrative",
+    icon: Brief,
+    children: [
+      {
+        name: "Property",
+        path: "/(drawer)/Administrative/Property",
+        title: "Property",
+        icon: Brief,
+        children: [
+          {
+            name: "Businessnature",
+            path: "/(drawer)/Adminstrative/Property/Businessnature",
+            title: "Business Nature",
+          },
+          {
+            name: "PropertyNature",
+            path: "/(drawer)/Adminstrative/Property/PropertyNature",
+            title: "Property Nature",
+          },
+          {
+            name: "PropertyType",
+            path: "/(drawer)/Adminstrative/Property/ProptertyType",
+            title: "Property Type",
+          },
+          {
+            name: "SubPropertyType",
+            path: "/(drawer)/Adminstrative/Property/SubPropertyType",
+            title: "Sub Property Type",
+          },
+          {
+            name: "Propertyitem",
+            path: "/(drawer)/Adminstrative/Property/PropertyItem",
+            title: "Property Item",
+          },
+          {
+            name: "Rera",
+            path: "/(drawer)/Adminstrative/Property/Rera",
+            title: "RERA",
+          },
+          {
+            name: "facedirection",
+            path: "/(drawer)/Adminstrative/Property/FaceDirection",
+            title: "Face Direction",
+          },
+          {
+            name: "Facilities",
+            path: "/(drawer)/Adminstrative/Property/Facility",
+            title: "Facility",
+          },
+          {
+            name: "Amenities",
+            path: "/(drawer)/Adminstrative/Property/Amenity",
+            title: "Amenity",
+          },
+          {
+            name: "Furnishings",
+            path: "/(drawer)/Adminstrative/Property/FunishingStatus",
+            title: "Furnishing Status",
+          },
+          {
+            name: "StructureType",
+            path: "/(drawer)/Adminstrative/Property/StructureType",
+            title: "Flat/House Structure Type",
+          },
+
+        
+      
+      {
+        name: "Type",
+        path: "/(drawer)/Adminstrative/Type",
+        title: "Type",
+        icon: Brief,
+        children: [
+          {
+            name: "Structure",
+            path: "/(drawer)/Adminstrative/Type/Structure",
+            title: "Flat/House Structure",
+          },
+          {
+            name: "RoomType",
+            path: "/(drawer)/Adminstrative/Type/RoomType",
+            title: "Room Type",
+          },
+          {
+            name: "ParkingType",
+            path: "/(drawer)/Adminstrative/Type/ParkingType",
+            title: "Parking Type",
+          },
+          {
+            name: "Ownershiptype",
+            path: "/(drawer)/Adminstrative/Type/Ownershiptype",
+            title: "Ownership Type",
+          },
+          {
+            name: "ShopShowroom",
+            path: "/(drawer)/Adminstrative/Type/Shopshowroom",
+            title: "Shop/Showroom Category",
+          },
+          {
+            name: "MeasurementUnit",
+            path: "/(drawer)/Adminstrative/Type/MeasurementUnit",
+            title: "Measurement Unit",
+          }
+        ]
+      }
+      ]
+      },
+    ]
+  },
+  {
     name: "HR",
     path: "/(drawer)/HR",
     title: "HR",
@@ -198,29 +310,29 @@ export const defaultModules = [
       },
       
       {
-        name: "Builder",
+        name: "Realtor",
         path: "/(drawer)/InventoryManagement/Builder",
-        title: "Builder",
+        title: "Realtor",
 
         icon: Brief,
         children: [
           {
             name: "AddBuilder",
             path: "/(drawer)/InventoryManagement/Builder/AddBuilder",
-            title: "Add Builder",
+            title: "Add Realtor",
           },
           {
             name: "ManageBuilder",
             path: "/(drawer)/InventoryManagement/Builder/ManageBuilder",
-            title: "Manage Builder",
+            title: "Manage Realtor",
           },
         ],
       },
-      {
-        name: "FollowUp",
-        path: "/(drawer)/InventoryManagement/FollowUp",
-        title: "Follow Up",
-      },
+      // {
+      //   name: "FollowUp",
+      //   path: "/(drawer)/InventoryManagement/FollowUp",
+      //   title: "Follow Up",
+      // },
     ],
   },
   {
@@ -238,12 +350,12 @@ export const defaultModules = [
       },
     ]
   },
-  {
-    name: "Geolocation",
-    path: "/(drawer)/Geolocation",
-    title: "Geolocation",
-    icon: Loc,
-  },
+  // {
+  //   name: "Geolocation",
+  //   path: "/(drawer)/Geolocation",
+  //   title: "Geolocation",
+  //   icon: Loc,
+  // },
   {
     name: "MarkAttendence",
     path: "/(drawer)/MarkAttendence",
