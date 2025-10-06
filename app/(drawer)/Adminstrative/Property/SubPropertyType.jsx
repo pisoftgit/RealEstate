@@ -95,7 +95,7 @@ export default function SubPropertyType() {
 
                     {/* Card 2: Nature Table */}
                     <View style={styles.card}>
-                         <Text style={styles.cardTitle}><Text style={{ color: 'red' }}>Note:-</Text>Please follow this codes</Text>
+                        <Text style={styles.cardTitle}><Text style={{ color: 'red' }}>Note:-</Text>Please follow this codes</Text>
                         <View style={styles.tableHeader}>
                             <Text style={styles.tableHeaderText}>Nature</Text>
                             <Text style={styles.tableHeaderText}>Nature Code</Text>

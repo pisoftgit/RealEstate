@@ -89,11 +89,11 @@ export default function Structure() {
               <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
               <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.type}</Text>
               <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.name}</Text>
-              <View style={[styles.actionCell, { flex: 1 }]}> 
-                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* edit logic */}}>
+              <View style={[styles.actionCell, { flex: 1 }]}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* edit logic */ }}>
                   <Feather name="edit" size={18} color="#5aaf57" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* delete logic */}}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* delete logic */ }}>
                   <Ionicons name="trash" size={18} color="#d32f2f" />
                 </TouchableOpacity>
               </View>

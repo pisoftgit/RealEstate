@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
-import { useNavigation } from "expo-router"; 
+import { useNavigation } from "expo-router";
+import useAddBusinessNature from '../../../../hooks/useAddBusinessNature'; // import the hook
+import useBusinessNature from '../../../../hooks/useBusinessNature'; // import the fetch hook
+import { StyleSheet } from 'react-native';
 
 const nodeTableData = [
   { id: 1, nature: 'Builder', userCode: '1' },
@@ -9,21 +12,61 @@ const nodeTableData = [
   { id: 3, nature: 'Dealer', userCode: '3' },
 ];
 
-const existingBusinessNature = [
-  { id: 1, nature: 'Builder', natureCode: '1' },
-  { id: 2, nature: 'Channel Partner', natureCode: '2' },
-  { id: 3, nature: 'Dealer', natureCode: '3' },
-];
-
 export default function Businessnature() {
-    const navigation = useNavigation();
+  const navigation = useNavigation();
   const [nature, setNature] = useState('');
   const [natureCode, setNatureCode] = useState('');
+  
+  const addBusinessNature = useAddBusinessNature(); // hook instance
+  const { businessNatures, loading } = useBusinessNature(); // fetch existing business natures
 
-  const handleSubmit = () => {
-    // Submit logic here
-    setNature('');
-    setNatureCode('');
+  const handleSubmit = async () => {
+    if (!nature || !natureCode) {
+      Alert.alert('Validation', 'Please enter both Nature and Nature Code');
+      return;
+    }
+
+    try {
+      // Call API
+      const response = await addBusinessNature({ nature, code: natureCode });
+      console.log('API Response:', response);
+
+      Alert.alert('Success', 'Business Nature added successfully!');
+      setNature('');
+      setNatureCode('');
+      
+      // Optionally refresh the data by calling the fetch function again
+      // The useBusinessNature hook will automatically update when the component re-renders
+    } catch (error) {
+      console.log('Error adding Business Nature:', error);
+      
+      // Handle specific error cases
+      if (error.response) {
+        const statusCode = error.response.status;
+        const errorMessage = error.response.data?.message || error.response.data?.error || 'Unknown error occurred';
+        
+        switch (statusCode) {
+          case 409:
+            Alert.alert('Conflict', 'This business nature already exists. Please use a different name or code.');
+            break;
+          case 400:
+            Alert.alert('Validation Error', errorMessage);
+            break;
+          case 401:
+            Alert.alert('Authentication Error', 'Please login again.');
+            break;
+          case 500:
+            Alert.alert('Server Error', 'Internal server error. Please try again later.');
+            break;
+          default:
+            Alert.alert('Error', `Failed to add business nature: ${errorMessage}`);
+        }
+      } else if (error.request) {
+        Alert.alert('Network Error', 'Unable to connect to server. Please check your internet connection.');
+      } else {
+        Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      }
+    }
   };
 
   return (
@@ -40,6 +83,7 @@ export default function Businessnature() {
               </Text>
             </View>
           </View>
+
           {/* Card 1: Configure Business Nature */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Configure Business Nature</Text>
@@ -68,13 +112,16 @@ export default function Businessnature() {
 
           {/* Card 2: Node Table */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}><Text style={{ color: 'red' }}>Note:-</Text>Please use the following codes for the respective business nature:</Text>
+            <Text style={styles.cardTitle}>
+              <Text style={{ color: 'red' }}>Note:-</Text>
+              Please use the following codes for the respective business nature:
+            </Text>
             <View style={styles.tableHeader}>
               <Text style={styles.tableHeaderText}>S. No</Text>
               <Text style={styles.tableHeaderText}>Nature</Text>
               <Text style={styles.tableHeaderText}>User Code</Text>
             </View>
-            {nodeTableData.map((item) => (
+            {nodeTableData.map(item => (
               <View key={item.id} style={styles.tableRow}>
                 <Text style={styles.tableCell}>{item.id}</Text>
                 <Text style={styles.tableCell}>{item.nature}</Text>
@@ -86,27 +133,42 @@ export default function Businessnature() {
           {/* Card 3: Existing Business Nature */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Existing Business Nature</Text>
-            <View style={styles.tableHeader}>
-              <Text style={styles.tableHeaderText}>S. No</Text>
-              <Text style={styles.tableHeaderText}>Nature</Text>
-              <Text style={styles.tableHeaderText}>Nature Code</Text>
-              <Text style={styles.tableHeaderText}>Actions</Text>
-            </View>
-            {existingBusinessNature.map((item) => (
-              <View key={item.id} style={styles.tableRow}>
-                <Text style={styles.tableCell}>{item.id}</Text>
-                <Text style={styles.tableCell}>{item.nature}</Text>
-                <Text style={styles.tableCell}>{item.natureCode}</Text>
-                <View style={styles.actionCell}>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => {/* edit logic */}}>
-                    <Feather name="edit" size={18} color="#5aaf57" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => {/* delete logic */}}>
-                    <Ionicons name="trash" size={18} color="#d32f2f" />
-                  </TouchableOpacity>
-                </View>
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#5aaf57" />
+                <Text style={styles.loadingText}>Loading business natures...</Text>
               </View>
-            ))}
+            ) : (
+              <>
+                <View style={styles.tableHeader}>
+                  <Text style={styles.tableHeaderText}>S. No</Text>
+                  <Text style={styles.tableHeaderText}>Nature</Text>
+                  <Text style={styles.tableHeaderText}>Nature Code</Text>
+                  <Text style={styles.tableHeaderText}>Actions</Text>
+                </View>
+                {businessNatures && businessNatures.length > 0 ? (
+                  businessNatures.map((item, index) => (
+                    <View key={item.id} style={styles.tableRow}>
+                      <Text style={styles.tableCell}>{index + 1}</Text>
+                      <Text style={styles.tableCell}>{item.name}</Text>
+                      <Text style={styles.tableCell}>{item.code}</Text>
+                      <View style={styles.actionCell}>
+                        <TouchableOpacity style={styles.iconBtn} onPress={() => { /* edit logic */ }}>
+                          <Feather name="edit" size={18} color="#5aaf57" />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.iconBtn} onPress={() => { /* delete logic */ }}>
+                          <Ionicons name="trash" size={18} color="#d32f2f" />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.noDataContainer}>
+                    <Text style={styles.noDataText}>No business natures found</Text>
+                  </View>
+                )}
+              </>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -114,19 +176,22 @@ export default function Businessnature() {
   );
 }
 
+// Styles remain the same as your original code
+
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f8f9fa' },
   scrollContent: { paddingBottom: 24 },
   container: { flex: 1, backgroundColor: '#f8f9fa', padding: 20 },
-    header: {
+  header: {
     paddingVertical: 18,
-    },
-    title: {
+  },
+  title: {
     fontSize: 32,
     fontFamily: 'PlusSB',
     color: '#333',
     marginTop: 8,
-    },
+  },
 
   card: {
     backgroundColor: '#fff',
@@ -218,5 +283,23 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     padding: 4,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
+    fontFamily: 'PlusR',
+  },
+  noDataContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  noDataText: {
+    color: '#666',
+    fontFamily: 'PlusR',
+    fontSize: 16,
   },
 });

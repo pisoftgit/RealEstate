@@ -6,17 +6,17 @@ import { useNavigation } from 'expo-router';
 const initialTypeTable = [
   { id: 1, type: 'Residential', natureCode: '1' },
   { id: 2, type: 'Commercial', natureCode: '2' },
-  
+
 ];
 
 const initialExistingTypes = [
   { id: 1, name: 'Residential', code: '1' },
   { id: 2, name: 'Commercial', code: '2' },
- 
+
 ];
 
 export default function ProptertyType() {
-    const navigation = useNavigation();
+  const navigation = useNavigation();
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [existingTypes, setExistingTypes] = useState(initialExistingTypes);
@@ -33,16 +33,16 @@ export default function ProptertyType() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.container}>
-            <View style={styles.header}>
-                                    <View style={styles.headerTop}>
-                                      <TouchableOpacity onPress={() => navigation.openDrawer()}>
-                                        <Ionicons name="menu" size={28} color="BLACK" />
-                                      </TouchableOpacity>
-                                      <Text style={styles.title}>
-                                        Property <Text style={{ color: '#5aaf57' }}>Nature</Text>
-                                      </Text>
-                                    </View>
-                                  </View>
+          <View style={styles.header}>
+            <View style={styles.headerTop}>
+              <TouchableOpacity onPress={() => navigation.openDrawer()}>
+                <Ionicons name="menu" size={28} color="BLACK" />
+              </TouchableOpacity>
+              <Text style={styles.title}>
+                Property <Text style={{ color: '#5aaf57' }}>Nature</Text>
+              </Text>
+            </View>
+          </View>
           {/* Card 1: Configure Property Type */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Configure Property Type</Text>
@@ -71,7 +71,7 @@ export default function ProptertyType() {
 
           {/* Card 2: Type Table */}
           <View style={styles.card}>
-             <Text style={styles.cardTitle}><Text style={{ color: 'red' }}>Note:-</Text>Please follow this codes</Text>
+            <Text style={styles.cardTitle}><Text style={{ color: 'red' }}>Note:-</Text>Please follow this codes</Text>
             <View style={styles.tableHeader}>
               <Text style={styles.tableHeaderText}>Type</Text>
               <Text style={styles.tableHeaderText}>Nature Code</Text>
@@ -98,11 +98,11 @@ export default function ProptertyType() {
                 <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
                 <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
                 <Text style={[styles.tableCell, { flex: 1 }]}>{item.code}</Text>
-                <View style={[styles.actionCell, { flex: 1 }]}> 
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => {/* edit logic */}}>
+                <View style={[styles.actionCell, { flex: 1 }]}>
+                  <TouchableOpacity style={styles.iconBtn} onPress={() => {/* edit logic */ }}>
                     <Feather name="edit" size={18} color="#5aaf57" />
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => {/* delete logic */}}>
+                  <TouchableOpacity style={styles.iconBtn} onPress={() => {/* delete logic */ }}>
                     <Ionicons name="trash" size={18} color="#d32f2f" />
                   </TouchableOpacity>
                 </View>
@@ -119,15 +119,15 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f8f9fa' },
   scrollContent: { paddingBottom: 24 },
   container: { flex: 1, backgroundColor: '#f8f9fa', padding: 20 },
-    header: {
+  header: {
     paddingVertical: 18,
-    },
-    title: {
+  },
+  title: {
     fontSize: 32,
     fontFamily: 'PlusSB',
     color: '#333',
     marginTop: 8,
-    },
+  },
 
   card: {
     backgroundColor: '#fff',

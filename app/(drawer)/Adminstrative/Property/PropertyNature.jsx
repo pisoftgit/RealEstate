@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
-import { useNavigation } from "expo-router"; 
+import { useNavigation } from "expo-router";
 
 
 const initialPropertyNature = [
@@ -11,7 +11,7 @@ const initialPropertyNature = [
 ];
 
 export default function PropertyNature() {
-     const navigation = useNavigation();
+  const navigation = useNavigation();
   const [nature, setNature] = useState('');
   const [propertyNatureList, setPropertyNatureList] = useState(initialPropertyNature);
 
@@ -26,16 +26,16 @@ export default function PropertyNature() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.container}>
-             <View style={styles.header}>
-                        <View style={styles.headerTop}>
-                          <TouchableOpacity onPress={() => navigation.openDrawer()}>
-                            <Ionicons name="menu" size={28} color="BLACK" />
-                          </TouchableOpacity>
-                          <Text style={styles.title}>
-                            Property <Text style={{ color: '#5aaf57' }}>Nature</Text>
-                          </Text>
-                        </View>
-                      </View>
+          <View style={styles.header}>
+            <View style={styles.headerTop}>
+              <TouchableOpacity onPress={() => navigation.openDrawer()}>
+                <Ionicons name="menu" size={28} color="BLACK" />
+              </TouchableOpacity>
+              <Text style={styles.title}>
+                Property <Text style={{ color: '#5aaf57' }}>Nature</Text>
+              </Text>
+            </View>
+          </View>
           {/* Card 1: Configure Property Nature */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Configure Property Nature</Text>
@@ -69,11 +69,11 @@ export default function PropertyNature() {
                 <View style={{ flex: 2 }}>
                   <Text style={styles.tableCell}>{item.nature}</Text>
                 </View>
-                <View style={[styles.actionCell, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}> 
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => {/* edit logic */}}>
+                <View style={[styles.actionCell, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
+                  <TouchableOpacity style={styles.iconBtn} onPress={() => {/* edit logic */ }}>
                     <Feather name="edit" size={18} color="#5aaf57" />
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => {/* delete logic */}}>
+                  <TouchableOpacity style={styles.iconBtn} onPress={() => {/* delete logic */ }}>
                     <Ionicons name="trash" size={18} color="#d32f2f" />
                   </TouchableOpacity>
                 </View>
@@ -90,15 +90,15 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f8f9fa' },
   scrollContent: { paddingBottom: 24 },
   container: { flex: 1, backgroundColor: '#f8f9fa', padding: 20 },
-   header: {
+  header: {
     paddingVertical: 18,
-    },
-    title: {
+  },
+  title: {
     fontSize: 32,
     fontFamily: 'PlusSB',
     color: '#333',
     marginTop: 8,
-    },
+  },
   card: {
     backgroundColor: '#fff',
     borderRadius: 16,

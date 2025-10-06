@@ -72,7 +72,7 @@ export default function PropertyItem() {
                 setValue={setPropertyType}
                 setItems={setPropertyTypeItems}
                 placeholder="Select Property Type"
-                style={{ borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8,  backgroundColor: '#f5f5f5' }}
+                style={{ borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8, backgroundColor: '#f5f5f5' }}
                 dropDownContainerStyle={{ borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8 }}
               />
             </View>
@@ -129,11 +129,11 @@ export default function PropertyItem() {
               <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
               <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.propertyType}</Text>
               <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.propertyItem}</Text>
-              <View style={[styles.actionCell, { flex: 1 }]}> 
-                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* edit logic */}}>
+              <View style={[styles.actionCell, { flex: 1 }]}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* edit logic */ }}>
                   <Feather name="edit" size={18} color="#5aaf57" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* delete logic */}}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* delete logic */ }}>
                   <Ionicons name="trash" size={18} color="#d32f2f" />
                 </TouchableOpacity>
               </View>
