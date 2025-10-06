@@ -1,23 +1,42 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 
-const initialFacilities = [
-  { id: 1, name: 'Swimming Pool' },
-  { id: 2, name: 'Gym' },
-];
+// Import your API hook here
+import useFacilityActions from '../../../../hooks/useFacilityActions';
 
 export default function Facility() {
   const navigation = useNavigation();
+  const { facilities, loading, addFacility, updateFacility, deleteFacility } = useFacilityActions();
   const [facility, setFacility] = useState('');
-  const [facilities, setFacilities] = useState(initialFacilities);
+  const [editing, setEditing] = useState(null);
 
-  const handleSubmit = () => {
-    if (facility.trim()) {
-      setFacilities([...facilities, { id: facilities.length + 1, name: facility }]);
+  const handleSubmit = async () => {
+    if (!facility.trim()) return;
+    try {
+      if (editing) {
+        await updateFacility({ id: editing.id, facilityName: facility });
+        setEditing(null);
+      } else {
+        await addFacility({ facilityName: facility });
+      }
       setFacility('');
+    } catch (e) {
+      Alert.alert('Failed', 'Error saving facility.');
     }
+  };
+
+  const handleEdit = (item) => {
+    setFacility(item.name);
+    setEditing(item);
+  };
+
+  const handleDelete = (id) => {
+    Alert.alert('Delete', 'Are you sure you want to delete?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => await deleteFacility(id) }
+    ]);
   };
 
   return (
@@ -31,7 +50,7 @@ export default function Facility() {
         </View>
         {/* Card 1: Input Field */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Add Facility</Text>
+          <Text style={styles.cardTitle}>{editing ? 'Edit Facility' : 'Add Facility'}</Text>
           <View style={styles.formRow}>
             <Text style={styles.label}>Facility</Text>
             <TextInput
@@ -41,8 +60,8 @@ export default function Facility() {
               placeholder="Enter Facility Name"
             />
           </View>
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Text style={styles.submitButtonText}>Submit</Text>
+          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
+            <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
           </TouchableOpacity>
         </View>
         {/* Card 2: Table */}
@@ -58,10 +77,10 @@ export default function Facility() {
               <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
               <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
               <View style={[styles.actionCell, { flex: 1 }]}>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* edit logic */ }}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
                   <Feather name="edit" size={18} color="#5aaf57" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* delete logic */ }}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
                   <Ionicons name="trash" size={18} color="#d32f2f" />
                 </TouchableOpacity>
               </View>
@@ -73,6 +92,7 @@ export default function Facility() {
   );
 }
 
+// Styles remain unchanged
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f8f9fa' },
   container: { flex: 1, backgroundColor: '#f8f9fa', padding: 20 },
