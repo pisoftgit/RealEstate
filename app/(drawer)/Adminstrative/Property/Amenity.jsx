@@ -1,23 +1,42 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 
-const initialAmenities = [
-  { id: 1, name: 'WiFi' },
-  { id: 2, name: 'Parking' },
-];
+import useAmenityActions from '../../../../hooks/useAmenityActions'; // Adjust path as needed
 
 export default function Amenity() {
   const navigation = useNavigation();
-  const [amenity, setAmenity] = useState('');
-  const [amenities, setAmenities] = useState(initialAmenities);
+  const { amenities, loading, addAmenity, updateAmenity, deleteAmenity } = useAmenityActions();
 
-  const handleSubmit = () => {
-    if (amenity.trim()) {
-      setAmenities([...amenities, { id: amenities.length + 1, name: amenity }]);
+  const [amenity, setAmenity] = useState('');
+  const [editing, setEditing] = useState(null);
+
+  const handleSubmit = async () => {
+    if (!amenity.trim()) return;
+    try {
+      if (editing) {
+        await updateAmenity({ id: editing.id, amenityName: amenity });
+        setEditing(null);
+      } else {
+        await addAmenity({ amenityName: amenity });
+      }
       setAmenity('');
+    } catch (e) {
+      Alert.alert('Error', 'Failed to save amenity');
     }
+  };
+
+  const handleEdit = (item) => {
+    setAmenity(item.name);
+    setEditing(item);
+  };
+
+  const handleDelete = (id) => {
+    Alert.alert('Delete Amenity', 'Are you sure you want to delete?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => await deleteAmenity(id) },
+    ]);
   };
 
   return (
@@ -29,9 +48,9 @@ export default function Amenity() {
           </TouchableOpacity>
           <Text style={styles.title}>Amenity</Text>
         </View>
-        {/* Card 1: Input Field */}
+        {/* Input Card */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Add Amenity</Text>
+          <Text style={styles.cardTitle}>{editing ? 'Edit Amenity' : 'Add Amenity'}</Text>
           <View style={styles.formRow}>
             <Text style={styles.label}>Amenity</Text>
             <TextInput
@@ -41,11 +60,11 @@ export default function Amenity() {
               placeholder="Enter Amenity Name"
             />
           </View>
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Text style={styles.submitButtonText}>Submit</Text>
+          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
+            <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
           </TouchableOpacity>
         </View>
-        {/* Card 2: Table */}
+        {/* List Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Amenity List</Text>
           <View style={styles.tableHeader}>
@@ -58,10 +77,10 @@ export default function Amenity() {
               <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
               <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
               <View style={[styles.actionCell, { flex: 1 }]}>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* edit logic */ }}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
                   <Feather name="edit" size={18} color="#5aaf57" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* delete logic */ }}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
                   <Ionicons name="trash" size={18} color="#d32f2f" />
                 </TouchableOpacity>
               </View>

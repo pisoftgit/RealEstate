@@ -1,23 +1,42 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 
-const initialDirections = [
-  { id: 1, name: 'East' },
-  { id: 2, name: 'West' },
-];
+// Import your API hook here
+import useFaceDirectionActions from '../../../../hooks/useFaceDirectionActions';
 
 export default function FaceDirection() {
   const navigation = useNavigation();
+  const { faceDirections, loading, addFaceDirection, updateFaceDirection, deleteFaceDirection } = useFaceDirectionActions();
   const [directionName, setDirectionName] = useState('');
-  const [directions, setDirections] = useState(initialDirections);
+  const [editing, setEditing] = useState(null);
 
-  const handleSubmit = () => {
-    if (directionName.trim()) {
-      setDirections([...directions, { id: directions.length + 1, name: directionName }]);
+  const handleSubmit = async () => {
+    if (!directionName.trim()) return;
+    try {
+      if (editing) {
+        await updateFaceDirection({ id: editing.id, faceDirection: directionName });
+        setEditing(null);
+      } else {
+        await addFaceDirection({ faceDirection: directionName });
+      }
       setDirectionName('');
+    } catch (e) {
+      Alert.alert("Failed", "Error saving face direction.");
     }
+  };
+
+  const handleEdit = (item) => {
+    setDirectionName(item.name);
+    setEditing(item);
+  };
+
+  const handleDelete = (id) => {
+    Alert.alert("Delete", "Are you sure you want to delete?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: async () => await deleteFaceDirection(id) }
+    ]);
   };
 
   return (
@@ -31,7 +50,7 @@ export default function FaceDirection() {
         </View>
         {/* Card 1: Input Field */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Add Face Direction</Text>
+          <Text style={styles.cardTitle}>{editing ? "Edit Face Direction" : "Add Face Direction"}</Text>
           <View style={styles.formRow}>
             <Text style={styles.label}>Direction Name</Text>
             <TextInput
@@ -41,8 +60,8 @@ export default function FaceDirection() {
               placeholder="Enter Direction Name"
             />
           </View>
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Text style={styles.submitButtonText}>Submit</Text>
+          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
+            <Text style={styles.submitButtonText}>{editing ? "Update" : "Submit"}</Text>
           </TouchableOpacity>
         </View>
         {/* Card 2: Table */}
@@ -53,15 +72,15 @@ export default function FaceDirection() {
             <Text style={[styles.tableHeaderText, { flex: 2 }]}>Direction Name</Text>
             <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
           </View>
-          {directions.map((item, idx) => (
+          {faceDirections.map((item, idx) => (
             <View key={item.id} style={styles.tableRow}>
               <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
               <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
               <View style={[styles.actionCell, { flex: 1 }]}>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* edit logic */ }}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
                   <Feather name="edit" size={18} color="#5aaf57" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* delete logic */ }}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
                   <Ionicons name="trash" size={18} color="#d32f2f" />
                 </TouchableOpacity>
               </View>
@@ -73,6 +92,7 @@ export default function FaceDirection() {
   );
 }
 
+// Styles remain unchanged
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f8f9fa' },
   container: { flex: 1, backgroundColor: '#f8f9fa', padding: 20 },
