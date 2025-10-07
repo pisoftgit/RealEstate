@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,115 +8,111 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Alert,
+  FlatList,
 } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
-import { useNavigation } from 'expo-router';
 import DropDownPicker from 'react-native-dropdown-picker';
-import useFlatHouseStructures from "../../../../hooks/useStructure"
+import useMeasurementUnits from '../../../../hooks/useMeasurements';
 
-export default function Structure() {
-  const navigation = useNavigation();
-
+export default function MeasurementUnitsScreen() {
   const {
-    structures,
-    structureTypes,
+    units,
     loading,
     error,
-    addStructure,
-    deleteStructure,
-    fetchStructures,
-  } = useFlatHouseStructures();
+    fetchUnits,
+    addUnit,
+    updateUnit,
+    deleteUnit,
+  } = useMeasurementUnits();
 
-  // Dropdown state for open/close and selected value
-  const [structureTypeOpen, setStructureTypeOpen] = useState(false);
-  const [structureType, setStructureType] = useState(null);
-
+  const [unitName, setUnitName] = useState('');
+  const [editingId, setEditingId] = useState(null);
   const [submitLoading, setSubmitLoading] = useState(false);
 
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownValue, setDropdownValue] = useState(null);
+
+  const resetForm = () => {
+    setUnitName('');
+    setEditingId(null);
+  };
+
   const handleSubmit = async () => {
-    if (!structureType) {
-      Alert.alert('Validation', 'Please select a structure type.');
+    if (!unitName.trim()) {
+      Alert.alert('Validation', 'Please enter a unit name.');
       return;
     }
-
+    setSubmitLoading(true);
     try {
-      setSubmitLoading(true);
-      await addStructure(structureType);
-      setStructureType(null);
-      fetchStructures(); // refresh list
+      if (editingId) {
+        await updateUnit(editingId, unitName.trim());
+      } else {
+        await addUnit(unitName.trim());
+      }
+      resetForm();
+      await fetchUnits();
     } catch (err) {
-      Alert.alert('Error', 'Failed to add structure.');
+      Alert.alert('Error', 'Failed to save unit.');
     } finally {
       setSubmitLoading(false);
     }
   };
+  
+  const handleEdit = (unit) => {
+    setUnitName(unit.name);
+    setEditingId(unit.id);
+  };
 
   const handleDelete = (id) => {
-    Alert.alert('Delete', 'Are you sure you want to delete this structure?', [
+    Alert.alert('Delete', 'Are you sure you want to delete this unit?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Yes',
         onPress: async () => {
           try {
-            await deleteStructure(id);
-            fetchStructures(); // refresh after delete
+            await deleteUnit(id);
+            await fetchUnits();
           } catch (err) {
-            Alert.alert('Error', 'Failed to delete structure.');
+            Alert.alert('Error', 'Failed to delete unit.');
           }
         },
       },
     ]);
   };
 
-  // Transform structureTypes for DropDownPicker: {label, value}
-  const dropdownItems = structureTypes.map((item) => ({
-    label: item.structureType,
-    value: item.structureType,
-  }));
+  // Render unit item for FlatList
+  const renderItem = ({ item, index }) => (
+    <View style={styles.tableRow}>
+      <Text style={[styles.tableCell, { flex: 0.7 }]}>{index + 1}</Text>
+      <Text style={[styles.tableCell, { flex: 3 }]}>{item.name}</Text>
+      <View style={[styles.actionCell, { flex: 1 }]}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
+          <Feather name="edit" size={18} color="#5aaf57" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
+          <Ionicons name="trash" size={18} color="#d32f2f" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu" size={28} color="black" />
-          </TouchableOpacity>
-          <Text style={styles.title}>Structure</Text>
-        </View>
+        <Text style={styles.title}>Measurement Units</Text>
 
         {loading && <ActivityIndicator size="small" color="#5aaf57" />}
         {error && <Text style={{ color: 'red' }}>{error}</Text>}
 
-        {/* Card 1: Input Fields */}
+        {/* Form */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Add Structure</Text>
-
-          <View style={styles.formRow}>
-            <Text style={styles.label}>Structure Type</Text>
-            <View style={{ flex: 1 }}>
-              <DropDownPicker
-                open={structureTypeOpen}
-                value={structureType}
-                items={dropdownItems}
-                setOpen={setStructureTypeOpen}
-                setValue={setStructureType}
-                setItems={() => {}}
-                placeholder="Select Structure Type"
-                style={{
-                  borderWidth: 1,
-                  borderColor: '#e0e0e0',
-                  borderRadius: 8,
-                  backgroundColor: '#f5f5f5',
-                }}
-                dropDownContainerStyle={{
-                  borderWidth: 1,
-                  borderColor: '#e0e0e0',
-                  borderRadius: 8,
-                }}
-              />
-            </View>
-          </View>
-
+          <Text style={styles.cardTitle}>{editingId ? 'Edit Unit' : 'Add Unit'}</Text>
+          <TextInput
+            style={styles.textInput}
+            placeholder="Enter unit name"
+            value={unitName}
+            onChangeText={setUnitName}
+          />
           <TouchableOpacity
             style={[styles.submitButton, submitLoading && { opacity: 0.7 }]}
             onPress={handleSubmit}
@@ -125,49 +121,31 @@ export default function Structure() {
             {submitLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.submitButtonText}>Submit</Text>
+              <Text style={styles.submitButtonText}>{editingId ? 'Update' : 'Add'}</Text>
             )}
           </TouchableOpacity>
+          {editingId && (
+            <TouchableOpacity style={styles.cancelButton} onPress={resetForm}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* Card 2: Table */}
+        {/* List */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Structure List</Text>
+          <Text style={styles.cardTitle}>Units List</Text>
 
-          <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
-            <Text style={[styles.tableHeaderText, { flex: 3 }]}>Type</Text>
-            <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
-          </View>
-
-          {structures.length === 0 && !loading && (
+          {units.length === 0 && !loading && (
             <Text style={{ textAlign: 'center', padding: 16, color: '#666' }}>
-              No structures found.
+              No units found.
             </Text>
           )}
 
-          {structures.map((item, idx) => (
-            <View key={item.id} style={styles.tableRow}>
-              <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
-              <Text style={[styles.tableCell, { flex: 3 }]}>{item.type}</Text>
-              <View style={[styles.actionCell, { flex: 1 }]}>
-                <TouchableOpacity
-                  style={styles.iconBtn}
-                  onPress={() => {
-                    // Edit logic can be added here later
-                  }}
-                >
-                  <Feather name="edit" size={18} color="#5aaf57" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.iconBtn}
-                  onPress={() => handleDelete(item.id)}
-                >
-                  <Ionicons name="trash" size={18} color="#d32f2f" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
+          <FlatList
+            data={units}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderItem}
+          />
         </View>
       </View>
     </SafeAreaView>
@@ -177,17 +155,10 @@ export default function Structure() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f8f9fa' },
   container: { flex: 1, backgroundColor: '#f8f9fa', padding: 20 },
-  header: {
-    paddingVertical: 18,
-    marginBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   title: {
-    fontSize: 32,
-    fontFamily: 'PlusSB',
-    color: '#333',
-    marginLeft: 16,
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 16,
   },
   card: {
     backgroundColor: '#fff',
@@ -198,59 +169,50 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 18,
-    fontFamily: 'PlusSB',
-    color: '#333',
+    fontWeight: '600',
     marginBottom: 12,
   },
-  formRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 16,
     marginBottom: 12,
-  },
-  label: {
-    width: 120,
-    color: '#333',
-    fontFamily: 'PlusR',
   },
   submitButton: {
     backgroundColor: '#5aaf57',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
   },
   submitButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontFamily: 'PlusSB',
+    fontWeight: '600',
   },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#5aaf57',
-    padding: 8,
+  cancelButton: {
+    marginTop: 8,
+    paddingVertical: 10,
     borderRadius: 8,
-    marginBottom: 4,
+    alignItems: 'center',
+    backgroundColor: '#aaa',
   },
-  tableHeaderText: {
-    flex: 1,
+  cancelButtonText: {
     color: '#fff',
-    textAlign: 'center',
-    fontFamily: 'PlusSB',
-    fontSize: 14,
+    fontSize: 16,
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 8,
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    backgroundColor: '#fff',
+    borderBottomColor: '#eee',
   },
   tableCell: {
     flex: 1,
     textAlign: 'center',
-    color: '#333',
-    fontFamily: 'PlusR',
-    fontSize: 13,
+    fontSize: 16,
   },
   actionCell: {
     flexDirection: 'row',
@@ -258,7 +220,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconBtn: {
-    padding: 4,
+    padding: 6,
     marginHorizontal: 6,
   },
 });
