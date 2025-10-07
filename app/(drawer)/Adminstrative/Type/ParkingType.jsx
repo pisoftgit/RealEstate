@@ -1,43 +1,110 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
-import { Ionicons, Feather } from '@expo/vector-icons';
-import { useNavigation } from 'expo-router';
-
-const initialParkingTypes = [
-  { id: 1, name: 'Covered' },
-  { id: 2, name: 'Open' },
-];
+import React, { useState, useEffect } from 'react'
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Alert,
+  Modal,
+  Pressable,
+} from 'react-native'
+import { Ionicons, Feather } from '@expo/vector-icons'
+import { useNavigation } from 'expo-router'
+import useParkingTypes from "../../../../hooks/useParking"
 
 export default function ParkingType() {
-  const navigation = useNavigation();
-  const [parkingType, setParkingType] = useState('');
-  const [parkingTypes, setParkingTypes] = useState(initialParkingTypes);
+  const navigation = useNavigation()
+  const {
+    parkingTypes,
+    loading,
+    error,
+    fetchParkingTypes,
+    saveParkingType,
+    updateParkingType,
+    deleteParkingType,
+  } = useParkingTypes()
 
-  const handleSubmit = () => {
-    if (parkingType.trim()) {
-      setParkingTypes([...parkingTypes, { id: parkingTypes.length + 1, name: parkingType }]);
-      setParkingType('');
+  const [parkingTypeInput, setParkingTypeInput] = useState('')
+  const [modalVisible, setModalVisible] = useState(false)
+  const [editId, setEditId] = useState(null)
+
+  useEffect(() => {
+    fetchParkingTypes()
+  }, [])
+
+  const handleSubmit = async () => {
+    if (!parkingTypeInput.trim()) return
+
+    try {
+      await saveParkingType(parkingTypeInput.trim())
+      setParkingTypeInput('')
+      await fetchParkingTypes()
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Something went wrong')
     }
-  };
+  }
+
+  const openEditModal = (item) => {
+    setEditId(item.id)
+    setParkingTypeInput(item.type)
+    setModalVisible(true)
+  }
+
+  const handleUpdate = async () => {
+    if (!parkingTypeInput.trim()) return
+
+    try {
+      await updateParkingType(editId, parkingTypeInput.trim())
+      setModalVisible(false)
+      setEditId(null)
+      setParkingTypeInput('')
+      await fetchParkingTypes()
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to update parking type')
+    }
+  }
+
+  const handleDelete = async (id) => {
+    Alert.alert('Confirm Delete', 'Are you sure you want to delete this parking type?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteParkingType(id)
+            await fetchParkingTypes()
+          } catch (err) {
+            Alert.alert('Error', err.message || 'Failed to delete parking type')
+          }
+        },
+      },
+    ])
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu" size={28} color="BLACK" />
+            <Ionicons name="menu" size={28} color="black" />
           </TouchableOpacity>
-          <Text style={styles.title}>Parking <Text style={{ color: '#5aaf57' }}>Type</Text></Text>
+          <Text style={styles.title}>
+            Parking <Text style={{ color: '#5aaf57' }}>Type</Text>
+          </Text>
         </View>
-        {/* Card 1: Input Field */}
+
+        {/* Add Parking Type */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Add Parking Type</Text>
           <View style={styles.formRow}>
             <Text style={styles.label}>Parking Type</Text>
             <TextInput
               style={styles.input}
-              value={parkingType}
-              onChangeText={setParkingType}
+              value={parkingTypeInput}
+              onChangeText={setParkingTypeInput}
               placeholder="Enter Parking Type"
             />
           </View>
@@ -45,32 +112,72 @@ export default function ParkingType() {
             <Text style={styles.submitButtonText}>Submit</Text>
           </TouchableOpacity>
         </View>
-        {/* Card 2: Table */}
+
+        {/* Parking Types List */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Parking Type List</Text>
+          {loading && <Text>Loading...</Text>}
+          {error && <Text style={{ color: 'red' }}>{error}</Text>}
+
           <View style={styles.tableHeader}>
             <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
             <Text style={[styles.tableHeaderText, { flex: 2 }]}>Parking Type</Text>
             <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
           </View>
+
           {parkingTypes.map((item, idx) => (
             <View key={item.id} style={styles.tableRow}>
               <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
-              <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
+              <Text style={[styles.tableCell, { flex: 2 }]}>{item.type}</Text>
               <View style={[styles.actionCell, { flex: 1 }]}>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* edit logic */ }}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => openEditModal(item)}>
                   <Feather name="edit" size={18} color="#5aaf57" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* delete logic */ }}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
                   <Ionicons name="trash" size={18} color="#d32f2f" />
                 </TouchableOpacity>
               </View>
             </View>
           ))}
         </View>
+
+        {/* Edit Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Edit Parking Type</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={parkingTypeInput}
+                onChangeText={setParkingTypeInput}
+                placeholder="Enter Parking Type"
+              />
+              <View style={styles.modalButtons}>
+                <Pressable
+                  style={[styles.modalButton, { backgroundColor: '#d32f2f' }]}
+                  onPress={() => {
+                    setModalVisible(false)
+                    setEditId(null)
+                    setParkingTypeInput('')
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Cancel</Text>
+                </Pressable>
+                <Pressable style={[styles.modalButton, { backgroundColor: '#5aaf57' }]} onPress={handleUpdate}>
+                  <Text style={styles.modalButtonText}>Update</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -79,6 +186,8 @@ const styles = StyleSheet.create({
   header: {
     paddingVertical: 18,
     marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   title: {
     fontSize: 32,
@@ -168,4 +277,53 @@ const styles = StyleSheet.create({
   iconBtn: {
     padding: 4,
   },
-});
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#333',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginTop: 16,
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+   modalInput: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    color: '#333',
+    fontFamily: 'PlusR',
+    fontSize: 16,
+    marginBottom: 16,
+  },
+})

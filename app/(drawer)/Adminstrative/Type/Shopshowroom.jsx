@@ -1,23 +1,91 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  ActivityIndicator,
+  Alert,
+  Modal,
+} from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
-
-const initialShopShowrooms = [
-  { id: 1, name: 'Shop 101' },
-  { id: 2, name: 'Showroom A' },
-];
+import useShopShowroomCategories from '../../../../hooks/useShowRoomCategory';
 
 export default function Shopshowroom() {
   const navigation = useNavigation();
   const [shopShowroom, setShopShowroom] = useState('');
-  const [shopShowrooms, setShopShowrooms] = useState(initialShopShowrooms);
+  const [editingId, setEditingId] = useState(null);
 
-  const handleSubmit = () => {
-    if (shopShowroom.trim()) {
-      setShopShowrooms([...shopShowrooms, { id: shopShowrooms.length + 1, name: shopShowroom }]);
+  // Modal state for editing only
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editModalName, setEditModalName] = useState('');
+
+  const {
+    categories,
+    loading,
+    error,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+  } = useShopShowroomCategories();
+
+  const handleSubmit = async () => {
+    if (!shopShowroom.trim()) return;
+
+    try {
+      if (editingId) {
+        await updateCategory(editingId, shopShowroom);
+        setEditingId(null);
+      } else {
+        await addCategory(shopShowroom);
+      }
       setShopShowroom('');
+    } catch (err) {
+      Alert.alert('Error', 'Something went wrong.');
     }
+  };
+
+  // Open modal with selected category data
+  const openEditModal = (item) => {
+    setEditModalName(item.name);
+    setEditingId(item.id);
+    setEditModalVisible(true);
+  };
+
+  const handleEditModalSave = async () => {
+    if (!editModalName.trim()) return;
+
+    try {
+      await updateCategory(editingId, editModalName);
+      setEditModalVisible(false);
+      setEditingId(null);
+    } catch (err) {
+      Alert.alert('Error', 'Something went wrong while updating.');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    Alert.alert(
+      'Delete Category',
+      'Are you sure you want to delete this category?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            try {
+              await deleteCategory(id);
+            } catch {
+              Alert.alert('Error', 'Failed to delete category.');
+            }
+          },
+          style: 'destructive',
+        },
+      ]
+    );
   };
 
   return (
@@ -25,15 +93,20 @@ export default function Shopshowroom() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu" size={28} color="BLACK" />
+            <Ionicons name="menu" size={28} color="black" />
           </TouchableOpacity>
-          <Text style={styles.title}>Shop/ <Text style={{ color: '#5aaf57' }}>Showroom</Text>0</Text>
+          <Text style={styles.title}>
+            Shop/ <Text style={{ color: '#5aaf57' }}>Showroom</Text>
+          </Text>
         </View>
-        {/* Card 1: Input Field */}
+
+        {/* Original input form for add/edit stays intact */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Add Shop/Showroom</Text>
+          <Text style={styles.cardTitle}>
+            {editingId ? 'Edit' : 'Add'} Shop/Showroom
+          </Text>
           <View style={styles.formRow}>
-            <Text style={styles.label}>Shop/Showroom</Text>
+            <Text style={styles.label}>Name</Text>
             <TextInput
               style={styles.input}
               value={shopShowroom}
@@ -42,33 +115,91 @@ export default function Shopshowroom() {
             />
           </View>
           <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Text style={styles.submitButtonText}>Submit</Text>
+            <Text style={styles.submitButtonText}>
+              {editingId ? 'Update' : 'Submit'}
+            </Text>
           </TouchableOpacity>
         </View>
-        {/* Card 2: Table */}
+
+        {/* List of categories */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Shop/Showroom List</Text>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
-            <Text style={[styles.tableHeaderText, { flex: 2 }]}>Shop/Showroom</Text>
-            <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
-          </View>
-          {shopShowrooms.map((item, idx) => (
-            <View key={item.id} style={styles.tableRow}>
-              <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
-              <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
-              <View style={[styles.actionCell, { flex: 1 }]}>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* edit logic */ }}>
-                  <Feather name="edit" size={18} color="#5aaf57" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => {/* delete logic */ }}>
-                  <Ionicons name="trash" size={18} color="#d32f2f" />
-                </TouchableOpacity>
+
+          {loading ? (
+            <ActivityIndicator size="large" color="#5aaf57" />
+          ) : (
+            <>
+              <View style={styles.tableHeader}>
+                <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
+                <Text style={[styles.tableHeaderText, { flex: 2 }]}>Name</Text>
+                <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
               </View>
-            </View>
-          ))}
+
+              {categories.map((item, idx) => (
+                <View key={item.id} style={styles.tableRow}>
+                  <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
+                  <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
+                  <View style={[styles.actionCell, { flex: 1 }]}>
+                    <TouchableOpacity
+                      style={styles.iconBtn}
+                      onPress={() => openEditModal(item)} // Open modal here
+                    >
+                      <Feather name="edit" size={18} color="#5aaf57" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.iconBtn}
+                      onPress={() => handleDelete(item.id)}
+                    >
+                      <Ionicons name="trash" size={18} color="#d32f2f" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </>
+          )}
         </View>
       </View>
+
+      {/* Edit Modal */}
+      <Modal
+        animationType="slide"
+        transparent
+        visible={editModalVisible}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.cardTitle}>Edit Shop/Showroom</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={editModalName}
+              onChangeText={setEditModalName}
+              placeholder="Enter Shop/Showroom Name"
+              autoFocus
+            />
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                marginTop: 16,
+              }}
+            >
+              <TouchableOpacity
+                style={[styles.submitButton, { flex: 0.45, backgroundColor: '#5aaf57' }]}
+                onPress={handleEditModalSave}
+              >
+                <Text style={styles.submitButtonText}>Update</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.submitButton, { flex: 0.45, backgroundColor: '#888' }]}
+                onPress={() => setEditModalVisible(false)}
+              >
+                <Text style={styles.submitButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -124,7 +255,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
   },
   submitButtonText: {
     color: '#fff',
@@ -167,5 +297,28 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     padding: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalInput: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    color: '#333',
+    fontFamily: 'PlusR',
+    fontSize: 16,
+    marginBottom: 16,
   },
 });

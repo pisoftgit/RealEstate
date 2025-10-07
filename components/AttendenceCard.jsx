@@ -17,7 +17,7 @@ const AttendanceCard = () => {
   const [clickInTime, setClickInTime] = useState(null);
   const [clickOutTime, setClickOutTime] = useState(null);
   const [hoursWorked, setHoursWorked] = useState('');
-  const [locationLogs, setLocationLogs] = useState([]); // 👈 for storing location + timestamp
+  const [locationLogs, setLocationLogs] = useState([]);
   const intervalRef = useRef(null);
 
   const animationRef = useRef(null);
