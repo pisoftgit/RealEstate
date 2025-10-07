@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontFamily: 'PlusSB',
     color: '#333',
     marginLeft: 16,
