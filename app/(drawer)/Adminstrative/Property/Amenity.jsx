@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Aler
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 
-import useAmenityActions from '../../../../hooks/useAmenityActions'; // Adjust path as needed
+import useAmenityActions from '../../../../hooks/useAmenityActions';
 
 export default function Amenity() {
   const navigation = useNavigation();
