@@ -75,10 +75,10 @@ const RequiredLabel = ({ text }) => (
   </View>
 );
 
-const AddBuilder = () => {
+const AddRealtor = () => {
   const navigation = useNavigation();
 
-  const [builderLogo, setBuilderLogo] = useState(null);
+  const [RealtorLogo, setRealtorLogo] = useState(null);
   const [logoBytes, setLogoBytes] = useState(null);
   const [logoType, setLogoType] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -87,7 +87,7 @@ const AddBuilder = () => {
   const [hasAddress, setHasAddress] = useState(true);
 
   const [form, setForm] = useState({
-    builderNature: null,
+    RealtorNature: null,
     name: "",
     mobile: "",
     email: "",
@@ -101,7 +101,7 @@ const AddBuilder = () => {
 
   const [errors, setErrors] = useState({});
 
-  // Builder Nature dropdown
+  // Realtor Nature dropdown
   const [natureOpen, setNatureOpen] = useState(false);
   const { businessNatures, loading: natureLoading } = useBusinessNature();
   const natureItems = businessNatures.map((item) => ({
@@ -151,7 +151,7 @@ const AddBuilder = () => {
     });
     if (!result.canceled) {
       const asset = result.assets[0];
-      setBuilderLogo(asset.uri);
+      setRealtorLogo(asset.uri);
       setLogoBytes(asset.base64);
       const ext = asset.uri.split(".").pop().toLowerCase();
       const type =
@@ -173,8 +173,8 @@ const AddBuilder = () => {
 
   const validateForm = () => {
     let newErrors = {};
-    if (!form.builderNature) newErrors.builderNature = "Builder Nature is required";
-    if (!form.name) newErrors.name = "Builder Name is required";
+    if (!form.RealtorNature) newErrors.RealtorNature = "Realtor Nature is required";
+    if (!form.name) newErrors.name = "Realtor Name is required";
     if (!form.mobile) newErrors.mobile = "Mobile number is required";
     if (!form.email) newErrors.email = "Email is required";
     if (!logoBytes) newErrors.logo = "Logo is required";
@@ -195,15 +195,15 @@ const AddBuilder = () => {
     setLoading(true);
 
     const payload = {
-      builderNature: form.builderNature,
+      RealtorNature: form.RealtorNature,
       name: form.name,
       mobileNo: form.mobile,
       email: form.email,
       website: form.website,
       description: form.description,
       isHeadOffice: form.isHeadOffice,
-      builderLogo: logoBytes,
-      builderLogoType: logoType,
+      RealtorLogo: logoBytes,
+      RealtorLogoType: logoType,
       ...(hasAddress && {
         addressDetails: {
           address1: form.addressLine1,
@@ -248,17 +248,17 @@ const AddBuilder = () => {
         >
           {/* Basic Information Card */}
           <CustomCard title="Basic Information" icon="person-add-outline">
-            <RequiredLabel text="Builder Nature" />
+            <RequiredLabel text="Realtor Nature" />
             <DropDownPicker
               open={natureOpen}
-              value={form.builderNature}
+              value={form.RealtorNature}
               items={natureItems}
               setOpen={setNatureOpen}
               setValue={(callback) =>
-                handleChange("builderNature", callback(form.builderNature))
+                handleChange("RealtorNature", callback(form.RealtorNature))
               }
               setItems={() => {}}
-              placeholder={natureLoading ? "Loading..." : "Select Builder Nature"}
+              placeholder={natureLoading ? "Loading..." : "Select Realtor Nature"}
               style={STYLES.dropdown}
               dropDownContainerStyle={STYLES.dropdownContainer}
               labelStyle={{ fontFamily: 'PlusR', fontSize: 16, color: COLORS.text }}
@@ -266,16 +266,16 @@ const AddBuilder = () => {
               listMode="SCROLLVIEW"
               disabled={natureLoading}
             />
-            {errors.builderNature && (
-              <Text style={STYLES.errorText}>{errors.builderNature}</Text>
+            {errors.RealtorNature && (
+              <Text style={STYLES.errorText}>{errors.RealtorNature}</Text>
             )}
 
-            <RequiredLabel text="Builder Name" />
+            <RequiredLabel text="Realtor Name" />
             <TextInput
               style={STYLES.input}
               value={form.name}
               onChangeText={(text) => handleChange("name", text)}
-              placeholder="Enter Builder Name"
+              placeholder="Enter Realtor Name"
               placeholderTextColor={COLORS.placeholder}
             />
             {errors.name && <Text style={STYLES.errorText}>{errors.name}</Text>}
@@ -308,8 +308,8 @@ const AddBuilder = () => {
 
             <Text style={STYLES.label}>Logo</Text>
             <TouchableOpacity onPress={pickLogo} style={STYLES.imagePicker}>
-              {builderLogo ? (
-                <Image source={{ uri: builderLogo }} style={STYLES.logo} />
+              {RealtorLogo ? (
+                <Image source={{ uri: RealtorLogo }} style={STYLES.logo} />
               ) : (
                 <View style={STYLES.logoPlaceholder}>
                   <Ionicons
@@ -514,7 +514,7 @@ const AddBuilder = () => {
                       color="#fff"
                       style={{ marginRight: 8 }}
                     />
-                    <Text style={STYLES.submitButtonText}>Submit Builder</Text>
+                    <Text style={STYLES.submitButtonText}>Submit Realtor</Text>
                   </>
                 )}
               </LinearGradient>
@@ -526,7 +526,7 @@ const AddBuilder = () => {
   );
 };
 
-export default AddBuilder;
+export default AddRealtor;
 
 
 const STYLES = StyleSheet.create({
