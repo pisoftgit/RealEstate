@@ -281,7 +281,8 @@ const filterStyles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#f8f9fa' },
     scrollContent: { padding: 5,paddingTop:30, paddingBottom: 40 },
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-    title: { fontSize: 24, fontWeight: '700', color: '#333', marginLeft: 10 },
+    title: { fontSize: 24,
+    fontFamily: "PlusSB", color: '#333', marginLeft: 10 },
     card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, elevation: 5, shadowColor: '#000' },
     cardTitle: { fontSize: 20, fontWeight: '800', color: '#1a1a1a', marginBottom: 15, borderBottomWidth: 2, borderBottomColor: '#004d40', paddingBottom: 10 },
     
@@ -295,17 +296,19 @@ const filterStyles = StyleSheet.create({
     },
     groupTitle: {
         fontSize: 16,
-        fontWeight: '700',
+    fontFamily: "PlusSB",
         color: '#004d40',
         marginBottom: 10,
     },
     
     formRowArea: { marginBottom: 10 },
-    label: { color: '#333', fontWeight: '600', fontSize: 14, marginBottom: 8 },
+    label: { color: '#333', 
+    fontFamily: "PlusSB", fontSize: 14, marginBottom: 8 },
     selectContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 5 },
     selectOption: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: '#e0e0e0', backgroundColor: '#fff' },
     selectOptionSelected: { borderColor: '#004d40', backgroundColor: '#004d4015' },
-    selectOptionText: { color: '#333', fontWeight: '500', fontSize: 13 },
+    selectOptionText: { color: '#333', 
+    fontFamily: "PlusL", fontSize: 13 },
     selectOptionTextSelected: { color: '#004d40', fontWeight: '700' },
     
     inputDynamic: {

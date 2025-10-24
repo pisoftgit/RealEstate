@@ -177,9 +177,7 @@ const PropertyCard = ({ item, navigation, onViewDetails, onEditDetails }) => {
         </View>
       </View>
       
-      {/* ACTION BAR: Edit Data & View Details */}
       <View style={cardStyles.actionBar}>
-        {/* ACTION 1: ADD/EDIT Property Details (Navigates to Edit Page) */}
         <TouchableOpacity style={cardStyles.actionBtnIcon} onPress={() => navigate("/(drawer)/InventoryManagement/Property/ManageSerialize")}>
           <Feather name="edit" size={18} color="#004d40" />
           <Text style={cardStyles.iconActionText}>Serialize Data</Text>
@@ -264,8 +262,8 @@ const appStyles = StyleSheet.create({
     paddingTop:20,
   },
   title: { 
-    fontSize: 24, 
-    fontWeight: '700', 
+    fontSize: 24,  
+    fontFamily: "PlusSB",
     color: '#333', 
     flex: 1,
     marginLeft: 10,
@@ -307,14 +305,14 @@ const cardStyles = StyleSheet.create({
   },
   cardProjectName: { 
     fontSize: 18, 
-    fontWeight: '700', 
+    fontFamily: "PlusR",
     color: '#333', 
     marginBottom: 4,
   },
   cardBuilder: { 
     fontSize: 14, 
     color: '#666', 
-    fontWeight: '400',
+    fontFamily: "PlusSB",
   },
   
   statusPill: {
@@ -325,7 +323,7 @@ const cardStyles = StyleSheet.create({
     borderWidth: 1,
   },
   statusText: { 
-    fontWeight: '700',
+    fontFamily: "PlusSB",
     fontSize: 10, 
   },
 
@@ -355,7 +353,7 @@ const cardStyles = StyleSheet.create({
   detailLabelSmall: { 
     fontSize: 13, 
     color: '#333', 
-    fontWeight: '500', 
+    fontFamily: "PlusL",
   },
 
   // Action Bar
@@ -378,7 +376,7 @@ const cardStyles = StyleSheet.create({
   },
   iconActionText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: "PlusSB",
     color: '#004d40',
     marginLeft: 4,
   },
@@ -394,12 +392,11 @@ const cardStyles = StyleSheet.create({
   actionBtnText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: "PlusR",
     marginRight: 6,
   },
 });
 
-// --- MODAL SPECIFIC STYLES (No changes needed, they were already spacious) ---
 const modalStyles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
@@ -430,7 +427,7 @@ const modalStyles = StyleSheet.create({
     },
     modalTitle: {
         fontSize: 22,
-        fontWeight: '700',
+    fontFamily: "PlusSB",
         color: '#333',
     },
     statusPill: {
@@ -440,7 +437,7 @@ const modalStyles = StyleSheet.create({
         borderWidth: 1,
     },
     statusText: {
-        fontWeight: '600',
+    fontFamily: "PlusSB",
         fontSize: 12,
     },
     builderText: {
@@ -469,11 +466,11 @@ const modalStyles = StyleSheet.create({
         color: '#555', 
         flex: 1.2, 
         marginLeft: 10,
-        fontWeight: '500', 
+    fontFamily: "PlusR", 
     },
     detailValue: { 
         fontSize: 14, 
-        fontWeight: '600', 
+    fontFamily: "PlusSB",
         color: '#333', 
         flex: 2, 
         textAlign: 'right' 
@@ -483,7 +480,7 @@ const modalStyles = StyleSheet.create({
     },
     descriptionTitle: {
         fontSize: 16,
-        fontWeight: '700',
+    fontFamily: "PlusSB",
         color: '#333',
         marginBottom: 5,
     },
@@ -492,6 +489,7 @@ const modalStyles = StyleSheet.create({
         color: '#555',
         lineHeight: 22,
         textAlign: 'justify',
+    fontFamily: "PlusL",
     },
     closeButton: {
         backgroundColor: '#004d40',
@@ -504,6 +502,6 @@ const modalStyles = StyleSheet.create({
     closeButtonText: {
         color: '#fff',
         fontSize: 16,
-        fontWeight: '700',
+    fontFamily: "PlusL",
     },
 });
