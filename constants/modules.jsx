@@ -328,11 +328,20 @@ export const defaultModules = [
           },
         ],
       },
-      // {
-      //   name: "FollowUp",
-      //   path: "/(drawer)/InventoryManagement/FollowUp",
-      //   title: "Follow Up",
-      // },
+     {
+        name: "PropertyInventory",
+        path: "/(drawer)/InventoryManagement/Property",
+        title: "Property",
+        icon: Brief,
+        children: [
+         
+          {
+            name: "ManageProperty",
+            path: "/(drawer)/InventoryManagement/Property/ManagePropertyDetail",
+            title: "Manage Property(Details)",
+          },
+        ],
+      },
     ],
   },
   {
