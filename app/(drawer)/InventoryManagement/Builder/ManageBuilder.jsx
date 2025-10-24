@@ -605,37 +605,46 @@ const ManageRealtors = () => {
 };
 
 const styles = StyleSheet.create({
-  // --- General Styles (Kept for overall look) ---
   container: { flex: 1, backgroundColor: "#f0f4f7" },
-  header: { paddingHorizontal: 20, paddingTop: Platform.OS === "android" ? 30 : 20, paddingBottom: 5 },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, marginBottom: 10 },
+  header: { paddingHorizontal: 20,
+    fontFamily: "PlusSB", paddingTop: Platform.OS === "android" ? 30 : 20, paddingBottom: 5 },
+  headerRow: { flexDirection: "row",
+    fontFamily: "PlusSB", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, marginBottom: 10 },
   headerTextContainer: { flex: 1 },
-  headerTitle: { fontSize: 32, fontWeight: '800', color: "#004d40" },
-  headerSubTitle: { fontSize: 28, fontWeight: '800', color: "#333", marginTop: -5 },
-  headerDesc: { fontSize: 14, color: "#666", marginTop: 5 },
+  headerTitle: { fontSize: 32, 
+    fontFamily: "PlusSB", color: "#004d40" },
+  headerSubTitle: { fontSize: 28, fontFamily: "PlusSB", color: "#333", marginTop: -5 },
+  headerDesc: { fontSize: 14,
+    fontFamily: "PlusSB", color: "#666", marginTop: 5 },
   lottie: { width: 100, height: 100, marginTop: -30 },
-  searchContainer: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", marginHorizontal: 20, borderRadius: 15, paddingHorizontal: 15, marginVertical: 15, shadowOpacity: 0.1, elevation: 5, borderWidth: 1, borderColor: '#eee' },
-  searchBar: { flex: 1, height: 50, fontSize: 16, color: "#333", paddingLeft: 10 },
+  searchContainer: { flexDirection: "row",
+    fontFamily: "PlusSB", alignItems: "center", backgroundColor: "#fff", marginHorizontal: 20, borderRadius: 15, paddingHorizontal: 15, marginVertical: 15, shadowOpacity: 0.1, elevation: 5, borderWidth: 1, borderColor: '#eee' },
+  searchBar: { flex: 1, height: 50,
+    fontFamily: "PlusL", fontSize: 16, color: "#333", paddingLeft: 10 },
   searchIcon: { marginRight: 8 },
   list: { paddingHorizontal: 20, paddingVertical: 10 },
   itemCard: { backgroundColor: "rgba(255, 255, 255, 0.9)", borderRadius: 20, padding: 15, marginBottom: 15, shadowOpacity: 0.15, elevation: 8 },
   cardHeader: { flexDirection: "row", alignItems: "center", paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#eee', marginBottom: 10 },
-  snContainer: { width: 25, alignItems: 'center', justifyContent: 'center', marginRight: 10, backgroundColor: '#004d40', borderRadius: 5, height: 25 },
-  snText: { fontSize: 14, fontWeight: 'bold', color: "#fff" },
+  snContainer: { width: 25, alignItems: 'center',
+    fontFamily: "PlusSB", justifyContent: 'center', marginRight: 10, backgroundColor: '#004d40', borderRadius: 5, height: 25 },
+  snText: { fontSize: 14, 
+    fontFamily: "PlusS",fontWeight: 'bold', color: "#fff" },
   cardAvatar: { width: 50, height: 50, borderRadius: 25, marginRight: 15, backgroundColor: "#fff", borderWidth: 2, borderColor: '#004d4050' },
   cardTitleWrapper: { flex: 1 },
-  cardName: { fontSize: 18, fontWeight: 'bold', color: "#004d40" },
-  cardCode: { fontSize: 13, fontWeight: '600', color: "#444", marginTop: 2 },
+  cardName: { fontSize: 18, 
+    fontFamily: "PlusSB", color: "#004d40" },
+  cardCode: { fontSize: 13, 
+    fontFamily: "PlusL", color: "#444", marginTop: 2 },
   actionIcons: { flexDirection: "column", alignItems: "center" },
   iconBtn: { padding: 5, borderRadius: 5, marginBottom: 5, backgroundColor: 'rgba(255, 255, 255, 0.8)' },
-  cardDetails: { paddingHorizontal: 5 },
-  detailRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
-  detailText: { fontSize: 13, color: '#333', marginLeft: 8 },
+  cardDetails: { paddingHorizontal: 5,fontSize:13,fontFamily: "PlusSB", },
+  detailRow: { flexDirection: 'row',fontFamily: "PlusL", alignItems: 'center', marginBottom: 5 },
+  detailText: { fontSize: 13, fontFamily: "PlusL",color: '#333', marginLeft: 8 },
   emptyList: { alignItems: 'center', marginTop: 50, padding: 20, backgroundColor: '#fff', borderRadius: 15 },
-  emptyListText: { fontSize: 18, color: '#aaa', marginTop: 10, fontWeight: '600' },
+  emptyListText: { fontSize: 18, color: '#aaa', marginTop: 10,
+    fontFamily: "PlusL", },
   fab: { position: 'absolute', width: 65, height: 65, alignItems: 'center', justifyContent: 'center', right: 30, bottom: 30, backgroundColor: '#004d40', borderRadius: 35, elevation: 10, shadowOpacity: 0.5, shadowRadius: 10 },
 
-  // --- MODAL OVERLAY STYLES ---
   centeredModalBackground: {
     flex: 1,
     justifyContent: "center",
@@ -668,16 +677,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalTitleCompact: {
+    
+    fontFamily: "PlusSB",
     fontSize: 20, // Smaller title
-    fontWeight: 'bold',
     marginBottom: 5,
     color: "#004d40",
   },
   modalSubTitleCompact: {
-    fontSize: 14, // Smaller subtitle
+    
+    fontFamily: "PlusL",
+    fontSize: 14,
     color: "#888",
-    marginBottom: 15, // Reduced margin
-    fontWeight: '600',
+    marginBottom: 15, 
   },
   
   // Section Grouping
@@ -691,8 +702,9 @@ const styles = StyleSheet.create({
     borderLeftColor: '#004d40',
   },
   sectionTitleCompact: {
+    
+    fontFamily: "PlusR",
     fontSize: 16, 
-    fontWeight: 'bold',
     color: '#004d40',
     marginBottom: 5, 
     borderBottomWidth: 1,
@@ -704,8 +716,8 @@ const styles = StyleSheet.create({
   inputLabelCompact: {
     width: '100%',
     textAlign: 'left',
+    fontFamily: "PlusSB",
     fontSize: 13, // Smaller label
-    fontWeight: '600',
     color: '#333',
     marginBottom: 3, // Reduced margin
     marginTop: 8, // Reduced margin
@@ -727,6 +739,7 @@ const styles = StyleSheet.create({
   modalTextInputCompact: {
     flex: 1,
     paddingVertical: 8, 
+    fontFamily: "PlusR",
     paddingRight: 10,
     fontSize: 14, 
     color: '#333',
@@ -736,6 +749,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#fff',
     borderRadius: 10,
+    fontFamily: "PlusL",
     padding: 10,
     marginBottom: 5,
     borderWidth: 1,
@@ -761,6 +775,7 @@ const styles = StyleSheet.create({
   },
   selectInputTextCompact: {
     flex: 1,
+    fontFamily: "PlusR",
     fontSize: 14, 
     color: '#333',
     marginLeft: 5,
@@ -768,7 +783,8 @@ const styles = StyleSheet.create({
   selectionCountSmallCompact: {
     width: '100%',
     textAlign: 'right',
-    fontSize: 11, 
+    fontSize: 11,
+    fontFamily: "PlusSB",
     color: '#004d40',
     marginBottom: 5,
   },
@@ -784,6 +800,7 @@ const styles = StyleSheet.create({
   },
   logoPlaceholderCompact: {
     fontSize: 10,
+    fontFamily: "PlusSB",
     color: '#999',
     marginBottom: 5,
     marginTop: -3,
@@ -791,18 +808,18 @@ const styles = StyleSheet.create({
   
   toggleRowCompact: {
     flexDirection: 'row',
-    width: '100%',
+    width: '90%',
     justifyContent: 'space-between',
     marginBottom: 10, 
     marginTop: 5,
   },
   toggleBtnCompact: {
     flex: 1,
-    padding: 8, 
+    padding: 5, 
     borderRadius: 10,
     borderWidth: 2,
     borderColor: '#e0e0e0',
-    marginHorizontal: 5,
+    marginHorizontal: 2,
     alignItems: 'center',
     backgroundColor: '#fff',
   },
@@ -811,8 +828,8 @@ const styles = StyleSheet.create({
     borderColor: '#004d40',
   },
   toggleTextCompact: {
-    fontSize: 14, // Smaller toggle text
-    fontWeight: '600',
+    fontSize: 14, 
+    fontFamily: "PlusL",
     color: '#666',
   },
   toggleTextActiveCompact: {
@@ -823,7 +840,7 @@ const styles = StyleSheet.create({
   modalButtonRowCompact: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
+    width: '90%',
     marginTop: 15, // Reduced margin
   },
   modalBtnCompact: {
@@ -834,10 +851,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     elevation: 3,
   },
-  modalBtnPrimary: { backgroundColor: '#004d40' },
+  modalBtnPrimary: { backgroundColor: '#004d40', },
   modalBtnSecondary: { backgroundColor: '#e0e0e0' },
-  modalBtnSecondaryTextCompact: { fontSize: 14, fontWeight: 'bold', color: '#333' },
-  modalBtnTextCompact: { fontSize: 14, fontWeight: 'bold', color: '#fff' },
+  modalBtnSecondaryTextCompact: { fontSize: 14,
+    fontFamily: "PlusSB", color: '#333' },
+  modalBtnTextCompact: { fontSize: 14,fontFamily: "PlusSB", color: '#fff' },
 
   selectionModalCard: {
     width: "90%",
@@ -861,14 +879,17 @@ const styles = StyleSheet.create({
     width: '46%',
   },
   selectOptionSelected: { backgroundColor: '#004d40', borderColor: '#004d40' },
-  selectOptionText: { fontSize: 12, color: '#333', fontWeight: '500' },
+  selectOptionText: { fontSize: 12, color: '#333',
+    fontFamily: "PlusSB"},
   selectOptionTextSelected: { color: '#fff' },
-  selectionCount: { fontSize: 14, fontWeight: 'bold', color: '#004d40', marginTop: 10 },
+  selectionCount: { fontSize: 14, fontFamily: "PlusL", color: '#004d40', marginTop: 10 },
 
   deleteModalCard: { width: "85%", backgroundColor: "#fff", borderRadius: 25, padding: 30, alignItems: "center", shadowOpacity: 0.5, shadowRadius: 15, elevation: 20 },
   deleteModalContent: { width: '100%', alignItems: 'center' },
-  deleteModalTitle: { fontSize: 24, fontWeight: 'bold', marginTop: 10, marginBottom: 10, color: "#c62828" },
-  deleteModalMessage: { fontSize: 15, color: "#555", textAlign: 'center', marginBottom: 25, lineHeight: 22 },
+  deleteModalTitle: { fontSize: 24,
+    fontFamily: "PlusSB", marginTop: 10, marginBottom: 10, color: "#c62828" },
+  deleteModalMessage: { fontSize: 15,
+    fontFamily: "PlusL", color: "#555", textAlign: 'center', marginBottom: 25, lineHeight: 22 },
   deleteModalHighlight: { fontWeight: 'bold', color: "#333" },
   modalButtonRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 10 },
   modalBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginHorizontal: 5, elevation: 3 },
