@@ -1,4 +1,3 @@
-// ... आपके ऊपर वाले imports वही रहेंगे
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -190,7 +189,7 @@ const AddBuilder = () => {
 
   const handleSubmit = async () => {
     if (!validateForm()) {
-      Alert.alert("Validation Error 😕", "Please fix form errors.");
+      Alert.alert("Validation Error ", "Please fix form errors.");
       return;
     }
     setLoading(true);
@@ -226,7 +225,7 @@ const AddBuilder = () => {
     try {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       Alert.alert(
-        "Success! 🎉",
+        "Success! ",
         "Realtor data submitted successfully! Check console for payload."
       );
     } catch (err) {

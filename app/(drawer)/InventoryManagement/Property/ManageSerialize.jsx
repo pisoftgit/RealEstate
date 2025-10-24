@@ -173,7 +173,7 @@ export default function PropertyFilterScreen({ route }) {
                         <Ionicons name="arrow-back" size={28} color="#333" />
                     </TouchableOpacity>
                     <Text style={filterStyles.title}>
-                        Property <Text style={{ color: '#5aaf57' }}>Details</Text>
+                        Property <Text style={{ color: '#004d40' }}>Details</Text>
                     </Text>
                 </View>
 
@@ -283,7 +283,7 @@ const filterStyles = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
     title: { fontSize: 24, fontWeight: '700', color: '#333', marginLeft: 10 },
     card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, elevation: 5, shadowColor: '#000' },
-    cardTitle: { fontSize: 20, fontWeight: '800', color: '#1a1a1a', marginBottom: 15, borderBottomWidth: 2, borderBottomColor: '#5aaf57', paddingBottom: 10 },
+    cardTitle: { fontSize: 20, fontWeight: '800', color: '#1a1a1a', marginBottom: 15, borderBottomWidth: 2, borderBottomColor: '#004d40', paddingBottom: 10 },
     
     filterGroup: {
         backgroundColor: '#f5f5f5',
@@ -296,7 +296,7 @@ const filterStyles = StyleSheet.create({
     groupTitle: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#5aaf57',
+        color: '#004d40',
         marginBottom: 10,
     },
     
@@ -304,9 +304,9 @@ const filterStyles = StyleSheet.create({
     label: { color: '#333', fontWeight: '600', fontSize: 14, marginBottom: 8 },
     selectContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 5 },
     selectOption: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: '#e0e0e0', backgroundColor: '#fff' },
-    selectOptionSelected: { borderColor: '#5aaf57', backgroundColor: '#ccf2cc' },
+    selectOptionSelected: { borderColor: '#004d40', backgroundColor: '#004d4015' },
     selectOptionText: { color: '#333', fontWeight: '500', fontSize: 13 },
-    selectOptionTextSelected: { color: '#388e3c', fontWeight: '700' },
+    selectOptionTextSelected: { color: '#004d40', fontWeight: '700' },
     
     inputDynamic: {
         borderWidth: 1,
@@ -322,8 +322,8 @@ const filterStyles = StyleSheet.create({
     inputLabel: { color: '#555', fontWeight: '500', fontSize: 13, marginBottom: 5 },
     input: { borderWidth: 1, borderColor: '#b0d4af', borderRadius: 8, padding: 10, backgroundColor: '#fff', color: '#333', fontSize: 16, fontWeight: '600' },
     
-    submitButton: { backgroundColor: '#5aaf57', paddingVertical: 14, borderRadius: 10, alignItems: 'center', marginTop: 30 },
-    submitButtonDisabled: { backgroundColor: '#b0d4af' },
+    submitButton: { backgroundColor: '', paddingVertical: 14, borderRadius: 10, alignItems: 'center', marginTop: 30 },
+    submitButtonDisabled: { backgroundColor: '#004d40' },
     submitButtonText: { color: '#fff', fontSize: 18, fontWeight: '700' },
 
     resultsCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, elevation: 5, shadowColor: '#000', marginTop: 20 },

@@ -122,7 +122,7 @@ const PropertyDetailsModal = ({ visible, onClose, property }) => {
                                 icon="shield" 
                                 label="RERA Approved" 
                                 value={property.reraApproved ? "Yes" : "No"}
-                                valueStyle={{ color: property.reraApproved ? "#4CAF50" : "#E53935" }}
+                                valueStyle={{ color: property.reraApproved ? "#004d40" : "#E53935" }}
                             />
                         </View>
 
@@ -172,7 +172,7 @@ const PropertyCard = ({ item, navigation, onViewDetails, onEditDetails }) => {
         <View style={cardStyles.reraRow}>
             <Feather name="shield" size={14} color="#555" />
             <Text style={cardStyles.detailLabelSmall}>RERA Approved: 
-                <Text style={{fontWeight: '700', color: item.reraApproved ? "#4CAF50" : "#E53935"}}> {item.reraApproved ? "YES" : "NO"}</Text>
+                <Text style={{fontWeight: '700', color: item.reraApproved ? "#004d40" : "#E53935"}}> {item.reraApproved ? "YES" : "NO"}</Text>
             </Text>
         </View>
       </View>
@@ -181,7 +181,7 @@ const PropertyCard = ({ item, navigation, onViewDetails, onEditDetails }) => {
       <View style={cardStyles.actionBar}>
         {/* ACTION 1: ADD/EDIT Property Details (Navigates to Edit Page) */}
         <TouchableOpacity style={cardStyles.actionBtnIcon} onPress={() => navigate("/(drawer)/InventoryManagement/Property/ManageSerialize")}>
-          <Feather name="edit" size={18} color="#5aaf57" />
+          <Feather name="edit" size={18} color="#004d40" />
           <Text style={cardStyles.iconActionText}>Serialize Data</Text>
         </TouchableOpacity>
         
@@ -221,7 +221,7 @@ export default function PropertyListScreen() {
               <Ionicons name="menu" size={28} color="BLACK" />
             </TouchableOpacity>
             <Text style={appStyles.title}>
-              Property <Text style={{ color: '#5aaf57' }}>Records</Text>
+              Property <Text style={{ color: '#004d40' }}>Records</Text>
             </Text>
         </View>
 
@@ -283,7 +283,7 @@ const appStyles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     borderLeftWidth: 4, 
-    borderLeftColor: '#5aaf57',
+    borderLeftColor: '#004d40',
   },
   listContainer: {
     paddingVertical: 10,
@@ -379,13 +379,13 @@ const cardStyles = StyleSheet.create({
   iconActionText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5aaf57',
+    color: '#004d40',
     marginLeft: 4,
   },
   actionBtnPrimary: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#5aaf57', 
+    backgroundColor: '#004d40', 
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -494,7 +494,7 @@ const modalStyles = StyleSheet.create({
         textAlign: 'justify',
     },
     closeButton: {
-        backgroundColor: '#5aaf57',
+        backgroundColor: '#004d40',
         padding: 12,
         borderRadius: 8,
         alignItems: 'center',

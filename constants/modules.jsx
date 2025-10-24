@@ -334,7 +334,11 @@ export const defaultModules = [
         title: "Property",
         icon: Brief,
         children: [
-         
+          {
+            name: "Serializing",
+            path: "/(drawer)/InventoryManagement/Property/Serialize",
+            title: "Searialize",
+          },
           {
             name: "ManageProperty",
             path: "/(drawer)/InventoryManagement/Property/ManagePropertyDetail",
