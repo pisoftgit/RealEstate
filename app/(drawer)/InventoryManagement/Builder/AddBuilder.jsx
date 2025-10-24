@@ -23,15 +23,15 @@ import useBusinessNature from '../../../../hooks/useBusinessNature';
 import useDropdownData from '../../../../hooks/useDropdownData';
 
 const COLORS = {
-  primary: "#2e7d32",
-  primaryLight: "#58b26e",
-  secondary: "#8bc34a",
+  primary: "#004d40",
+  primaryLight: "#218373ff",
+  secondary: "#198170ff",
   background: "#e8f5e9",
   card: "#f4fcf4",
   input: "#f0f8f0",
   border: "#c8e6c9",
   text: "#202020ff",
-  placeholder: "#66bb6a",
+  placeholder: "#13773dff",
   error: "#d32f2f",
 };
 
