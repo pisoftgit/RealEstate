@@ -19,8 +19,16 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useLocalSearchParams } from 'expo-router';
+import { useNavigation } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { DrawerActions } from '@react-navigation/native';
+
+import useDropdownData from '../../../../hooks/useDropdownData';
+import useReraActions from '../../../../hooks/useReraActions';
+import useSaveProject from '../../../../hooks/useSaveProject';
+import useMeasurementUnits from '../../../../hooks/useMeasurements';
+import { getAllPlc, getAllbuilderbyid } from '../../../../services/api';
 
 const BANNER_IMAGE_URL = 'https://images.pexels.com/photos/17693722/pexels-photo-17693722.jpeg';
 
@@ -83,7 +91,7 @@ const STYLES = StyleSheet.create({
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },
-  backButton: {
+  menuButton: {
     position: 'absolute',
     left: 20,
     top: 50,
@@ -252,8 +260,11 @@ const CustomHeader = ({ navigation, title }) => (
     >
       <Text style={STYLES.headerText}>{title}</Text>
     </LinearGradient>
-    <TouchableOpacity onPress={() => navigation.goBack()} style={STYLES.backButton}>
-      <Ionicons name="arrow-back" size={24} color={COLORS.card} />
+    <TouchableOpacity 
+      onPress={() => navigation.dispatch(DrawerActions.openDrawer())} 
+      style={STYLES.menuButton}
+    >
+      <Ionicons name="menu" size={24} color={COLORS.card} />
     </TouchableOpacity>
   </View>
 );
@@ -268,64 +279,60 @@ const RequiredLabel = ({ text, isRequired }) => (
 
 const AddProject = () => {
   const navigation = useNavigation();
-  const params = useLocalSearchParams();
 
-  // Check if we're in edit mode
-  const isEditMode = params.editMode === 'true';
-  const editingProperty = isEditMode && params.propertyData ? JSON.parse(params.propertyData) : null;
-
-  const [image, setImage] = useState(isEditMode && editingProperty ? editingProperty.pic : null);
+  const [image, setImage] = useState(null);
   const [imageBytes, setImageBytes] = useState(null);
   const [imageType, setImageType] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const [builderOpen, setBuilderOpen] = useState(false);
-  const [builderValue, setBuilderValue] = useState(isEditMode && editingProperty ? editingProperty.builderName : null);
-  const [builderItems, setBuilderItems] = useState([
-    { label: 'Builder A', value: 'builder_a' },
-    { label: 'Builder B', value: 'builder_b' },
-    { label: 'Eco Builders', value: 'Eco Builders' },
-    { label: 'Urban Homes Inc.', value: 'Urban Homes Inc.' },
-    { label: 'Luxury Estates Co.', value: 'Luxury Estates Co.' },
-    { label: 'Country Living Ltd.', value: 'Country Living Ltd.' },
-    { label: 'Corporate Devs', value: 'Corporate Devs' },
-    { label: 'Other', value: 'other' },
-  ]);
+  const [builderValue, setBuilderValue] = useState(null);
+  const [builderItems, setBuilderItems] = useState([]);
 
   const [possessionOpen, setPossessionOpen] = useState(false);
-  const [possessionValue, setPossessionValue] = useState(isEditMode && editingProperty ? editingProperty.possessionStatus : null);
+  const [possessionValue, setPossessionValue] = useState(null);
   const [possessionItems, setPossessionItems] = useState([
-    { label: 'Ready to Move', value: 'Ready to Move' },
-    { label: 'Under Construction', value: 'Under Construction' },
-    { label: 'Completed', value: 'Completed' },
-    { label: 'Planning Phase', value: 'Planning Phase' },
+    { label: 'READY_TO_MOVE', value: 'READY_TO_MOVE' },
+    { label: 'UNDER_CONSTRUCTION', value: 'UNDER_CONSTRUCTION' },
   ]);
 
   const [countryOpen, setCountryOpen] = useState(false);
   const [countryValue, setCountryValue] = useState(null);
-  const [countryItems, setCountryItems] = useState([]);
-
   const [stateOpen, setStateOpen] = useState(false);
   const [stateValue, setStateValue] = useState(null);
-  const [stateItems, setStateItems] = useState([]);
-
   const [districtOpen, setDistrictOpen] = useState(false);
   const [districtValue, setDistrictValue] = useState(null);
-  const [districtItems, setDistrictItems] = useState([]);
+
+  const [measurementUnitOpen, setMeasurementUnitOpen] = useState(false);
+  const [measurementUnitValue, setMeasurementUnitValue] = useState(null);
+  const [measurementUnitItems, setMeasurementUnitItems] = useState([
+    { label: 'Square Feet', value: 'sq_ft' },
+    { label: 'Square Meters', value: 'sq_m' },
+    { label: 'Acres', value: 'acres' },
+    { label: 'Hectares', value: 'hectares' },
+  ]);
+
+  const [plcOpen, setPlcOpen] = useState(false);
+  const [plcValue, setPlcValue] = useState(null);
+  const [plcItems, setPlcItems] = useState([]);
+
+  const [reraDropdownOpen, setReraDropdownOpen] = useState(false);
+  const [reraDropdownValue, setReraDropdownValue] = useState(null);
+  const { reras, loading: reraLoading } = useReraActions();
 
   const [form, setForm] = useState({
-    projectName: isEditMode && editingProperty ? editingProperty.projectName : '',
-    startDate: isEditMode && editingProperty ? editingProperty.startDate : '',
-    completionDate: isEditMode && editingProperty ? editingProperty.completionDate : '',
-    cost: '',
-    description: isEditMode && editingProperty ? editingProperty.description : '',
-    address: isEditMode && editingProperty ? editingProperty.address : '',
-    propertyNature: isEditMode && editingProperty ? editingProperty.propertyNature : '',
-    isGated: isEditMode && editingProperty ? editingProperty.isGated : false,
-    reraApproved: isEditMode && editingProperty ? editingProperty.reraApproved : false,
+    projectName: '',
+    startDate: '',
+    completionDate: '',
+    description: '',
+    isGated: false,
+    reraApproved: false,
     addressLine1: '',
     addressLine2: '',
     city: '',
+    pincode: '',
+    area: '',
+    addressType: 'COMMERCIAL',
   });
 
   const [errors, setErrors] = useState({});
@@ -333,56 +340,35 @@ const AddProject = () => {
   const [showReraCard, setShowReraCard] = useState(form.reraApproved);
   const [reraDetails, setReraDetails] = useState({ reraNo: '', reraDesc: '' });
   const [mediaFiles, setMediaFiles] = useState([]);
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showCompletionDatePicker, setShowCompletionDatePicker] = useState(false);
+  const [addressTypeOpen, setAddressTypeOpen] = useState(false);
+  const [addressTypeValue, setAddressTypeValue] = useState('COMMERCIAL');
+  const [addressTypeItems] = useState([
+    { label: 'Commercial', value: 'COMMERCIAL' },
+    { label: 'Residential', value: 'RESIDENTIAL' },
+  ]);
 
+  // Dropdown data hook for country, state, district
+  const {
+    countries,
+    states,
+    districts,
+    loading: dropdownLoading
+  } = useDropdownData(null, countryValue, stateValue, null);
+
+  // Fetch PLC and Builder options
   useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const mockCountryData = [{ id: 1, country: 'USA' }, { id: 2, country: 'India' }];
-        const formatted = mockCountryData.map(item => ({
-          label: item.country,
-          value: item.id,
-        }));
-        setCountryItems(formatted);
-      } catch (err) {
-        console.error('Error loading countries', err);
-      }
+    const fetchPlcAndBuilders = async () => {
+      // Fetch PLCs
+      const plcList = await getAllPlc();
+      setPlcItems(Array.isArray(plcList) ? plcList.map(p => ({ label: p.name, value: p.id?.toString() })) : []);
+      // Fetch Builders
+      const builderList = await getAllbuilderbyid();
+      setBuilderItems(Array.isArray(builderList) ? builderList.map(b => ({ label: b.name, value: b.id?.toString() })) : []);
     };
-    fetchInitialData();
+    fetchPlcAndBuilders();
   }, []);
-
-  useEffect(() => {
-    const fetchStates = async () => {
-      if (!countryValue) return;
-      try {
-        const mockStateData = countryValue === 1
-          ? [{ id: 101, state: 'California' }, { id: 102, state: 'Texas' }]
-          : [{ id: 201, state: 'Maharashtra' }, { id: 202, state: 'Delhi' }];
-        setStateItems(mockStateData.map(state => ({ label: state.state, value: state.id })));
-        setStateValue(null);
-      } catch (err) {
-        console.error('Error loading states', err);
-      }
-    };
-    fetchStates();
-  }, [countryValue]);
-
-  useEffect(() => {
-    const fetchDistricts = async () => {
-      if (!stateValue) return;
-      try {
-        const mockDistrictData = stateValue === 201
-          ? [{ id: 2001, district: 'Mumbai' }, { id: 2002, district: 'Pune' }]
-          : stateValue === 202
-            ? [{ id: 2003, district: 'New Delhi' }, { id: 2004, district: 'North Delhi' }]
-            : [];
-        setDistrictItems(mockDistrictData.map(d => ({ label: d.district, value: d.id })));
-        setDistrictValue(null);
-      } catch (err) {
-        console.error('Error loading districts', err);
-      }
-    };
-    fetchDistricts();
-  }, [stateValue]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -456,19 +442,26 @@ const AddProject = () => {
     }
   };
 
+  // Helper to format date as yyyy-MM-dd
+  const formatDate = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    if (isNaN(d)) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const validateForm = () => {
     let newErrors = {};
     if (!form.projectName) newErrors.projectName = 'Project name is required.';
     if (!builderValue) newErrors.builder = 'Builder is required.';
     if (!possessionValue) newErrors.possession = 'Possession status is required.';
     if (!form.startDate) newErrors.startDate = 'Start date is required.';
-    // Cost is not required for edit mode if not present in original data
-    if (!isEditMode && !form.cost) newErrors.cost = 'Cost is required.';
-    if (!image) newErrors.image = 'Project image is required.';
     if (showReraCard) {
       if (!reraDetails.reraNo) newErrors.reraNo = 'RERA number is required.';
     }
-    if (mediaFiles.length === 0) newErrors.mediaFiles = 'At least one media file is required.';
     if (!countryValue) newErrors.country = 'Country is required.';
     if (!stateValue) newErrors.state = 'State is required.';
     if (!districtValue) newErrors.district = 'District is required.';
@@ -482,16 +475,26 @@ const AddProject = () => {
     setImageType(null);
     setBuilderValue(null);
     setPossessionValue(null);
+    setCountryValue(null);
+    setStateValue(null);
+    setDistrictValue(null);
+    setMeasurementUnitValue(null);
+    setPlcValue(null);
+    setReraDropdownValue(null);
+    setAddressTypeValue('COMMERCIAL');
     setForm({
       projectName: '',
       startDate: '',
       completionDate: '',
-      cost: '',
       description: '',
-      address: '',
-      propertyNature: '',
       isGated: false,
       reraApproved: false,
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      pincode: '',
+      area: '',
+      addressType: 'COMMERCIAL',
     });
     setErrors({});
     setShowReraCard(false);
@@ -499,56 +502,66 @@ const AddProject = () => {
     setMediaFiles([]);
   };
 
+  const saveProject = useSaveProject();
+
   const handleSubmit = async () => {
     if (!validateForm()) {
-      Alert.alert('Validation Error', 'Please correct the errors in the form.');
+      Alert.alert('Validation Error', 'Please fill all required fields.');
       return;
     }
-    setLoading(true);
 
+    setLoading(true);
+    
+    // Prepare mediaDTOs from media files
+    const mediaDTOs = mediaFiles.map(file => ({
+      mediaLabel: file.name || 'Project Media',
+      contentType: file.type || 'image/png',
+      mediaBase64: file.base64 || '',
+    }));
+
+    // Prepare payload for saveProject hook according to API requirements
     const payload = {
-      id: isEditMode ? editingProperty.id : null,
-      image: imageBytes,
-      imageType: imageType,
-      builder: builderValue,
-      possessionStatus: possessionValue,
+      builderId: builderValue,
       projectName: form.projectName,
-      startDate: form.startDate,
-      completionDate: form.completionDate,
-      cost: form.cost,
-      description: form.description,
-      address: form.address,
-      propertyNature: form.propertyNature,
       isGated: form.isGated,
-      reraApproved: form.reraApproved,
-      reraNo: reraDetails.reraNo,
-      reraDesc: reraDetails.reraDesc,
-      mediaFiles: mediaFiles,
+      isReraApproved: form.reraApproved,
+      reraId: reraDropdownValue,
+      reraNumber: reraDetails.reraNo,
+      possessionStatus: possessionValue,
+      projectStartDate: form.startDate,
+      projectCompletionDate: form.completionDate,
+      totalArea: form.area ? parseFloat(form.area) : null,
+      areaUnitId: measurementUnitValue,
+      description: form.description,
+      addressType: addressTypeValue || 'COMMERCIAL',
+      address1: form.addressLine1,
+      address2: form.addressLine2,
+      city: form.city,
+      pincode: form.pincode,
+      districtId: districtValue,
+      stateId: stateValue,
+      countryId: countryValue,
+      plcIds: plcValue ? (Array.isArray(plcValue) ? plcValue : [plcValue]) : [],
+      mediaDTOs: mediaDTOs,
     };
 
-    console.log(`${isEditMode ? 'Updating' : 'Submitting'} the following data:`, payload);
-
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      Alert.alert('Success!', `Project ${isEditMode ? 'updated' : 'added'} successfully.`);
-      if (!isEditMode) {
-        resetForm();
-      } else {
-        navigation.goBack();
-      }
+      await saveProject(payload);
+      resetForm();
     } catch (error) {
-      Alert.alert('Error', `Failed to ${isEditMode ? 'update' : 'add'} project. Please try again.`);
-      console.error(error);
+      // Error handled in hook
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch measurement units
+  const { units: measurementUnits, loading: measurementUnitsLoading } = useMeasurementUnits();
+
   return (
     <SafeAreaView style={STYLES.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <CustomHeader navigation={navigation} title={isEditMode ? "Edit Project" : "Add New Project"} />
+        <CustomHeader navigation={navigation} title="Add New Project" />
         <ScrollView
           contentContainerStyle={STYLES.scrollViewContent}
           keyboardShouldPersistTaps="handled"
@@ -604,33 +617,100 @@ const AddProject = () => {
             {errors.possession && <Text style={STYLES.errorText}>{errors.possession}</Text>}
 
             <RequiredLabel text="Start Date" isRequired={true} />
-            <TextInput
-              placeholder="e.g., 2023-01-01"
-              value={form.startDate}
-              onChangeText={text => handleChange('startDate', text)}
-              style={STYLES.input}
-              placeholderTextColor={COLORS.placeholder}
-            />
+            <TouchableOpacity
+              onPress={() => setShowStartDatePicker(true)}
+              style={[STYLES.input, { justifyContent: 'center' }]}
+              activeOpacity={0.7}
+            >
+              <Text style={{ color: form.startDate ? COLORS.text : COLORS.placeholder }}>
+                {form.startDate || 'Select Start Date'}
+              </Text>
+            </TouchableOpacity>
+            {showStartDatePicker && (
+              <DateTimePicker
+                value={form.startDate ? new Date(form.startDate) : new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={(event, selectedDate) => {
+                  setShowStartDatePicker(false);
+                  if (event.type === 'set' && selectedDate) {
+                    handleChange('startDate', formatDate(selectedDate));
+                  }
+                }}
+              />
+            )}
             {errors.startDate && <Text style={STYLES.errorText}>{errors.startDate}</Text>}
 
             <RequiredLabel text="Completion Date" isRequired={false} />
-            <TextInput
-              placeholder="e.g., 2025-12-31"
-              value={form.completionDate}
-              onChangeText={text => handleChange('completionDate', text)}
-              style={STYLES.input}
-              placeholderTextColor={COLORS.placeholder}
+            <TouchableOpacity
+              onPress={() => setShowCompletionDatePicker(true)}
+              style={[STYLES.input, { justifyContent: 'center' }]}
+              activeOpacity={0.7}
+            >
+              <Text style={{ color: form.completionDate ? COLORS.text : COLORS.placeholder }}>
+                {form.completionDate || 'Select Completion Date'}
+              </Text>
+            </TouchableOpacity>
+            {showCompletionDatePicker && (
+              <DateTimePicker
+                value={form.completionDate ? new Date(form.completionDate) : new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={(event, selectedDate) => {
+                  setShowCompletionDatePicker(false);
+                  if (event.type === 'set' && selectedDate) {
+                    handleChange('completionDate', formatDate(selectedDate));
+                  }
+                }}
+              />
+            )}
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <View style={{ flex: 1 }}>
+                <RequiredLabel text="Area" isRequired={false} />
+                <TextInput
+                  placeholder="Enter area"
+                  value={form.area}
+                  onChangeText={text => handleChange('area', text)}
+                  style={STYLES.input}
+                  placeholderTextColor={COLORS.placeholder}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <RequiredLabel text="Measurement Unit" isRequired={false} />
+                <DropDownPicker
+                  open={measurementUnitOpen}
+                  value={measurementUnitValue}
+                  items={measurementUnits.map(u => ({ label: u.name, value: u.id }))}
+                  setOpen={setMeasurementUnitOpen}
+                  setValue={setMeasurementUnitValue}
+                  setItems={() => {}}
+                  placeholder="Select Unit"
+                  style={STYLES.dropdown}
+                  dropDownContainerStyle={STYLES.dropdownContainer}
+                  listMode="SCROLLVIEW"
+                  zIndex={700}
+                  loading={measurementUnitsLoading}
+                />
+              </View>
+            </View>
+
+            <RequiredLabel text="PLC" isRequired={false} />
+            <DropDownPicker
+              open={plcOpen}
+              value={plcValue}
+              items={plcItems}
+              setOpen={setPlcOpen}
+              setValue={setPlcValue}
+              setItems={setPlcItems}
+              placeholder="Select PLC"
+              style={STYLES.dropdown}
+              dropDownContainerStyle={STYLES.dropdownContainer}
+              listMode="SCROLLVIEW"
+              zIndex={600}
             />
 
-            <RequiredLabel text="Property Nature" isRequired={false} />
-            <TextInput
-              placeholder="e.g., residential, commercial"
-              value={form.propertyNature}
-              onChangeText={text => handleChange('propertyNature', text)}
-              style={STYLES.input}
-              placeholderTextColor={COLORS.placeholder}
-            />
-            <Text style={STYLES.label}>Description</Text>
+            <RequiredLabel text="Description" isRequired={false} />
             <TextInput
               placeholder="Enter a detailed description of the project"
               value={form.description}
@@ -678,13 +758,20 @@ const AddProject = () => {
               />
               {errors.reraNo && <Text style={STYLES.errorText}>{errors.reraNo}</Text>}
 
-              <RequiredLabel text="Description" isRequired={false} />
-              <TextInput
-                placeholder="Enter RERA Description"
-                value={reraDetails.reraDesc}
-                onChangeText={text => handleReraDetailsChange('reraDesc', text)}
-                style={STYLES.input}
-                placeholderTextColor={COLORS.placeholder}
+              <RequiredLabel text="RERA" isRequired={false} />
+              <DropDownPicker
+                open={reraDropdownOpen}
+                value={reraDropdownValue}
+                items={reras.map(r => ({ label: r.name, value: r.id }))}
+                setOpen={setReraDropdownOpen}
+                setValue={setReraDropdownValue}
+                setItems={() => {}}
+                placeholder="Select RERA"
+                style={STYLES.dropdown}
+                dropDownContainerStyle={STYLES.dropdownContainer}
+                listMode="SCROLLVIEW"
+                zIndex={500}
+                loading={reraLoading}
               />
             </View>
           )}
@@ -695,14 +782,29 @@ const AddProject = () => {
               <Text style={STYLES.cardTitle}>Address Details</Text>
             </View>
 
+            <RequiredLabel text="Address Type" isRequired={false} />
+            <DropDownPicker
+              open={addressTypeOpen}
+              value={addressTypeValue}
+              items={addressTypeItems}
+              setOpen={setAddressTypeOpen}
+              setValue={setAddressTypeValue}
+              setItems={() => {}}
+              placeholder="Select Address Type"
+              style={STYLES.dropdown}
+              dropDownContainerStyle={STYLES.dropdownContainer}
+              listMode="SCROLLVIEW"
+              zIndex={1100}
+            />
+
             <RequiredLabel text="Country" isRequired={true} />
             <DropDownPicker
               open={countryOpen}
               value={countryValue}
-              items={countryItems}
+              items={countries}
               setOpen={setCountryOpen}
               setValue={setCountryValue}
-              setItems={setCountryItems}
+              setItems={() => {}}
               placeholder="Select Country"
               style={STYLES.dropdown}
               dropDownContainerStyle={STYLES.dropdownContainer}
@@ -713,6 +815,7 @@ const AddProject = () => {
                 setStateValue(null);
                 setDistrictValue(null);
               }}
+              loading={dropdownLoading}
             />
             {errors.country && <Text style={STYLES.errorText}>{errors.country}</Text>}
 
@@ -720,10 +823,10 @@ const AddProject = () => {
             <DropDownPicker
               open={stateOpen}
               value={stateValue}
-              items={stateItems}
+              items={states}
               setOpen={setStateOpen}
               setValue={setStateValue}
-              setItems={setStateItems}
+              setItems={() => {}}
               placeholder="Select State"
               style={STYLES.dropdown}
               dropDownContainerStyle={STYLES.dropdownContainer}
@@ -734,6 +837,7 @@ const AddProject = () => {
                 setStateValue(value);
                 setDistrictValue(null);
               }}
+              loading={dropdownLoading}
             />
             {errors.state && <Text style={STYLES.errorText}>{errors.state}</Text>}
 
@@ -741,18 +845,20 @@ const AddProject = () => {
             <DropDownPicker
               open={districtOpen}
               value={districtValue}
-              items={districtItems}
+              items={districts}
               setOpen={setDistrictOpen}
               setValue={setDistrictValue}
-              setItems={setDistrictItems}
+              setItems={() => {}}
               placeholder="Select District"
               style={STYLES.dropdown}
               dropDownContainerStyle={STYLES.dropdownContainer}
               listMode="SCROLLVIEW"
               zIndex={800}
               disabled={!stateValue}
+              loading={dropdownLoading}
             />
             {errors.district && <Text style={STYLES.errorText}>{errors.district}</Text>}
+            
             <RequiredLabel text="City" isRequired={false} />
             <TextInput
               placeholder="Enter city"
@@ -760,6 +866,16 @@ const AddProject = () => {
               onChangeText={text => handleChange('city', text)}
               style={STYLES.input}
               placeholderTextColor={COLORS.placeholder}
+            />
+
+            <RequiredLabel text="Pincode" isRequired={false} />
+            <TextInput
+              placeholder="Enter pincode"
+              value={form.pincode}
+              onChangeText={text => handleChange('pincode', text)}
+              style={STYLES.input}
+              placeholderTextColor={COLORS.placeholder}
+              keyboardType="numeric"
             />
 
             <RequiredLabel text="Address Line 1" isRequired={false} />
@@ -839,13 +955,13 @@ const AddProject = () => {
                 ) : (
                   <>
                     <Ionicons
-                      name={isEditMode ? "checkmark-circle-outline" : "add-circle-outline"}
+                      name="add-circle-outline"
                       size={20}
                       color="#fff"
                       style={{ marginRight: 8 }}
                     />
                     <Text style={STYLES.submitButtonText}>
-                      {isEditMode ? 'Update Project' : 'Add Project'}
+                      Add Project
                     </Text>
                   </>
                 )}

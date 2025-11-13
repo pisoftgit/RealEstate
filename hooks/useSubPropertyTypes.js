@@ -30,6 +30,31 @@ const useSubPropertyTypes = () => {
     }
   }, []);
 
+  // 🔹 GET PROPERTY TYPE WITH SUB-TYPES BY PROPERTY TYPE ID
+  const fetchPropertyTypeWithSubTypes = useCallback(
+    async (propertyTypeId) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const secretKey = await SecureStore.getItemAsync("auth_token");
+        const response = await axios.get(
+          `${API_BASE_URL}/sub-property-types/getPropertyTypeWithSubTypesByPropertyTypeId/${propertyTypeId}`,
+          {
+            headers: { secret_key: secretKey },
+          }
+        );
+        return response.data;
+      } catch (err) {
+        setError(err.message);
+        console.error("Error fetching property type with sub-types:", err);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   // 🔹 CREATE (SAVE)
   const addSubPropertyType = useCallback(async (payload) => {
     try {
@@ -103,6 +128,7 @@ const useSubPropertyTypes = () => {
     loading,
     error,
     fetchSubPropertyTypes,
+    fetchPropertyTypeWithSubTypes,
     addSubPropertyType,
     updateSubPropertyType,
     deleteSubPropertyType,
