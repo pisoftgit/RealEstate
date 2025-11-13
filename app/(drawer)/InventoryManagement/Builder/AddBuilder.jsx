@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -18,9 +18,10 @@ import DropDownPicker from "react-native-dropdown-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import * as SecureStore from "expo-secure-store";
 import { API_BASE_URL } from "../../../../services/api";
-import useBusinessNature from '../../../../hooks/useBusinessNature';
-import useDropdownData from '../../../../hooks/useDropdownData';
+import useBusinessNature from "../../../../hooks/useBusinessNature";
+import useDropdownData from "../../../../hooks/useDropdownData";
 
 const COLORS = {
   primary: "#004d40",
@@ -35,6 +36,7 @@ const COLORS = {
   error: "#d32f2f",
 };
 
+// --- Helper Components ---
 const CustomHeader = ({ navigation, title }) => (
   <View style={STYLES.bannerContainer}>
     <Image
@@ -75,6 +77,15 @@ const RequiredLabel = ({ text }) => (
   </View>
 );
 
+const getAuthHeaders = async () => {
+  const token = await SecureStore.getItemAsync("auth_token");
+  return {
+    "Content-Type": "application/json",
+    secret_key: token,
+  };
+};
+
+// --- Main Screen ---
 const AddRealtor = () => {
   const navigation = useNavigation();
 
@@ -82,12 +93,10 @@ const AddRealtor = () => {
   const [logoBytes, setLogoBytes] = useState(null);
   const [logoType, setLogoType] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  // 👉 Address toggle radio
   const [hasAddress, setHasAddress] = useState(true);
 
   const [form, setForm] = useState({
-    RealtorNature: null,
+    RealtorNature: [], // must be array
     name: "",
     mobile: "",
     email: "",
@@ -96,54 +105,62 @@ const AddRealtor = () => {
     addressLine1: "",
     addressLine2: "",
     city: "",
+    pincode: "",
     isHeadOffice: false,
   });
 
   const [errors, setErrors] = useState({});
 
-  // Realtor Nature dropdown
+  // --- Realtor Nature Dropdown ---
   const [natureOpen, setNatureOpen] = useState(false);
   const { businessNatures, loading: natureLoading } = useBusinessNature();
-  const natureItems = businessNatures.map((item) => ({
-    label: item.name,
-    value: item.code,
-  }));
 
-  // Country dropdown
+  const natureItems = useMemo(
+    () =>
+      businessNatures.map((item) => ({
+        label: item.name,
+        value: item.id, // ✅ send ID to backend
+      })),
+    [businessNatures]
+  );
+
+  useEffect(() => {
+    console.log("Business Natures fetched:", businessNatures);
+  }, [businessNatures]);
+
+  useEffect(() => {
+    console.log("Selected RealtorNature IDs:", form.RealtorNature);
+  }, [form.RealtorNature]);
+
+  // --- Location Dropdowns ---
   const [countryOpen, setCountryOpen] = useState(false);
   const [countryValue, setCountryValue] = useState(null);
-
-  // State dropdown
   const [stateOpen, setStateOpen] = useState(false);
   const [stateValue, setStateValue] = useState(null);
-
-  // District dropdown
   const [districtOpen, setDistrictOpen] = useState(false);
   const [districtValue, setDistrictValue] = useState(null);
 
-  // Use the same data fetching logic as AddressDetailsForm
   const { countries, states, districts } = useDropdownData(
-    null, // Pass null for selectedDepartmentId (not used in this form)
+    null,
     countryValue,
     stateValue,
-    null // Pass null for selectedDesignationId (not used in this form)
+    null
   );
 
-  // Handle value change for country, state, district with proper reset logic
   const handleLocationChange = (key, value) => {
-    console.log(`handleLocationChange: key=${key}, value=${value}`); // Debug log
-    if (key === 'country') {
+    if (key === "country") {
       setCountryValue(value);
-      setStateValue(null); // Reset state when country changes
-      setDistrictValue(null); // Reset district when country changes
-    } else if (key === 'state') {
+      setStateValue(null);
+      setDistrictValue(null);
+    } else if (key === "state") {
       setStateValue(value);
-      setDistrictValue(null); // Reset district when state changes
-    } else if (key === 'district') {
+      setDistrictValue(null);
+    } else if (key === "district") {
       setDistrictValue(value);
     }
   };
 
+  // --- Pick Logo ---
   const pickLogo = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       base64: true,
@@ -158,78 +175,103 @@ const AddRealtor = () => {
         ext === "jpg" || ext === "jpeg"
           ? "image/jpeg"
           : ext === "png"
-          ? "image/png"
-          : "image/*";
+            ? "image/png"
+            : "image/*";
       setLogoType(type);
     }
   };
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
+  // --- Validation ---
   const validateForm = () => {
     let newErrors = {};
-    if (!form.RealtorNature) newErrors.RealtorNature = "Realtor Nature is required";
+
+    if (!form.RealtorNature || form.RealtorNature.length === 0) {
+      newErrors.RealtorNature = "At least one Realtor Nature is required";
+    }
     if (!form.name) newErrors.name = "Realtor Name is required";
     if (!form.mobile) newErrors.mobile = "Mobile number is required";
     if (!form.email) newErrors.email = "Email is required";
     if (!logoBytes) newErrors.logo = "Logo is required";
+
     if (hasAddress) {
       if (!countryValue) newErrors.country = "Country is required";
       if (!stateValue) newErrors.state = "State is required";
       if (!districtValue) newErrors.district = "District is required";
+      if (!form.pincode) newErrors.pincode = "Pincode is required";
     }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // --- Submit Handler ---
   const handleSubmit = async () => {
     if (!validateForm()) {
-      Alert.alert("Validation Error ", "Please fix form errors.");
+      Alert.alert("Validation Error", "Please fix form errors.");
       return;
     }
     setLoading(true);
 
     const payload = {
-      RealtorNature: form.RealtorNature,
+      logoString: logoBytes,
+      logoContentType: logoType,
+      businessNatureIds: form.RealtorNature, // ✅ sending array of IDs
       name: form.name,
       mobileNo: form.mobile,
       email: form.email,
-      website: form.website,
+      websiteURL: form.website,
       description: form.description,
-      isHeadOffice: form.isHeadOffice,
-      RealtorLogo: logoBytes,
-      RealtorLogoType: logoType,
+      addedById: 1,
+      addressType: "Office",
+      hasAddress: hasAddress,
+      headOffice:
+        form.isHeadOffice && hasAddress
+          ? `${form.addressLine1}, ${form.city}, ${form.pincode}`
+          : "",
       ...(hasAddress && {
-        addressDetails: {
-          address1: form.addressLine1,
-          address2: form.addressLine2,
-          city: form.city,
-          district: {
-            id: districtValue,
-            state: {
-              id: stateValue,
-              country: { id: countryValue },
-            },
-          },
-        },
+        address1: form.addressLine1,
+        address2: form.addressLine2,
+        city: form.city,
+        pincode: form.pincode,
+        districtId: districtValue,
+        stateId: stateValue,
+        countryId: countryValue,
       }),
     };
 
-    console.log("Payload:", payload);
+    console.log("Submitting Payload:", payload);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      Alert.alert(
-        "Success! ",
-        "Realtor data submitted successfully! Check console for payload."
-      );
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${API_BASE_URL}/builders/saveBuilder`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        let errorBody;
+        try {
+          errorBody = await response.json();
+        } catch {
+          errorBody = await response.text();
+        }
+        throw new Error(
+          errorBody?.message || `HTTP ${response.status}: ${response.statusText}`
+        );
+      }
+
+      Alert.alert("Success!", "Realtor added successfully!", [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
     } catch (err) {
-      Alert.alert("Error", "Failed to submit Realtor data.");
+      console.error("Submission Error:", err.message);
+      Alert.alert("Error", `Failed to submit Realtor: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -242,11 +284,7 @@ const AddRealtor = () => {
         style={{ flex: 1 }}
       >
         <CustomHeader navigation={navigation} title="Add New Realtor" />
-        <ScrollView
-          contentContainerStyle={STYLES.scrollViewContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Basic Information Card */}
+        <ScrollView contentContainerStyle={STYLES.scrollViewContent}>
           <CustomCard title="Basic Information" icon="person-add-outline">
             <RequiredLabel text="Realtor Nature" />
             <DropDownPicker
@@ -255,14 +293,23 @@ const AddRealtor = () => {
               items={natureItems}
               setOpen={setNatureOpen}
               setValue={(callback) =>
-                handleChange("RealtorNature", callback(form.RealtorNature))
+                setForm((prev) => ({
+                  ...prev,
+                  RealtorNature: callback(prev.RealtorNature),
+                }))
               }
-              setItems={() => {}}
-              placeholder={natureLoading ? "Loading..." : "Select Realtor Nature"}
+              setItems={() => { }}
+              multiple={true}
+              mode="BADGE"
+              placeholder={
+                natureLoading
+                  ? "Loading Realtor Natures..."
+                  : "Select Realtor Nature(s)"
+              }
               style={STYLES.dropdown}
               dropDownContainerStyle={STYLES.dropdownContainer}
-              labelStyle={{ fontFamily: 'PlusR', fontSize: 16, color: COLORS.text }}
-              zIndex={4000}
+              zIndex={5000}
+              zIndexInverse={1000}
               listMode="SCROLLVIEW"
               disabled={natureLoading}
             />
@@ -306,6 +353,16 @@ const AddRealtor = () => {
               <Text style={STYLES.errorText}>{errors.email}</Text>
             )}
 
+            <Text style={STYLES.label}>Website (Optional)</Text>
+            <TextInput
+              style={STYLES.input}
+              value={form.website}
+              keyboardType="url"
+              onChangeText={(text) => handleChange("website", text)}
+              placeholder="Enter Website URL"
+              placeholderTextColor={COLORS.placeholder}
+            />
+
             <Text style={STYLES.label}>Logo</Text>
             <TouchableOpacity onPress={pickLogo} style={STYLES.imagePicker}>
               {RealtorLogo ? (
@@ -323,7 +380,7 @@ const AddRealtor = () => {
             </TouchableOpacity>
             {errors.logo && <Text style={STYLES.errorText}>{errors.logo}</Text>}
 
-            <Text style={STYLES.label}>Description</Text>
+            <Text style={STYLES.label}>Description (Optional)</Text>
             <TextInput
               style={[STYLES.input, STYLES.textArea]}
               value={form.description}
@@ -333,68 +390,54 @@ const AddRealtor = () => {
               placeholderTextColor={COLORS.placeholder}
             />
 
-            {/* 👉 Radio Buttons for Address */}
-            <RequiredLabel text="Do you want to add Address?" />
+            <RequiredLabel text="Is this the Head Office?" />
             <View style={{ flexDirection: "row", marginTop: 8 }}>
               <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginRight: 20,
-                }}
-                onPress={() => setHasAddress(true)}
+                style={STYLES.radioOption}
+                onPress={() => handleChange('isHeadOffice', true)}
               >
-                <View
-                  style={{
-                    height: 20,
-                    width: 20,
-                    borderRadius: 10,
-                    borderWidth: 2,
-                    borderColor: COLORS.primary,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: 6,
-                  }}
-                >
-                  {hasAddress && (
-                    <View
-                      style={{
-                        height: 10,
-                        width: 10,
-                        borderRadius: 5,
-                        backgroundColor: COLORS.primary,
-                      }}
-                    />
+                <View style={STYLES.radioRing}>
+                  {form.isHeadOffice && (
+                    <View style={STYLES.radioDot} />
                   )}
                 </View>
                 <Text style={{ color: COLORS.text }}>Yes</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={{ flexDirection: "row", alignItems: "center" }}
+                style={STYLES.radioOption}
+                onPress={() => handleChange('isHeadOffice', false)}
+              >
+                <View style={STYLES.radioRing}>
+                  {!form.isHeadOffice && (
+                    <View style={STYLES.radioDot} />
+                  )}
+                </View>
+                <Text style={{ color: COLORS.text }}>No</Text>
+              </TouchableOpacity>
+            </View>
+
+            <RequiredLabel text="Do you want to add Address?" />
+            <View style={{ flexDirection: "row", marginTop: 8 }}>
+              <TouchableOpacity
+                style={STYLES.radioOption}
+                onPress={() => setHasAddress(true)}
+              >
+                <View style={STYLES.radioRing}>
+                  {hasAddress && (
+                    <View style={STYLES.radioDot} />
+                  )}
+                </View>
+                <Text style={{ color: COLORS.text }}>Yes</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={STYLES.radioOption}
                 onPress={() => setHasAddress(false)}
               >
-                <View
-                  style={{
-                    height: 20,
-                    width: 20,
-                    borderRadius: 10,
-                    borderWidth: 2,
-                    borderColor: COLORS.primary,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: 6,
-                  }}
-                >
+                <View style={STYLES.radioRing}>
                   {!hasAddress && (
-                    <View
-                      style={{
-                        height: 10,
-                        width: 10,
-                        borderRadius: 5,
-                        backgroundColor: COLORS.primary,
-                      }}
-                    />
+                    <View style={STYLES.radioDot} />
                   )}
                 </View>
                 <Text style={{ color: COLORS.text }}>No</Text>
@@ -402,7 +445,7 @@ const AddRealtor = () => {
             </View>
           </CustomCard>
 
-          {/* Address Card (Optional) */}
+          {/* Address Card (Visible if hasAddress is true) */}
           {hasAddress && (
             <CustomCard title="Address Details" icon="location-outline">
               <RequiredLabel text="Country" />
@@ -412,7 +455,7 @@ const AddRealtor = () => {
                 items={countries}
                 setOpen={setCountryOpen}
                 setValue={setCountryValue}
-                setItems={() => {}}
+                setItems={() => { }}
                 placeholder="Select Country"
                 style={STYLES.dropdown}
                 dropDownContainerStyle={STYLES.dropdownContainer}
@@ -431,7 +474,7 @@ const AddRealtor = () => {
                 items={states}
                 setOpen={setStateOpen}
                 setValue={setStateValue}
-                setItems={() => {}}
+                setItems={() => { }}
                 placeholder="Select State"
                 style={STYLES.dropdown}
                 dropDownContainerStyle={STYLES.dropdownContainer}
@@ -451,7 +494,7 @@ const AddRealtor = () => {
                 items={districts}
                 setOpen={setDistrictOpen}
                 setValue={setDistrictValue}
-                setItems={() => {}}
+                setItems={() => { }}
                 placeholder="Select District"
                 style={STYLES.dropdown}
                 dropDownContainerStyle={STYLES.dropdownContainer}
@@ -464,6 +507,20 @@ const AddRealtor = () => {
               {errors.district && (
                 <Text style={STYLES.errorText}>{errors.district}</Text>
               )}
+
+              <RequiredLabel text="Pincode" />
+              <TextInput
+                style={STYLES.input}
+                value={form.pincode}
+                keyboardType="number-pad"
+                onChangeText={(text) => handleChange("pincode", text)}
+                placeholder="Enter Pincode"
+                placeholderTextColor={COLORS.placeholder}
+              />
+              {errors.pincode && (
+                <Text style={STYLES.errorText}>{errors.pincode}</Text>
+              )}
+
               <Text style={STYLES.label}>City</Text>
               <TextInput
                 style={STYLES.input}
@@ -485,13 +542,11 @@ const AddRealtor = () => {
                 style={STYLES.input}
                 value={form.addressLine2}
                 onChangeText={(text) => handleChange("addressLine2", text)}
-                placeholder="Enter Address Line 2"
+                placeholder="Enter Address Line 2 (Optional)"
                 placeholderTextColor={COLORS.placeholder}
               />
             </CustomCard>
           )}
-
-          {/* Submit Button */}
           <View style={STYLES.submitButton}>
             <TouchableOpacity
               onPress={handleSubmit}
@@ -514,7 +569,9 @@ const AddRealtor = () => {
                       color="#fff"
                       style={{ marginRight: 8 }}
                     />
-                    <Text style={STYLES.submitButtonText}>Submit Realtor</Text>
+                    <Text style={STYLES.submitButtonText}>
+                      Submit Realtor
+                    </Text>
                   </>
                 )}
               </LinearGradient>
@@ -525,10 +582,9 @@ const AddRealtor = () => {
     </SafeAreaView>
   );
 };
-
 export default AddRealtor;
 
-
+// --- STYLES ---
 const STYLES = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   scrollViewContent: { paddingBottom: 40 },
@@ -654,9 +710,24 @@ const STYLES = StyleSheet.create({
   logo: { width: "100%", height: "100%", resizeMode: "cover", borderRadius: 60 },
   logoPlaceholder: { justifyContent: "center", alignItems: "center" },
   logoText: { color: COLORS.placeholder, marginTop: 5, fontSize: 12, fontFamily: "PlusR" },
-  checkboxContainer: { flexDirection: "row", alignItems: "center", marginTop: 10 },
-  checkboxText: { marginLeft: 10, color: COLORS.text, fontSize: 16, fontFamily: "PlusR" },
   dropdown: { borderColor: COLORS.border, borderRadius: 8, backgroundColor: COLORS.input },
   dropdownContainer: { borderColor: COLORS.border, borderWidth: 1, borderRadius: 8, backgroundColor: COLORS.card },
   cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
+  radioOption: { flexDirection: "row", alignItems: "center", marginRight: 20 },
+  radioRing: {
+    height: 20,
+    width: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 6,
+  },
+  radioDot: {
+    height: 10,
+    width: 10,
+    borderRadius: 5,
+    backgroundColor: COLORS.primary,
+  }
 });

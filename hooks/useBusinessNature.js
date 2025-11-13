@@ -1,50 +1,52 @@
 // hooks/useBusinessNature.js
-import { useEffect, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
-import { API_BASE_URL } from '../services/api';
+import { useEffect, useState } from 'react'
+import * as SecureStore from 'expo-secure-store'
+import { API_BASE_URL } from '../services/api'
 
 const useBusinessNature = () => {
-  const [businessNatures, setBusinessNatures] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [businessNatures, setBusinessNatures] = useState([])
+  const [loading, setLoading] = useState(true)
 
   const fetchBusinessNatures = async () => {
     try {
-      const secretKey = await SecureStore.getItemAsync('auth_token');
-      console.log("Secret Key:", secretKey);
+      const secretKey = await SecureStore.getItemAsync('auth_token')
+      console.log('Secret Key:', secretKey)
 
-      const res = await fetch(`${API_BASE_URL}/business-nature/getAllBusinessNatures`, {
-        headers: {
-          secret_key: secretKey,
-        },
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/business-nature/getAllBusinessNatures`,
+        {
+          headers: {
+            secret_key: secretKey
+          }
+        }
+      )
 
-      const data = await res.json();
-      console.log("API Response:", data);
+      const data = await res.json()
+      console.log('API Response:', data)
 
-      // Map data to a simplified structure
-      const list = data.data || data; // handle both {data: [...]} and [...] formats
+      const list = data.data || data 
       if (Array.isArray(list)) {
-        const mappedList = list.map((item) => ({
-          id: item.id?.toString(),
+        const mappedList = list.map(item => ({
+          id: item.id, 
           name: item.nature,
-          code: item.code,
-        }));
-        setBusinessNatures(mappedList);
+          code: item.code
+        }))
+        setBusinessNatures(mappedList)
       } else {
-        setBusinessNatures([]); // fallback to empty if not array
+        setBusinessNatures([])
       }
     } catch (error) {
-      console.error('Error fetching business natures:', error.message);
+      console.error('Error fetching business natures:', error.message)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchBusinessNatures();
-  }, []);
+    fetchBusinessNatures()
+  }, [])
 
-  return { businessNatures, loading };
-};
+  return { businessNatures, loading }
+}
 
-export default useBusinessNature;
+export default useBusinessNature

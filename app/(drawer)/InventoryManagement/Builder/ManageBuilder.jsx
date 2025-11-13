@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,170 +13,484 @@ import {
   Dimensions,
   TouchableWithoutFeedback,
   Alert,
+  Linking,
   KeyboardAvoidingView,
-  ScrollView, // Essential for ensuring content is scrollable
+  ScrollView,
+  ActivityIndicator,
 } from "react-native";
+import * as SecureStore from 'expo-secure-store';
+import { API_BASE_URL } from "../../../../services/api";
 import LottieView from "lottie-react-native";
 import { Feather, AntDesign, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter, useNavigation } from "expo-router";
+import { useRouter, useNavigation, useFocusEffect } from "expo-router";
+import useBusinessNature from "../../../../hooks/useBusinessNature";
+import axios from "axios";
+import { Picker } from '@react-native-picker/picker';
 
-const dummyRealtors = [
-  {
-    id: "R001",
-    logo: "https://thumbs.dreamstime.com/b/portrait-handsome-smiling-young-man-folded-arms-smiling-joyful-cheerful-men-crossed-hands-isolated-studio-shot-172869765.jpg",
-    name: "Alpha Realty Group",
-    userCode: "ARG1001",
-    businessNature: ["Residential", "Commercial"],
-    headOffice: "700 Market St, Suite 100, City A",
-    email: "contact@alpharealty.com",
-    mobileNo: "+1-555-123-4567",
-    description: "A leading full-service real estate firm.",
-    hasAddress: true, 
-  },
-  {
-    id: "R002",
-    logo: "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?cs=srgb&dl=pexels-italo-melo-881954-2379004.jpg&fm=jpg",
-    name: "Coastal Homes Inc.",
-    userCode: "CHI2002",
-    businessNature: ["Luxury Residential", "Builder"],
-    headOffice: "15 Palm Ave, Beachside",
-    email: "info@coastalhomes.net",
-    mobileNo: "+1-555-987-6543",
-    description: "Specializing in premium coastal properties.",
-    hasAddress: true,
-  },
-  {
-    id: "R003",
-    logo: "https://img.freepik.com/free-photo/designer-working-3d-model_23-2149371896.jpg?semt=ais_hybrid&w=740&q=80",
-    name: "Metro Commercial Partners",
-    userCode: "MCP3003",
-    businessNature: ["Commercial"],
-    headOffice: "99 Business Loop, Metropolis",
-    email: "deals@metropartners.biz",
-    mobileNo: "+1-555-111-2222",
-    description: "Your partner for large-scale commercial leasing.",
-    hasAddress: false,
-  },
-];
 
-const BUSINESS_NATURE_OPTIONS = [
-  "Builder",
-  "Channels Partner Updated",
-  "Dealer",
-  "Aujla",
-  "Residential",
-  "Commercial",
-  "Luxury Residential",
-];
+import useDropdownData from "../../../../hooks/useDropdownData";
+const API_URL = `${API_BASE_URL}/builders/getAllBuilders/1`;
+const GET_BUILDER_BY_ID_URL = `${API_BASE_URL}/builders/getBuilderById`;
+const UPDATE_BUILDER_URL = `${API_BASE_URL}/builders/updateBuilder`;
+
+const COLORS = {
+  primary: "#004d40",
+  secondary: "#198170ff",
+  text: "#333",
+  placeholder: "#999",
+  background: "#f0f4f7",
+  card: "rgba(255, 255, 255, 0.9)",
+  danger: "#c62828",
+};
+
+const getAuthHeaders = async () => {
+  const token = await SecureStore.getItemAsync('auth_token');
+  if (!token) {
+    console.error("Authentication token is missing.");
+    return {};
+  }
+  return {
+    'Content-Type': 'application/json',
+    secret_key: token,
+  };
+};
+
+// Helper function to convert an ArrayBuffer to a binary string
+const arrayBufferToBase64 = (buffer) => {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  // btoa is a standard browser function for Base64 encoding a binary string
+  return btoa(binary); 
+};
+
+const getAuthenticatedImageSource = async (realtorId) => {
+  if (!realtorId) return null;
+
+  try {
+    const headers = await getAuthHeaders();
+    const url = `${API_BASE_URL}/builders/getLogo/${realtorId}/logo`;
+
+    // 1. Request the response data as an ArrayBuffer
+    const response = await axios.get(url, { 
+      headers: headers, 
+      responseType: 'arraybuffer' // <--- Essential for raw bytes
+    });
+
+    let base64String = null;
+    
+    // Check if the response is valid and contains raw data (ArrayBuffer)
+    if (response.data instanceof ArrayBuffer) {
+      // 2. Convert the ArrayBuffer to a Base64 string using the browser-compatible helper
+      base64String = arrayBufferToBase64(response.data);
+    }
+
+    if (base64String && typeof base64String === 'string') {
+      // 3. Construct the data URI
+      return {
+        uri: `data:image/jpeg;base64,${base64String}`, 
+        cache: 'reload',
+      };
+    }
+    return null;
+
+  } catch (error) {
+    console.warn(`Failed to fetch Base64 image for ${realtorId}:`, error?.response?.status, error?.message);
+    return null;
+  }
+};
+
+const RealtorLogoWithAuth = ({ realtorId, style }) => {
+  const [imageSource, setImageSource] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!realtorId) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchImageSource = async () => {
+      setLoading(true);
+      try {
+        const source = await getAuthenticatedImageSource(realtorId);
+        setImageSource(source);
+      } catch (error) {
+        setImageSource(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchImageSource();
+  }, [realtorId]);
+
+  if (loading) {
+    return (
+      <View style={[styles.cardAvatar, styles.avatarPlaceholder, style]}>
+        <ActivityIndicator size="small" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (imageSource && imageSource.uri) {
+    return (
+      <Image
+        source={imageSource}
+        style={[styles.cardAvatar, style]}
+        resizeMode="contain"
+        onError={(e) => {
+          console.error("Image failed to load:", e.nativeEvent.error);
+          setImageSource(null);
+        }}
+      />
+    );
+  }
+
+  return (
+    <View style={[styles.cardAvatar, styles.avatarPlaceholder, style]}>
+      <Ionicons name="business-outline" size={24} color={COLORS.placeholder} />
+    </View>
+  );
+};
+
+const mapBusinessNatureIds = (ids, natureList) => {
+  const idStrings = Array.isArray(ids) ? ids.map(id => String(id)) : [];
+  if (idStrings.length === 0) {
+    return ["Not Specified"];
+  }
+  if (!Array.isArray(natureList) || natureList.length === 0) {
+    return ["Names Unavailable"];
+  }
+  const natureMap = natureList.reduce((map, item) => {
+    map[String(item.id)] = item.name;
+    return map;
+  }, {});
+  const mappedNames = idStrings.map(id => natureMap[id]).filter(name => name);
+  return [...new Set(mappedNames.length > 0 ? mappedNames : ["Names Unavailable"])];
+};
+
+
+// --- 3. Main Component ---
 const ManageRealtors = () => {
+  const navigation = useNavigation();
+
+  // ---------------------- FORM STATE VARIABLES ----------------------
+  const [formName, setFormName] = useState("");
+  const [formMobileNo, setFormMobileNo] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formOffice, setFormOffice] = useState("");
+  const [formWebsiteUrl, setFormWebsiteUrl] = useState("");
+  const [formBusinessNature, setFormBusinessNature] = useState([]);
+  const [formHasAddress, setFormHasAddress] = useState(false);
+  const [formAddress1, setFormAddress1] = useState("");
+  const [formAddress2, setFormAddress2] = useState("");
+  const [formCity, setFormCity] = useState("");
+  const [formPincode, setFormPincode] = useState("");
+  const [formCountryId, setFormCountryId] = useState("");
+  const [formStateId, setFormStateId] = useState("");
+  const [formDistrictId, setFormDistrictId] = useState("");
+
+  // ---------------------- OTHER STATE ----------------------
   const [searchQuery, setSearchQuery] = useState("");
-  const [realtors, setRealtors] = useState(dummyRealtors);
+  const [realtors, setRealtors] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isFetchingSelectedRealtor, setIsFetchingSelectedRealtor] = useState(false);
   const [selectedRealtor, setSelectedRealtor] = useState(null);
   const [updateModalVisible, setUpdateModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [businessNatureModalVisible, setBusinessNatureModalVisible] = useState(false);
-  
-  const navigation = useNavigation();
-  const router = useRouter();
 
-  // State for the form data in the update modal
-  const [formName, setFormName] = useState('');
-  const [formMobileNo, setFormMobileNo] = useState('');
-  const [formEmail, setFormEmail] = useState('');
-  const [formLogo, setFormLogo] = useState('');
-  const [formDescription, setFormDescription] = useState('');
-  const [formOffice, setFormOffice] = useState('');
-  const [formBusinessNature, setFormBusinessNature] = useState([]);
-  const [formHasAddress, setFormHasAddress] = useState(false);
-
-  useEffect(() => {
-    if (selectedRealtor) {
-      setFormName(selectedRealtor.name || '');
-      setFormMobileNo(selectedRealtor.mobileNo || '');
-      setFormEmail(selectedRealtor.email || '');
-      setFormLogo(selectedRealtor.logo || '');
-      setFormDescription(selectedRealtor.description || '');
-      setFormOffice(selectedRealtor.headOffice || '');
-      setFormBusinessNature(selectedRealtor.businessNature || []); 
-      setFormHasAddress(selectedRealtor.hasAddress || false);
-    }
-  }, [selectedRealtor]);
-
-  const handleUpdatePress = (realtor) => {
-    setSelectedRealtor(realtor);
-    setUpdateModalVisible(true);
-  };
-  
-  const handleCloseUpdateModal = () => {
-      setUpdateModalVisible(false);
-      setSelectedRealtor(null);
+  // ---------------------- HOOKS ----------------------
+  const { businessNatures: natures, loading: loadingNatures } = useBusinessNature() || {
+    businessNatures: [],
+    loading: false,
   };
 
-  const handleDeletePress = (realtor) => {
-    setSelectedRealtor(realtor);
-    setDeleteModalVisible(true);
-  };
+  const { countries, states, districts, loading: loadingDropdownData } = useDropdownData(
+    null, // departmentId
+    formCountryId,
+    formStateId,
+    null
+  );
 
-  const confirmDelete = () => {
-    setRealtors(realtors.filter((r) => r.id !== selectedRealtor.id));
-    setDeleteModalVisible(false);
-    setSelectedRealtor(null);
-    Alert.alert("Deleted!", `${selectedRealtor.name} has been removed.`);
-  };
+  const fetchRealtors = useCallback(async (isRefresh = false) => {
+    if (!isRefresh) setIsLoading(true);
+    setIsRefreshing(isRefresh);
 
-  const handleUpdateSubmit = () => {
-    if (!formName || formBusinessNature.length === 0 || !formMobileNo || formHasAddress === undefined) {
-      Alert.alert("Missing Fields", "Name, Business Nature, Mobile No, and 'Add Address' are required.");
+    if (loadingNatures) {
+      setIsLoading(false);
       return;
     }
 
-    const updatedRealtors = realtors.map(r =>
-      r.id === selectedRealtor.id ? { 
-        ...r, 
-        name: formName, 
-        headOffice: formOffice, 
-        mobileNo: formMobileNo, 
-        email: formEmail,
-        logo: formLogo,
-        description: formDescription,
-        businessNature: formBusinessNature,
-        hasAddress: formHasAddress,
-      } : r
-    );
-    setRealtors(updatedRealtors);
-    handleCloseUpdateModal();
-    Alert.alert("Updated!", `${formName} details have been saved.`);
+    try {
+      const authOptions = await getAuthHeaders();
+      const response = await fetch(API_URL, { headers: authOptions });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const apiData = await response.json();
+
+      const mappedData = (Array.isArray(apiData) ? apiData : []).map(item => {
+        const businessNatureIdsFromApi = Array.isArray(item.businessNatures)
+          ? item.businessNatures.map(nature => nature.id)
+          : [];
+
+        return ({
+          id: item.id,
+          name: item.name || `Builder ID ${item.id}`,
+          userCode: item.userCode || `C-${item.id}`,
+          mobileNo: item.mobileNo || '+91-XXX-XXX-XXXX',
+          email: item.email || `contact@builder${item.id}.com`,
+          headOffice: item.headOffice || 'N/A',
+          description: item.description || 'No description provided.',
+          hasAddress: item.hasAddress === true,
+          websiteUrl: item.websiteURL,
+          businessNature: mapBusinessNatureIds(businessNatureIdsFromApi, natures),
+          originalBusinessNatureIds: businessNatureIdsFromApi,
+        });
+      });
+
+      setRealtors(mappedData);
+    } catch (error) {
+      console.error("Failed to fetch realtors:", error);
+      Alert.alert("Error", error.message || "Failed to load realtors.");
+      setRealtors([]);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [natures, loadingNatures]);
+
+  const fetchSelectedRealtor = useCallback(async (realtorId) => {
+    if (!realtorId) return;
+
+    setIsFetchingSelectedRealtor(true);
+    try {
+      const authOptions = await getAuthHeaders();
+      const url = `${GET_BUILDER_BY_ID_URL}/${realtorId}`;
+      const response = await fetch(url, { headers: authOptions });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const item = await response.json();
+
+      const businessNatureIdsFromApi = Array.isArray(item.businessNatures)
+        ? item.businessNatures.map(nature => nature.id)
+        : [];
+
+      const businessNatureNames = mapBusinessNatureIds(businessNatureIdsFromApi, natures);
+
+      // Existing form state initialization
+      setFormName(item.name || '');
+      setFormMobileNo(item.mobileNo || '');
+      setFormEmail(item.email || '');
+      setFormDescription(item.description || '');
+      setFormOffice(item.headOffice || '');
+      setFormWebsiteUrl(item.websiteURL || '');
+      setFormBusinessNature(businessNatureNames);
+      setFormHasAddress(item.hasAddress === true);
+
+      // 🌟 FIX: Initialize address and location ID fields 🌟
+      setFormAddress1(item.address1 || '');
+      setFormAddress2(item.address2 || '');
+      setFormCity(item.city || '');
+      setFormPincode(item.pincode || '');
+
+      // Convert IDs to string for TextInput value property
+      setFormDistrictId(String(item.districtId || ''));
+      setFormStateId(String(item.stateId || ''));
+      setFormCountryId(String(item.countryId || ''));
+      // ---------------------------------------------------
+
+      setUpdateModalVisible(true);
+
+    } catch (error) {
+      console.error("Failed to fetch selected realtor details:", error);
+      Alert.alert("Error", error.message || "Failed to load realtor details for update.");
+      setSelectedRealtor(null);
+    } finally {
+      setIsFetchingSelectedRealtor(false);
+    }
+  }, [natures]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!loadingNatures) {
+        fetchRealtors();
+      }
+    }, [fetchRealtors, loadingNatures])
+  );
+
+  const handleUpdatePress = (realtor) => {
+    setSelectedRealtor(realtor);
+    fetchSelectedRealtor(realtor.id);
   };
 
-  const filteredRealtors = realtors.filter((realtor) => {
-    const lowerCaseQuery = searchQuery?.toLowerCase() || "";
-    const lowerCaseName = realtor.name?.toLowerCase() || "";
-    const lowerCaseCode = realtor.userCode?.toLowerCase() || "";
-    return (
-      lowerCaseName.includes(lowerCaseQuery) ||
-      lowerCaseCode.includes(lowerCaseQuery)
-    );
-  });
-  
-  const toggleBusinessNature = (nature) => {
-    setFormBusinessNature(prevNatures => {
-      if (prevNatures.includes(nature)) {
-        return prevNatures.filter(n => n !== nature);
+  const handleCloseUpdateModal = () => {
+    setUpdateModalVisible(false);
+    setSelectedRealtor(null);
+    setFormName('');
+    setFormDescription('');
+    setFormOffice('');
+    setFormWebsiteUrl('');
+    setFormBusinessNature([]);
+    setFormHasAddress(false);
+
+    setFormAddress1('');
+    setFormAddress2('');
+    setFormCity('');
+    setFormPincode('');
+    setFormDistrictId('');
+    setFormStateId('');
+    setFormCountryId('');
+  };
+
+  const handleDeletePress = (realtor) => { setSelectedRealtor(realtor); setDeleteModalVisible(true); };
+
+  const confirmDelete = async () => {
+    if (!selectedRealtor?.id) {
+      Alert.alert("Error", "No realtor selected for deletion.");
+      return;
+    }
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(
+        `${API_BASE_URL}/builders/deleteBuilder/${selectedRealtor.id}`,
+        {
+          method: "DELETE",
+          headers,
+        }
+      );
+
+      if (!response.ok) {
+        const errMsg = `Server responded with status ${response.status}`;
+        console.error(errMsg);
+        throw new Error("Failed to delete realtor. Please try again.");
+      }
+
+      setRealtors((prev) => prev.filter((r) => r.id !== selectedRealtor.id));
+      setDeleteModalVisible(false);
+      setSelectedRealtor(null);
+      Alert.alert("Deleted", `${selectedRealtor.name} was successfully removed.`);
+    } catch (error) {
+      console.error("Error deleting realtor:", error);
+      Alert.alert("Error", error.message || "Failed to delete realtor.");
+    }
+  };
+
+const handleUpdateSubmit = async () => {
+  if (!selectedRealtor?.id) {
+    Alert.alert("Error", "No realtor ID found for update.");
+    return;
+  }
+
+  const natureMap = natures.reduce((map, item) => {
+    map[item.name] = item.id;
+    return map;
+  }, {});
+  const businessNatureIdsForAPI = formBusinessNature
+    .map(name => natureMap[name])
+    .filter(id => id !== undefined);
+
+  // Convert to number or null
+  const getNumericId = (id) => {
+    const num = parseInt(id, 10);
+    return isNaN(num) ? null : num;
+  };
+
+  // Build payload
+  const updatePayload = {
+    headOffice: formOffice || "",
+    hasAddress: !!formHasAddress,
+    websiteURL: formWebsiteUrl || "",
+    description: formDescription || "",
+    businessNatureIds: businessNatureIdsForAPI,
+    name: formName || "",
+    logoContentType: "image/jpg",
+    logoString: "", 
+    addedById: 1,
+    addressType: "Office",
+    address1: formAddress1 || "",
+    address2: formAddress2 || "",
+    city: formCity || "",
+    pincode: formPincode || "",
+    districtId: getNumericId(formDistrictId),
+    stateId: getNumericId(formStateId),
+    countryId: getNumericId(formCountryId),
+  };
+
+  try {
+    const headers = await getAuthHeaders();
+    headers["Content-Type"] = "application/json"; 
+
+    const url = `${UPDATE_BUILDER_URL}/${selectedRealtor.id}`;
+
+    console.log("Sending payload:", JSON.stringify(updatePayload, null, 2));
+
+    const response = await fetch(url, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(updatePayload),
+    });
+
+    const resultText = await response.text();
+    if (!response.ok) {
+      console.error("Update failed response:", resultText);
+      throw new Error(`Failed to update realtor. Status: ${response.status}. Details: ${resultText.substring(0, 200)}...`);
+    }
+
+    console.log("Update response:", resultText);
+
+    Alert.alert("Success", `${formName} details have been successfully updated.`);
+    
+    fetchRealtors(); 
+    handleCloseUpdateModal();
+
+  } catch (error) {
+    console.error("Error during update:", error);
+    Alert.alert("Update Failed", error.message || "An unexpected error occurred during update.");
+  }
+};
+
+
+  const toggleBusinessNature = (natureName) => {
+    setFormBusinessNature(prev => {
+      if (prev.includes(natureName)) {
+        return prev.filter(n => n !== natureName);
       } else {
-        return [...prevNatures, nature];
+        return [...prev, natureName];
       }
     });
   };
 
-  // --- Render Item for FlatList (Unchanged) ---
+  const filteredRealtors = realtors.filter((realtor) =>
+    realtor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    realtor.userCode.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+
   const renderRealtor = ({ item, index }) => (
     <View style={styles.itemCard}>
       <View style={styles.cardHeader}>
-        {/* ... (content) ... */}
         <View style={styles.snContainer}>
           <Text style={styles.snText}>{index + 1}</Text>
         </View>
-        <Image source={{ uri: item.logo }} style={styles.cardAvatar} />
+
+        <RealtorLogoWithAuth
+          realtorId={item.id}
+          style={styles.cardAvatar}
+        />
+
         <View style={styles.cardTitleWrapper}>
           <Text style={styles.cardName} numberOfLines={1}>
             {item.name}
@@ -186,315 +500,341 @@ const ManageRealtors = () => {
           </Text>
         </View>
         <View style={styles.actionIcons}>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => handleUpdatePress(item)}
-          >
-            <Feather name="edit-3" size={18} color="#004d40" />
+          <TouchableOpacity style={styles.iconBtn} onPress={() => handleUpdatePress(item)}>
+            <Feather name="edit-3" size={18} color={COLORS.primary} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => handleDeletePress(item)}
-          >
-            <Feather name="x-circle" size={18} color="#c62828" />
+          <TouchableOpacity style={styles.iconBtn} onPress={() => handleDeletePress(item)}>
+            <Feather name="x-circle" size={18} color={COLORS.danger} />
           </TouchableOpacity>
         </View>
       </View>
-      
       <View style={styles.cardDetails}>
         <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="office-building" size={14} color="#666" />
-            <Text style={styles.detailText} numberOfLines={1}>
-                {item.headOffice}
-            </Text>
+          <MaterialCommunityIcons name="office-building" size={14} color="#666" />
+          <Text style={styles.detailText} numberOfLines={1}>
+            {item.headOffice || 'Address not provided'}
+          </Text>
         </View>
         <View style={styles.detailRow}>
-            <Feather name="briefcase" size={14} color="#666" />
-            <Text style={styles.detailText} numberOfLines={1}>
-                {item.businessNature.join(", ")}
-            </Text>
+          <Feather name="briefcase" size={14} color="#666" />
+          <Text style={styles.detailText} numberOfLines={1}>
+            {item.businessNature.join(", ")}
+          </Text>
         </View>
         <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="email-outline" size={14} color="#666" />
-            <Text style={styles.detailText} numberOfLines={1}>
-                {item.email}
-            </Text>
+          <Feather name="file-text" size={14} color="#666" />
+          <Text style={styles.detailText} numberOfLines={1}>
+            {item.description}
+          </Text>
         </View>
+
         <View style={styles.detailRow}>
-            <Feather name="phone" size={14} color="#666" />
-            <Text style={styles.detailText} numberOfLines={1}>
-                {item.mobileNo}
-            </Text>
+          <Feather name="globe" size={14} color="#666" style={{ marginRight: 6 }} />
+          <Text
+            style={[styles.detailText, { color: "#007AFF", textDecorationLine: "underline" }]}
+            numberOfLines={1}
+            onPress={() => {
+              if (item.websiteUrl) {
+                let url = item.websiteUrl.trim();
+                if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                  url = `https://${url}`;
+                }
+                Linking.openURL(url).catch(err =>
+                  console.error("Failed to open URL:", err)
+                );
+              } else {
+                Alert.alert("No Website", "This realtor has not provided a website URL.");
+              }
+            }}
+          >
+            Click here to visit Website
+          </Text>
         </View>
+
       </View>
     </View>
   );
 
- // --- Render Business Nature Selection Modal ---
+  // --- Render Business Nature Selection Modal ---
   const renderBusinessNatureModal = () => (
-    <Modal
-      visible={businessNatureModalVisible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={() => setBusinessNatureModalVisible(false)}
-    >
+    <Modal visible={businessNatureModalVisible} transparent={true} animationType="fade" onRequestClose={() => setBusinessNatureModalVisible(false)}>
       <TouchableWithoutFeedback onPress={() => setBusinessNatureModalVisible(false)}>
         <View style={styles.centeredModalBackground}>
-          <View style={styles.selectionModalCard}>
-            <Text style={styles.modalTitleCompact}>Select Business Nature *</Text>
-            
-            <FlatList
-              data={BUSINESS_NATURE_OPTIONS}
-              keyExtractor={item => item}
-              numColumns={2}
-              style={styles.businessNatureList}
-              contentContainerStyle={styles.businessNatureListContent}
-              renderItem={({ item }) => {
-                const isSelected = formBusinessNature.includes(item);
-                return (
-                  <TouchableOpacity
-                    style={[styles.selectOption, isSelected && styles.selectOptionSelected]}
-                    onPress={() => toggleBusinessNature(item)}
-                  >
-                    <Ionicons 
-                      name={isSelected ? "checkbox-outline" : "square-outline"} 
-                      size={18} 
-                      color={isSelected ? "#fff" : "#004d40"} 
-                      style={{ marginRight: 5 }}
-                    />
-                    <Text style={[styles.selectOptionText, isSelected && styles.selectOptionTextSelected]}>
-                      {item}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-            
-            <Text style={styles.selectionCount}>
-              {formBusinessNature.length} selected
-            </Text>
+          <TouchableWithoutFeedback>
+            <View style={styles.selectionModalCard}>
+              <Text style={styles.modalTitleCompact}>Select Business Natures</Text>
 
-            <TouchableOpacity
-              style={[styles.modalBtnCompact, styles.modalBtnPrimary, { marginTop: 10 }]}
-              onPress={() => setBusinessNatureModalVisible(false)}
-            >
-              <Text style={styles.modalBtnTextCompact}>Done</Text>
-            </TouchableOpacity>
-          </View>
+              {(loadingNatures || !Array.isArray(natures)) ? (
+                <ActivityIndicator
+                  size="large"
+                  color={COLORS.primary}
+                  style={{ marginVertical: 20 }}
+                />
+              ) : (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 10 }}>
+                  {natures.map((nature) => (
+                    <TouchableOpacity
+                      key={nature.id}
+                      style={[styles.selectOption, formBusinessNature.includes(nature.name) && styles.selectOptionSelected]}
+                      onPress={() => toggleBusinessNature(nature.name)}
+                    >
+                      <MaterialCommunityIcons
+                        name={formBusinessNature.includes(nature.name) ? "check-circle" : "checkbox-blank-circle-outline"}
+                        size={16}
+                        color={formBusinessNature.includes(nature.name) ? '#fff' : COLORS.primary}
+                        style={{ marginRight: 5 }}
+                      />
+                      <Text style={[styles.selectOptionText, formBusinessNature.includes(nature.name) && styles.selectOptionTextSelected]}>{nature.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              <Text style={styles.selectionCount}>Selected: {formBusinessNature.length}</Text>
+              <TouchableOpacity style={[styles.modalBtnCompact, styles.modalBtnPrimary, { marginTop: 20, width: '100%' }]} onPress={() => setBusinessNatureModalVisible(false)}>
+                <Text style={styles.modalBtnTextCompact}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>
     </Modal>
   );
 
+  const renderUpdateModalContent = () => {
+    // Combined loading check for a smoother transition
+    const isFullyLoading = isFetchingSelectedRealtor || !selectedRealtor || loadingDropdownData;
 
-  const renderUpdateModalContent = () => (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.updateModalContent}
-    >
+    if (isFullyLoading) {
+      return (
+        <View style={{ padding: 40, alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={{ marginTop: 15, color: COLORS.text }}>Loading realtor details...</Text>
+        </View>
+      );
+    }
+
+    return (
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.updateModalContent}>
         <ScrollView contentContainerStyle={{ paddingBottom: 10 }}>
-             <Text style={styles.modalTitleCompact}>Update Realtor Profile</Text>
-            <Text style={styles.modalSubTitleCompact}>Editing: **{selectedRealtor?.name}**</Text>
-            
-            <View style={styles.sectionContainerCompact}>
-                <Text style={styles.sectionTitleCompact}>Basic Information</Text>
+          <Text style={styles.modalTitleCompact}>Update Realtor Profile</Text>
+          <Text style={styles.modalSubTitleCompact}>Editing: **{selectedRealtor?.name}**</Text>
 
-                {/* Name */}
-                <Text style={styles.inputLabelCompact}>Name *</Text>
+          {/* --- Basic Information --- */}
+          <View style={styles.sectionContainerCompact}>
+            <Text style={styles.sectionTitleCompact}>Basic Information</Text>
+            <Text style={styles.inputLabelCompact}>Name *</Text>
+            <View style={styles.inputWithIconCompact}>
+              <Feather name="user" size={18} color="#004d4080" style={styles.inputIcon} />
+              <TextInput style={styles.modalTextInputCompact} placeholder="Realtor Name" value={formName} onChangeText={setFormName} placeholderTextColor="#aaa" />
+            </View>
+            <Text style={styles.inputLabelCompact}>Business Nature *</Text>
+            <TouchableOpacity style={styles.selectInputCompact} onPress={() => setBusinessNatureModalVisible(true)}>
+              <Feather name="briefcase" size={18} color="#004d4080" style={styles.inputIcon} />
+              <Text style={styles.selectInputTextCompact} numberOfLines={1}>
+                {formBusinessNature.length > 0 ? formBusinessNature.join(', ') : 'Select Business Nature'}
+              </Text>
+              <Feather name="chevron-down" size={18} color={COLORS.primary} />
+            </TouchableOpacity>
+            <Text style={styles.selectionCountSmallCompact}>{formBusinessNature.length} selected</Text>
+          </View>
+
+          {/* --- Contact Information --- */}
+          <View style={styles.sectionContainerCompact}>
+            <Text style={styles.sectionTitleCompact}>Contact Information</Text>
+            <Text style={styles.inputLabelCompact}>Mobile No *</Text>
+            <View style={styles.inputWithIconCompact}>
+              <Feather name="phone" size={18} color="#004d4080" style={styles.inputIcon} />
+              <TextInput style={styles.modalTextInputCompact} placeholder="Mobile Number" value={formMobileNo} onChangeText={setFormMobileNo} keyboardType="phone-pad" placeholderTextColor="#aaa" />
+            </View>
+            <Text style={styles.inputLabelCompact}>Email</Text>
+            <View style={styles.inputWithIconCompact}>
+              <MaterialCommunityIcons name="email-outline" size={18} color="#004d4080" style={styles.inputIcon} />
+              <TextInput style={styles.modalTextInputCompact} placeholder="Email Address" value={formEmail} onChangeText={setFormEmail} keyboardType="email-address" placeholderTextColor="#aaa" />
+            </View>
+            <Text style={styles.inputLabelCompact}>Website URL</Text>
+            <View style={styles.inputWithIconCompact}>
+              <Feather name="globe" size={18} color="#004d4080" style={styles.inputIcon} />
+              <TextInput style={styles.modalTextInputCompact} placeholder="Website URL (optional)" value={formWebsiteUrl} onChangeText={setFormWebsiteUrl} keyboardType="url" autoCapitalize="none" placeholderTextColor="#aaa" />
+            </View>
+          </View>
+
+          <View style={styles.sectionContainerCompact}>
+            <Text style={styles.sectionTitleCompact}>Branding & Description</Text>
+
+            <Text style={styles.inputLabelCompact}>Logo Preview (Secure Fetch)</Text>
+            <RealtorLogoWithAuth
+              realtorId={selectedRealtor?.id}
+              style={styles.logoPreviewCompact}
+            />
+            <Text style={styles.logoPlaceholderCompact}>Logo is loaded securely using ID.</Text>
+
+            <Text style={styles.inputLabelCompact}>Description</Text>
+            <TextInput style={styles.modalTextInputAreaCompact} placeholder="Realtor Description" value={formDescription} onChangeText={setFormDescription} multiline numberOfLines={2} placeholderTextColor="#aaa" />
+          </View>
+
+          {/* --- Address Settings & Detailed Address --- */}
+          <View style={styles.sectionContainerCompact}>
+            <Text style={styles.sectionTitleCompact}>Address Settings</Text>
+            <Text style={styles.inputLabelCompact}>Add Address ? *</Text>
+            <View style={styles.toggleRowCompact}>
+              <TouchableOpacity style={[styles.toggleBtnCompact, formHasAddress && styles.toggleBtnActiveCompact]} onPress={() => setFormHasAddress(true)}><Text style={[styles.toggleTextCompact, formHasAddress && styles.toggleTextActiveCompact]}>Yes</Text></TouchableOpacity>
+              <TouchableOpacity style={[styles.toggleBtnCompact, !formHasAddress && styles.toggleBtnActiveCompact]} onPress={() => setFormHasAddress(false)}><Text style={[styles.toggleTextCompact, !formHasAddress && styles.toggleTextActiveCompact]}>No</Text></TouchableOpacity>
+            </View>
+
+            {formHasAddress && (
+              <>
+                <Text style={styles.inputLabelCompact}>Head Office Name/Short Description</Text>
                 <View style={styles.inputWithIconCompact}>
-                    <Feather name="user" size={18} color="#004d4080" style={styles.inputIcon} />
-                    <TextInput
-                        style={styles.modalTextInputCompact}
-                        placeholder="Realtor Name"
-                        value={formName}
-                        onChangeText={setFormName}
-                        placeholderTextColor="#aaa"
-                    />
+                  <MaterialCommunityIcons name="office-building" size={18} color="#004d4080" style={styles.inputIcon} />
+                  <TextInput style={styles.modalTextInputCompact} placeholder="Head Office Name" value={formOffice} onChangeText={setFormOffice} placeholderTextColor="#aaa" />
                 </View>
 
-                {/* Business Nature Multi-Select */}
-                <Text style={styles.inputLabelCompact}>Business Nature *</Text>
-                <TouchableOpacity 
-                    style={styles.selectInputCompact}
-                    onPress={() => setBusinessNatureModalVisible(true)}
-                >
-                    <Feather name="briefcase" size={18} color="#004d4080" style={styles.inputIcon} />
-                    <Text style={styles.selectInputTextCompact} numberOfLines={1}>
-                        {formBusinessNature.length > 0 
-                        ? formBusinessNature.join(', ') 
-                        : 'Select Business Nature'}
-                    </Text>
-                    <Feather name="chevron-down" size={18} color="#004d40" />
-                </TouchableOpacity>
-                <Text style={styles.selectionCountSmallCompact}>
-                    {formBusinessNature.length} selected
-                </Text>
-            </View>
+                {/* --- Detailed Address Inputs --- */}
+                <Text style={styles.sectionTitleCompact}>Detailed Address</Text>
 
-            <View style={styles.sectionContainerCompact}>
-                <Text style={styles.sectionTitleCompact}>Contact Information</Text>
-                
-                {/* Mobile No */}
-                <Text style={styles.inputLabelCompact}>Mobile No *</Text>
+                <Text style={styles.inputLabelCompact}>Address Line 1 *</Text>
                 <View style={styles.inputWithIconCompact}>
-                    <Feather name="phone" size={18} color="#004d4080" style={styles.inputIcon} />
-                    <TextInput
-                        style={styles.modalTextInputCompact}
-                        placeholder="Mobile Number"
-                        value={formMobileNo}
-                        onChangeText={setFormMobileNo}
-                        keyboardType="phone-pad"
-                        placeholderTextColor="#aaa"
-                    />
+                  <Feather name="map-pin" size={18} color="#004d4080" style={styles.inputIcon} />
+                  <TextInput style={styles.modalTextInputCompact} placeholder="House/Street Number" value={formAddress1} onChangeText={setFormAddress1} placeholderTextColor="#aaa" />
                 </View>
 
-                {/* Email */}
-                <Text style={styles.inputLabelCompact}>Email</Text>
+                <Text style={styles.inputLabelCompact}>Address Line 2 (Optional)</Text>
                 <View style={styles.inputWithIconCompact}>
-                    <MaterialCommunityIcons name="email-outline" size={18} color="#004d4080" style={styles.inputIcon} />
-                    <TextInput
-                        style={styles.modalTextInputCompact}
-                        placeholder="Email Address"
-                        value={formEmail}
-                        onChangeText={setFormEmail}
-                        keyboardType="email-address"
-                        placeholderTextColor="#aaa"
-                    />
+                  <Feather name="map" size={18} color="#004d4080" style={styles.inputIcon} />
+                  <TextInput style={styles.modalTextInputCompact} placeholder="Landmark / Area" value={formAddress2} onChangeText={setFormAddress2} placeholderTextColor="#aaa" />
                 </View>
-            </View>
-            <View style={styles.sectionContainerCompact}>
-                <Text style={styles.sectionTitleCompact}>Branding & Description</Text>
-                
-                {/* Logo URL */}
-                <Text style={styles.inputLabelCompact}>Logo URL</Text>
+
+                <Text style={styles.inputLabelCompact}>City *</Text>
                 <View style={styles.inputWithIconCompact}>
-                    <Ionicons name="image-outline" size={18} color="#004d4080" style={styles.inputIcon} />
-                    <TextInput
-                        style={styles.modalTextInputCompact}
-                        placeholder="Image URL for Logo"
-                        value={formLogo}
-                        onChangeText={setFormLogo}
-                        placeholderTextColor="#aaa"
+                  <Feather name="tag" size={18} color="#004d4080" style={styles.inputIcon} />
+                  <TextInput style={styles.modalTextInputCompact} placeholder="City Name" value={formCity} onChangeText={setFormCity} placeholderTextColor="#aaa" />
+                </View>
+
+                <Text style={styles.inputLabelCompact}>Pincode *</Text>
+                <View style={styles.inputWithIconCompact}>
+                  <Feather name="code" size={18} color="#004d4080" style={styles.inputIcon} />
+                  <TextInput style={styles.modalTextInputCompact} placeholder="Pincode" value={formPincode} onChangeText={setFormPincode} keyboardType="numeric" placeholderTextColor="#aaa" />
+                </View>
+
+                <Text style={styles.sectionTitleCompact}>Location</Text>
+
+                {/* --- Country Dropdown --- */}
+                <Text style={styles.inputLabelCompact}>Country *</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={formCountryId}
+                    onValueChange={(value) => {
+                      setFormCountryId(value);
+                      setFormStateId("");
+                      setFormDistrictId("");
+                    }}
+                    style={styles.pickerCompact}
+                  >
+                    <Picker.Item label="Select Country" value="" />
+                    {countries.map((country) => (
+                      <Picker.Item
+                        key={country.value}
+                        label={country.label}
+                        value={String(country.value)}
+                      />
+                    ))}
+                  </Picker>
+                </View>
+
+                {/* --- State Dropdown --- */}
+                <Text style={styles.inputLabelCompact}>State *</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={formStateId}
+                    onValueChange={(value) => {
+                      setFormStateId(value);
+                      setFormDistrictId("");
+                    }}
+                    style={styles.pickerCompact}
+                    enabled={!!formCountryId}
+                  >
+                    <Picker.Item
+                      label={formCountryId ? "Select State" : "Select Country First"}
+                      value=""
                     />
+                    {states.map((state) => (
+                      <Picker.Item
+                        key={state.value}
+                        label={state.label}
+                        value={String(state.value)}
+                      />
+                    ))}
+                  </Picker>
                 </View>
-                {formLogo ? (
-                    <Image source={{ uri: formLogo }} style={styles.logoPreviewCompact} />
-                ) : (
-                    <Text style={styles.logoPlaceholderCompact}>No Logo URL provided</Text>
-                )}
 
-                {/* Description */}
-                <Text style={styles.inputLabelCompact}>Description</Text>
-                <TextInput
-                    style={styles.modalTextInputAreaCompact}
-                    placeholder="Realtor Description"
-                    value={formDescription}
-                    onChangeText={setFormDescription}
-                    multiline
-                    numberOfLines={2}
-                    placeholderTextColor="#aaa"
-                />
-            </View>
-            
-            <View style={styles.sectionContainerCompact}>
-                <Text style={styles.sectionTitleCompact}>Address Settings</Text>
-
-                {/* Add Address Toggle */}
-                <Text style={styles.inputLabelCompact}>Add Address ? *</Text>
-                <View style={styles.toggleRowCompact}>
-                    <TouchableOpacity 
-                        style={[styles.toggleBtnCompact, formHasAddress && styles.toggleBtnActiveCompact]}
-                        onPress={() => setFormHasAddress(true)}
-                    >
-                        <Text style={[styles.toggleTextCompact, formHasAddress && styles.toggleTextActiveCompact]}>Yes</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                        style={[styles.toggleBtnCompact, !formHasAddress && styles.toggleBtnActiveCompact]}
-                        onPress={() => setFormHasAddress(false)}
-                    >
-                        <Text style={[styles.toggleTextCompact, !formHasAddress && styles.toggleTextActiveCompact]}>No</Text>
-                    </TouchableOpacity>
+                {/* --- District Dropdown --- */}
+                <Text style={styles.inputLabelCompact}>District *</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={formDistrictId}
+                    onValueChange={setFormDistrictId}
+                    style={styles.pickerCompact}
+                    enabled={!!formStateId}
+                  >
+                    <Picker.Item
+                      label={formStateId ? "Select District" : "Select State First"}
+                      value=""
+                    />
+                    {districts.map((district) => (
+                      <Picker.Item
+                        key={district.value}
+                        label={district.label}
+                        value={String(district.value)}
+                      />
+                    ))}
+                  </Picker>
                 </View>
-                
-                {formHasAddress && (
-                    <>
-                        <Text style={styles.inputLabelCompact}>Head Office Address</Text>
-                        <View style={styles.inputWithIconCompact}>
-                            <MaterialCommunityIcons name="office-building" size={18} color="#004d4080" style={styles.inputIcon} />
-                            <TextInput
-                                style={styles.modalTextInputCompact}
-                                placeholder="Head Office Address"
-                                value={formOffice}
-                                onChangeText={setFormOffice}
-                                placeholderTextColor="#aaa"
-                            />
-                        </View>
-                    </>
-                )}
-            </View>
-            
-            <View style={styles.modalButtonRowCompact}>
-                <TouchableOpacity
-                    style={[styles.modalBtnCompact, styles.modalBtnPrimary]}
-                    onPress={handleUpdateSubmit}
-                >
-                    <Text style={styles.modalBtnTextCompact}>Save Changes</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.modalBtnCompact, styles.modalBtnSecondary]}
-                    onPress={handleCloseUpdateModal}
-                >
-                    <Text style={styles.modalBtnSecondaryTextCompact}>Cancel</Text>
-                </TouchableOpacity>
-            </View>
+
+
+              </>
+            )}
+          </View>
+
+          {/* --- Buttons --- */}
+          <View style={styles.modalButtonRowCompact}>
+            <TouchableOpacity style={[styles.modalBtnCompact, styles.modalBtnPrimary]} onPress={handleUpdateSubmit}><Text style={styles.modalBtnTextCompact}>Save Changes</Text></TouchableOpacity>
+          </View>
         </ScrollView>
-    </KeyboardAvoidingView>
-  );
+      </KeyboardAvoidingView>
+    );
+  };
 
-  // --- Render Delete Modal Content (Unchanged size) ---
+  // --- Render Delete Modal Content ---
   const renderDeleteModalContent = () => (
     <View style={styles.deleteModalContent}>
-      <Ionicons name="warning-sharp" size={60} color="#c62828" />
-      <Text style={styles.deleteModalTitle}>Delete Realtor?</Text>
-      {selectedRealtor && (
-        <>
-          <Text style={styles.deleteModalMessage}>
-            You are about to permanently delete{" "}
-            <Text style={styles.deleteModalHighlight}>{selectedRealtor.name}</Text>. 
-            This action cannot be undone.
-          </Text>
-
-          <View style={styles.modalButtonRow}>
-            <TouchableOpacity
-              style={[styles.modalBtn, styles.modalBtnDelete]}
-              onPress={confirmDelete}
-            >
-              <Text style={styles.modalBtnText}>Yes, Delete It</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalBtn, styles.modalBtnSecondary]}
-              onPress={() => setDeleteModalVisible(false)}
-            >
-              <Text style={styles.modalBtnSecondaryText}>Keep Realtor</Text>
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
+      <Feather name="alert-triangle" size={40} color={COLORS.danger} />
+      <Text style={styles.deleteModalTitle}>Confirm Deletion</Text>
+      <Text style={styles.deleteModalMessage}>
+        Are you sure you want to delete realtor
+        <Text style={styles.deleteModalHighlight}> {selectedRealtor?.name} </Text>
+        ? This action cannot be undone.
+      </Text>
+      <View style={styles.modalButtonRow}>
+        <TouchableOpacity style={[styles.modalBtn, styles.modalBtnDelete]} onPress={confirmDelete}>
+          <Text style={styles.modalBtnText}>Delete</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.modalBtn, styles.modalBtnSecondary]} onPress={() => setDeleteModalVisible(false)}>
+          <Text style={styles.modalBtnSecondaryText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
+
+  // --- Main Render Return ---
   return (
     <SafeAreaView style={styles.container}>
-      {/* ... (Main screen content) ... */}
-      
-      {/* Header Bar */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
-          <Ionicons name="menu" size={26} color="#004d40" />
+          <Ionicons name="menu" size={26} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
-      
-      {/* Title Section */}
       <View style={styles.headerRow}>
         <View style={styles.headerTextContainer}>
           <Text style={styles.headerTitle}>Realtor</Text>
@@ -503,70 +843,58 @@ const ManageRealtors = () => {
             Search by Name or User Code.
           </Text>
         </View>
+        {/* ⚠️ Ensure Lottie path is correct */}
         <LottieView
-          source={require("../../../../assets/svg/EMP.json")} 
+          source={require("../../../../assets/svg/EMP.json")}
           autoPlay
           loop
           style={styles.lottie}
         />
       </View>
-      
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <Feather
-          name="search"
-          size={20}
-          color="#004d40"
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={styles.searchBar}
-          placeholder="Search for a realtor..."
-          placeholderTextColor="#999"
-          value={searchQuery}
-          onChangeText={(text) => setSearchQuery(text)}
-        />
+        <Feather name="search" size={20} color={COLORS.primary} style={styles.searchIcon} />
+        <TextInput style={styles.searchBar} placeholder="Search for a realtor..." placeholderTextColor={COLORS.placeholder} value={searchQuery} onChangeText={setSearchQuery} />
         {searchQuery?.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery("")}>
-            <AntDesign name="closecircle" size={18} color="#999" />
+            <AntDesign name="closecircle" size={18} color={COLORS.placeholder} />
           </TouchableOpacity>
         )}
       </View>
-      
+
       {/* Realtor List */}
-      <FlatList
-        data={filteredRealtors}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        renderItem={renderRealtor}
-        ListEmptyComponent={() => (
-          <View style={styles.emptyList}>
-            <MaterialCommunityIcons name="account-group-outline" size={50} color="#aaa" />
-            <Text style={styles.emptyListText}>No realtors found.</Text>
-          </View>
-        )}
-      />
+      {(isLoading || loadingNatures) && !isRefreshing ? (
+        <View style={styles.centerLoader}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>
+            {loadingNatures ? 'Loading business data...' : 'Loading Realtors...'}
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredRealtors}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={styles.list}
+          renderItem={renderRealtor}
+          onRefresh={() => fetchRealtors(true)}
+          refreshing={isRefreshing}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyList}>
+              <MaterialCommunityIcons name="account-group-outline" size={50} color="#aaa" />
+              <Text style={styles.emptyListText}>No realtors found.</Text>
+            </View>
+          )}
+        />
+      )}
 
-
-      {/* --- Update Modal --- */}
-      <Modal
-        visible={updateModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={handleCloseUpdateModal}
-      >
+      {/* --- Modals --- */}
+      <Modal visible={updateModalVisible} transparent={true} animationType="slide" onRequestClose={handleCloseUpdateModal}>
         <TouchableWithoutFeedback onPress={handleCloseUpdateModal}>
           <View style={styles.centeredModalBackground}>
             <TouchableWithoutFeedback>
               <View style={styles.modalCardCompact}>
-                {/* Close Button */}
-                <TouchableOpacity
-                    style={styles.modalCloseButton}
-                    onPress={handleCloseUpdateModal}
-                >
-                    <Ionicons name="close" size={20} color="#555" />
+                <TouchableOpacity style={styles.modalCloseButton} onPress={handleCloseUpdateModal}>
+                  <Ionicons name="close-circle" size={24} color={COLORS.placeholder} />
                 </TouchableOpacity>
-
                 {renderUpdateModalContent()}
               </View>
             </TouchableWithoutFeedback>
@@ -574,328 +902,127 @@ const ManageRealtors = () => {
         </TouchableWithoutFeedback>
       </Modal>
 
-      <Modal
-        visible={deleteModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setDeleteModalVisible(false)}
-      >
+      <Modal visible={deleteModalVisible} transparent={true} animationType="fade" onRequestClose={() => setDeleteModalVisible(false)}>
         <TouchableWithoutFeedback onPress={() => setDeleteModalVisible(false)}>
           <View style={styles.centeredModalBackground}>
             <TouchableWithoutFeedback>
-              <View style={styles.deleteModalCard}>
+              <View style={styles.modalCard}>
                 {renderDeleteModalContent()}
               </View>
             </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-
       {renderBusinessNatureModal()}
-
-      {/* Floating Add Button (FAB) */}
-      <TouchableOpacity 
-        style={styles.fab}
-        onPress={() => router.push("/(drawer)/InventoryManagement/Builder/AddBuilder")}
-      >
-        <Ionicons name="add" size={32} color="#fff" />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f0f4f7" },
-  header: { paddingHorizontal: 20,
-    fontFamily: "PlusSB", paddingTop: Platform.OS === "android" ? 30 : 20, paddingBottom: 5 },
-  headerRow: { flexDirection: "row",
-    fontFamily: "PlusSB", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, marginBottom: 10 },
-  headerTextContainer: { flex: 1 },
-  headerTitle: { fontSize: 32, 
-    fontFamily: "PlusSB", color: "#004d40" },
-  headerSubTitle: { fontSize: 28, fontFamily: "PlusSB", color: "#333", marginTop: -5 },
-  headerDesc: { fontSize: 14,
-    fontFamily: "PlusSB", color: "#666", marginTop: 5 },
-  lottie: { width: 100, height: 100, marginTop: -30 },
-  searchContainer: { flexDirection: "row",
-    fontFamily: "PlusSB", alignItems: "center", backgroundColor: "#fff", marginHorizontal: 20, borderRadius: 15, paddingHorizontal: 15, marginVertical: 15, shadowOpacity: 0.1, elevation: 5, borderWidth: 1, borderColor: '#eee' },
-  searchBar: { flex: 1, height: 50,
-    fontFamily: "PlusL", fontSize: 16, color: "#333", paddingLeft: 10 },
-  searchIcon: { marginRight: 8 },
-  list: { paddingHorizontal: 20, paddingVertical: 10 },
-  itemCard: { backgroundColor: "rgba(255, 255, 255, 0.9)", borderRadius: 20, padding: 15, marginBottom: 15, shadowOpacity: 0.15, elevation: 8 },
-  cardHeader: { flexDirection: "row", alignItems: "center", paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#eee', marginBottom: 10 },
-  snContainer: { width: 25, alignItems: 'center',
-    fontFamily: "PlusSB", justifyContent: 'center', marginRight: 10, backgroundColor: '#004d40', borderRadius: 5, height: 25 },
-  snText: { fontSize: 14, 
-    fontFamily: "PlusS",fontWeight: 'bold', color: "#fff" },
-  cardAvatar: { width: 50, height: 50, borderRadius: 25, marginRight: 15, backgroundColor: "#fff", borderWidth: 2, borderColor: '#004d4050' },
-  cardTitleWrapper: { flex: 1 },
-  cardName: { fontSize: 18, 
-    fontFamily: "PlusSB", color: "#004d40" },
-  cardCode: { fontSize: 13, 
-    fontFamily: "PlusL", color: "#444", marginTop: 2 },
-  actionIcons: { flexDirection: "column", alignItems: "center" },
-  iconBtn: { padding: 5, borderRadius: 5, marginBottom: 5, backgroundColor: 'rgba(255, 255, 255, 0.8)' },
-  cardDetails: { paddingHorizontal: 5,fontSize:13,fontFamily: "PlusSB", },
-  detailRow: { flexDirection: 'row',fontFamily: "PlusL", alignItems: 'center', marginBottom: 5 },
-  detailText: { fontSize: 13, fontFamily: "PlusL",color: '#333', marginLeft: 8 },
-  emptyList: { alignItems: 'center', marginTop: 50, padding: 20, backgroundColor: '#fff', borderRadius: 15 },
-  emptyListText: { fontSize: 18, color: '#aaa', marginTop: 10,
-    fontFamily: "PlusL", },
-  fab: { position: 'absolute', width: 65, height: 65, alignItems: 'center', justifyContent: 'center', right: 30, bottom: 30, backgroundColor: '#004d40', borderRadius: 35, elevation: 10, shadowOpacity: 0.5, shadowRadius: 10 },
 
-  centeredModalBackground: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.75)",
-  },
-  
-  modalCardCompact: {
-    width: "90%",
-    maxHeight: Dimensions.get('window').height * 0.9, 
-    backgroundColor: "#fff",
-    borderRadius: 20, 
-    padding: 10,
-    paddingTop: 45,
-    alignItems: "center",
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
-    elevation: 20,
-    position: 'relative',
-  },
-  modalCloseButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    padding: 5,
-    zIndex: 10,
-  },
-  updateModalContent: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  modalTitleCompact: {
-    
-    fontFamily: "PlusSB",
-    fontSize: 20, // Smaller title
-    marginBottom: 5,
-    color: "#004d40",
-  },
-  modalSubTitleCompact: {
-    
-    fontFamily: "PlusL",
-    fontSize: 14,
-    color: "#888",
-    marginBottom: 15, 
-  },
-  
-  // Section Grouping
-  sectionContainerCompact: {
-    width: '100%',
-    padding: 10,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    marginBottom: 10, 
-    borderLeftWidth: 2, 
-    borderLeftColor: '#004d40',
-  },
-  sectionTitleCompact: {
-    
-    fontFamily: "PlusR",
-    fontSize: 16, 
-    color: '#004d40',
-    marginBottom: 5, 
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    paddingBottom: 5,
-  },
-  
-  // Input Fields
-  inputLabelCompact: {
-    width: '100%',
-    textAlign: 'left',
-    fontFamily: "PlusSB",
-    fontSize: 13, // Smaller label
-    color: '#333',
-    marginBottom: 3, // Reduced margin
-    marginTop: 8, // Reduced margin
-  },
-  inputWithIconCompact: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    marginBottom: 5,
-    height: 40,
-  },
-  inputIcon: {
-    marginLeft: 10,
-  },
-  modalTextInputCompact: {
-    flex: 1,
-    paddingVertical: 8, 
-    fontFamily: "PlusR",
-    paddingRight: 10,
-    fontSize: 14, 
-    color: '#333',
-    height: '100%',
-  },
-  modalTextInputAreaCompact: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    fontFamily: "PlusL",
-    padding: 10,
-    marginBottom: 5,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    fontSize: 14,
-    color: '#333',
-    minHeight: 80, 
-    textAlignVertical: 'top',
-  },
-  
-  selectInputCompact: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    paddingRight: 10,
-    marginBottom: 2,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    minHeight: 40,
-  },
-  selectInputTextCompact: {
-    flex: 1,
-    fontFamily: "PlusR",
-    fontSize: 14, 
-    color: '#333',
-    marginLeft: 5,
-  },
-  selectionCountSmallCompact: {
-    width: '100%',
-    textAlign: 'right',
-    fontSize: 11,
-    fontFamily: "PlusSB",
-    color: '#004d40',
-    marginBottom: 5,
-  },
-  
-  // Logo Preview
-  logoPreviewCompact: {
-    width: 50, 
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.background },
+  centerLoader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { paddingHorizontal: 20, paddingTop: Platform.OS === "android" ? 30 : 20, paddingBottom: 5 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, marginBottom: 10 },
+  headerTextContainer: { flex: 1 },
+  headerTitle: { fontSize: 32, fontFamily: "PlusSB", color: COLORS.primary },
+  headerSubTitle: { fontSize: 28, fontFamily: "PlusSB", color: COLORS.text, marginTop: -5 },
+  headerDesc: { fontSize: 14, fontFamily: "PlusSB", color: "#666", marginTop: 5 },
+  lottie: { width: 100, height: 100, marginTop: -30 },
+  searchContainer: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", marginHorizontal: 20, borderRadius: 15, paddingHorizontal: 15, marginVertical: 15, shadowOpacity: 0.1, elevation: 5, borderWidth: 1, borderColor: '#eee' },
+  searchBar: { flex: 1, height: 50, fontFamily: "PlusL", fontSize: 16, color: COLORS.text, paddingLeft: 10 },
+  searchIcon: { marginRight: 8 },
+  list: { paddingHorizontal: 20, paddingVertical: 10, paddingBottom: 100 },
+  itemCard: { backgroundColor: COLORS.card, borderRadius: 20, padding: 15, marginBottom: 15, shadowOpacity: 0.15, elevation: 8 },
+  cardHeader: { flexDirection: "row", alignItems: "center", paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#eee', marginBottom: 10 },
+  snContainer: { width: 25, alignItems: 'center', justifyContent: 'center', marginRight: 10, backgroundColor: COLORS.primary, borderRadius: 5, height: 25 },
+  snText: { fontSize: 14, fontFamily: "PlusS", fontWeight: 'bold', color: "#fff" },
+  cardAvatar: {
+    width: 50,
     height: 50,
     borderRadius: 25,
-    marginVertical: 5,
-    borderWidth: 2,
-    borderColor: '#004d40',
-  },
-  logoPlaceholderCompact: {
-    fontSize: 10,
-    fontFamily: "PlusSB",
-    color: '#999',
-    marginBottom: 5,
-    marginTop: -3,
-  },
-  
-  toggleRowCompact: {
-    flexDirection: 'row',
-    width: '90%',
-    justifyContent: 'space-between',
-    marginBottom: 10, 
-    marginTop: 5,
-  },
-  toggleBtnCompact: {
-    flex: 1,
-    padding: 5, 
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#e0e0e0',
-    marginHorizontal: 2,
-    alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  toggleBtnActiveCompact: {
-    backgroundColor: '#004d40',
-    borderColor: '#004d40',
-  },
-  toggleTextCompact: {
-    fontSize: 14, 
-    fontFamily: "PlusL",
-    color: '#666',
-  },
-  toggleTextActiveCompact: {
-    color: '#fff',
-  },
-
-  // Modal Buttons
-  modalButtonRowCompact: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '90%',
-    marginTop: 15, // Reduced margin
-  },
-  modalBtnCompact: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 10, 
-    alignItems: 'center',
-    marginHorizontal: 5,
-    elevation: 3,
-  },
-  modalBtnPrimary: { backgroundColor: '#004d40', },
-  modalBtnSecondary: { backgroundColor: '#e0e0e0' },
-  modalBtnSecondaryTextCompact: { fontSize: 14,
-    fontFamily: "PlusSB", color: '#333' },
-  modalBtnTextCompact: { fontSize: 14,fontFamily: "PlusSB", color: '#fff' },
-
-  selectionModalCard: {
-    width: "90%",
+    marginRight: 15,
     backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 15,
-    alignItems: "center",
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
-    elevation: 20,
+    borderWidth: 2,
+    borderColor: `${COLORS.primary}50`,
+    objectFit: "contain",
   },
-  selectOption: {
-    flexDirection: 'row',
+  avatarPlaceholder: {
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 8, 
-    margin: 4,  
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#004d4050',
-    backgroundColor: '#f5f7fa',
-    width: '46%',
+    backgroundColor: '#f5f5f5',
   },
-  selectOptionSelected: { backgroundColor: '#004d40', borderColor: '#004d40' },
-  selectOptionText: { fontSize: 12, color: '#333',
-    fontFamily: "PlusSB"},
-  selectOptionTextSelected: { color: '#fff' },
-  selectionCount: { fontSize: 14, fontFamily: "PlusL", color: '#004d40', marginTop: 10 },
+  cardTitleWrapper: { flex: 1 },
+  cardName: { fontSize: 18, fontFamily: "PlusSB", color: COLORS.primary },
+  cardCode: { fontSize: 13, fontFamily: "PlusL", color: "#444", marginTop: 2 },
+  actionIcons: { flexDirection: "column", alignItems: "center" },
+  iconBtn: { padding: 5, borderRadius: 5, marginBottom: 5, backgroundColor: 'rgba(255, 255, 255, 0.8)' },
+  cardDetails: { paddingHorizontal: 5 },
+  detailRow: { flexDirection: 'row', fontFamily: "PlusL", alignItems: 'center', marginBottom: 5 },
+  detailText: { fontSize: 13, fontFamily: "PlusL", color: '#333', marginLeft: 8 },
+  emptyList: { alignItems: 'center', marginTop: 50, padding: 20, backgroundColor: '#fff', borderRadius: 15 },
+  emptyListText: { fontSize: 18, color: '#aaa', marginTop: 10, fontFamily: "PlusL" },
+  fab: { position: 'absolute', width: 65, height: 65, alignItems: 'center', justifyContent: 'center', right: 30, bottom: 30, backgroundColor: COLORS.primary, borderRadius: 35, elevation: 10, shadowOpacity: 0.5, shadowRadius: 10 },
 
-  deleteModalCard: { width: "85%", backgroundColor: "#fff", borderRadius: 25, padding: 30, alignItems: "center", shadowOpacity: 0.5, shadowRadius: 15, elevation: 20 },
-  deleteModalContent: { width: '100%', alignItems: 'center' },
-  deleteModalTitle: { fontSize: 24,
-    fontFamily: "PlusSB", marginTop: 10, marginBottom: 10, color: "#c62828" },
-  deleteModalMessage: { fontSize: 15,
-    fontFamily: "PlusL", color: "#555", textAlign: 'center', marginBottom: 25, lineHeight: 22 },
-  deleteModalHighlight: { fontWeight: 'bold', color: "#333" },
-  modalButtonRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 10 },
-  modalBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginHorizontal: 5, elevation: 3 },
-  modalBtnDelete: { backgroundColor: '#c62828' },
-  modalBtnText: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
-  modalBtnSecondaryText: { fontSize: 16, fontWeight: 'bold', color: '#333' },
+  // Modal Styles 
+  centeredModalBackground: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0, 0, 0, 0.75)" },
+  modalCardCompact: { width: Dimensions.get('window').width * 0.9, maxHeight: Dimensions.get('window').height * 0.9, backgroundColor: "#fff", borderRadius: 20, padding: 10, paddingTop: 45, alignItems: "center", shadowOpacity: 0.4, shadowRadius: 15, elevation: 20, position: 'relative' },
+  modalCloseButton: { position: 'absolute', top: 10, right: 10, padding: 5, zIndex: 10 },
+  updateModalContent: { width: '100%', alignItems: 'center' },
+  modalTitleCompact: { fontFamily: "PlusSB", fontSize: 20, marginBottom: 5, color: COLORS.primary },
+  modalSubTitleCompact: { fontFamily: "PlusL", fontSize: 14, color: "#888", marginBottom: 15 },
+  sectionContainerCompact: { width: '85%', padding: 5, backgroundColor: '#f9f9f9', borderRadius: 12, marginBottom: 10, borderLeftWidth: 2, borderLeftColor: COLORS.primary },
+  sectionTitleCompact: { fontFamily: "PlusR", fontSize: 16, color: COLORS.primary, marginBottom: 5, borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 5 },
+  inputLabelCompact: { width: '100%', textAlign: 'left', fontFamily: "PlusSB", fontSize: 13, color: COLORS.text, marginBottom: 3, marginTop: 8 },
+  inputWithIconCompact: { flexDirection: 'row', alignItems: 'center', width: '100%', backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#e0e0e0', marginBottom: 5, height: 40 },
+  inputIcon: { marginLeft: 10 },
+  modalTextInputCompact: { flex: 1, paddingVertical: 8, fontFamily: "PlusR", paddingRight: 10, fontSize: 14, color: COLORS.text, height: '100%' },
+  modalTextInputAreaCompact: { width: '100%', backgroundColor: '#fff', borderRadius: 10, fontFamily: "PlusL", padding: 10, marginBottom: 5, borderWidth: 1, borderColor: '#e0e0e0', fontSize: 14, color: COLORS.text, minHeight: 80, textAlignVertical: 'top' },
+  selectInputCompact: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', borderRadius: 10, paddingRight: 10, marginBottom: 2, borderWidth: 1, borderColor: '#e0e0e0', minHeight: 40 },
+  selectInputTextCompact: { flex: 1, fontFamily: "PlusR", fontSize: 14, color: COLORS.text, marginLeft: 5 },
+  selectionCountSmallCompact: { width: '100%', textAlign: 'right', fontSize: 11, fontFamily: "PlusSB", color: COLORS.primary, marginBottom: 5 },
+  logoPreviewCompact: { width: 60, height: 60, borderRadius: 30, marginVertical: 5, borderWidth: 2, borderColor: COLORS.primary },
+  logoPlaceholderCompact: { fontSize: 10, fontFamily: "PlusSB", color: COLORS.placeholder, marginBottom: 5, marginTop: -3 },
+  toggleRowCompact: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginBottom: 10, marginTop: 5 },
+  toggleBtnCompact: { flex: 1, padding: 5, borderRadius: 10, borderWidth: 2, borderColor: '#e0e0e0', marginHorizontal: 2, alignItems: 'center', backgroundColor: '#fff' },
+  toggleBtnActiveCompact: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  toggleTextCompact: { fontSize: 14, fontFamily: "PlusL", color: '#666' },
+  toggleTextActiveCompact: { color: '#fff' },
+  modalButtonRowCompact: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 10, marginTop: 10 },
+  modalBtnCompact: { flex: 1, padding: 10, borderRadius: 10, alignItems: 'center', marginHorizontal: 5 },
+  modalBtnPrimary: { backgroundColor: COLORS.primary },
+  modalBtnSecondary: { backgroundColor: '#fff', borderWidth: 1, borderColor: COLORS.primary },
+  modalBtnTextCompact: { color: '#fff', fontFamily: "PlusSB", fontSize: 16 },
+  modalBtnSecondaryTextCompact: { color: COLORS.primary, fontFamily: "PlusSB", fontSize: 16 },
+  selectionModalCard: { width: Dimensions.get('window').width * 0.85, maxHeight: Dimensions.get('window').height * 0.7, backgroundColor: "#fff", borderRadius: 20, padding: 20, alignItems: "center" },
+  selectOption: { flexDirection: 'row', alignItems: 'center', width: '48%', padding: 8, margin: 4, borderRadius: 8, borderWidth: 1, borderColor: `${COLORS.primary}30`, backgroundColor: '#fff' },
+  selectOptionSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  selectOptionText: { fontSize: 14, fontFamily: "PlusR", color: COLORS.text, flexShrink: 1 },
+  selectOptionTextSelected: { color: '#fff', fontFamily: "PlusSB" },
+  selectionCount: { marginTop: 10, fontSize: 14, fontFamily: "PlusSB", color: COLORS.primary },
+  deleteModalCard: { width: Dimensions.get('window').width * 0.8, backgroundColor: "#fff", borderRadius: 20, padding: 25, alignItems: "center" },
+  deleteModalContent: { alignItems: 'center' },
+  deleteModalTitle: { fontFamily: "PlusSB", fontSize: 22, color: COLORS.danger, marginTop: 10 },
+  deleteModalMessage: { fontFamily: "PlusR", fontSize: 15, color: "#444", textAlign: 'center', marginVertical: 15 },
+  deleteModalHighlight: { fontFamily: "PlusSB", color: "#000" },
+  modalButtonRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 20 },
+  modalBtn: { flex: 1, padding: 12, borderRadius: 10, alignItems: 'center', marginHorizontal: 5 },
+  modalBtnDelete: { backgroundColor: COLORS.danger },
+  modalBtnSecondaryText: { color: COLORS.primary, fontFamily: "PlusSB", fontSize: 16 },
+  modalBtnText: { color: '#fff', fontFamily: "PlusSB", fontSize: 16 },
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+
+  pickerCompact: {
+    height: 44,
+    color: '#333',
+    backgroundColor: '#f9f9f9',
+  },
 });
 
 export default ManageRealtors;
