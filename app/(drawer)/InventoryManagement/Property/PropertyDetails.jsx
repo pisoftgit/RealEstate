@@ -225,13 +225,7 @@ const ApartmentComplexSection = ({ towerType, setTowerType }) => {
       <Text style={styles.subLabel}>Tower Status</Text>
       {/* Tower Type */}
       <View style={styles.toggleRow}>
-        <TouchableOpacity 
-          onPress={() => setTowerType("existing")} 
-          style={[styles.toggleButton, towerType === "existing" && styles.toggleButtonActive]}
-        >
-          <MaterialCommunityIcons name="office-building-marker" size={18} color={towerType === "existing" ? COLORS.card : COLORS.text} />
-          <Text style={[styles.toggleLabel, towerType === "existing" && styles.optionTextActive]}>Existing Tower</Text>
-        </TouchableOpacity>
+        
 
         <TouchableOpacity 
           onPress={() => setTowerType("new")} 
@@ -239,6 +233,13 @@ const ApartmentComplexSection = ({ towerType, setTowerType }) => {
         >
           <MaterialCommunityIcons name="office-building-plus" size={18} color={towerType === "new" ? COLORS.card : COLORS.text} />
           <Text style={[styles.toggleLabel, towerType === "new" && styles.optionTextActive]}>New Tower</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={() => setTowerType("existing")} 
+          style={[styles.toggleButton, towerType === "existing" && styles.toggleButtonActive]}
+        >
+          <MaterialCommunityIcons name="office-building-marker" size={18} color={towerType === "existing" ? COLORS.card : COLORS.text} />
+          <Text style={[styles.toggleLabel, towerType === "existing" && styles.optionTextActive]}>Existing Tower</Text>
         </TouchableOpacity>
       </View>
 
@@ -322,7 +323,7 @@ export default function PropertyDetails() {
 
   const [propertyType, setPropertyType] = useState("");
   const [property, setProperty] = useState("");
-  const [towerType, setTowerType] = useState("existing");
+  const [towerType, setTowerType] = useState("new");
 
   const propertyOptions = {
     Residential: ["Apartment Complex", "Independent House", "Plot"],
