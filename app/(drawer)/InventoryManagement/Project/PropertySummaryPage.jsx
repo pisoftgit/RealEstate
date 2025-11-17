@@ -25,6 +25,9 @@ const PropertySummaryPage = () => {
     console.error('Error parsing property data:', error);
   }
 
+  // Extract projectId from params or propertyData
+  const projectId = params.projectId || propertyData?.id || propertyData?.projectId;
+
   const handlePropertySummarySave = (summaryData) => {
     console.log('Property Summary Data:', summaryData);
     console.log('Associated Project:', propertyData?.projectName);
@@ -63,6 +66,7 @@ const PropertySummaryPage = () => {
       {/* Content */}
       <View style={styles.content}>
         <PropertySummary 
+          projectId={projectId}
           onSave={handlePropertySummarySave}
           initialData={{}}
         />

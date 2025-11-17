@@ -14,88 +14,29 @@ import {
   TouchableWithoutFeedback,
   Switch,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import LottieView from "lottie-react-native";
 import { Feather, AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as DocumentPicker from 'expo-document-picker';
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
+import useHouseVillasByProject from "../hooks/useHouseVillasByProject";
+import useFurnishingStatusActions from "../hooks/useFurnishingStatusActions";
+import useFaceDirectionActions from "../hooks/useFaceDirectionActions";
+import useAmenityActions from "../hooks/useAmenityActions";
+import useFacilityActions from "../hooks/useFacilityActions";
+import useMeasurements from "../hooks/useMeasurements";
+import { getAllPlc } from "../services/api";
 
 const screenHeight = Dimensions.get("window").height;
-
-const dummyFlats = [
-  {
-    id: "1",
-    towerName: "Tower A",
-    unitNumber: "A-101",
-    floor: "1st Floor",
-    bhk: "2 BHK",
-    area: "1200 sq ft",
-    price: "₹45,00,000",
-    status: "Available",
-    isAvailable: true,
-    furnishing: "Semi-Furnished",
-    facing: "East",
-    balconies: 2,
-    bathrooms: 2,
-    parking: "Covered",
-  },
-  {
-    id: "2",
-    towerName: "Tower B",
-    unitNumber: "B-205",
-    floor: "2nd Floor",
-    bhk: "3 BHK",
-    area: "1650 sq ft",
-    price: "₹62,50,000",
-    status: "Sold",
-    isAvailable: false,
-    furnishing: "Fully-Furnished",
-    facing: "North",
-    balconies: 3,
-    bathrooms: 3,
-    parking: "Covered + Open",
-  },
-  {
-    id: "3",
-    towerName: "Tower C",
-    unitNumber: "C-310",
-    floor: "3rd Floor",
-    bhk: "1 BHK",
-    area: "850 sq ft",
-    price: "₹32,00,000",
-    status: "Available",
-    isAvailable: true,
-    furnishing: "Unfurnished",
-    facing: "South",
-    balconies: 1,
-    bathrooms: 1,
-    parking: "Open",
-  },
-  {
-    id: "4",
-    towerName: "Tower D",
-    unitNumber: "D-405",
-    floor: "4th Floor",
-    bhk: "4 BHK",
-    area: "2200 sq ft",
-    price: "₹85,00,000",
-    status: "Reserved",
-    isAvailable: false,
-    furnishing: "Semi-Furnished",
-    facing: "West",
-    balconies: 4,
-    bathrooms: 4,
-    parking: "Covered + Open",
-  },
-];
 
 const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStructure, setSelectedStructure] = useState("");
   const [selectedArea, setSelectedArea] = useState("");
+  
   const [structureDropdownVisible, setStructureDropdownVisible] = useState(false);
   const [areaDropdownVisible, setAreaDropdownVisible] = useState(false);
-  const [flats, setFlats] = useState([]);
   const [selectedFlat, setSelectedFlat] = useState(null);
   const [actionsModalVisible, setActionsModalVisible] = useState(false);
   const [viewModalVisible, setViewModalVisible] = useState(false);
@@ -104,6 +45,30 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
   const [fillDetailsModalVisible, setFillDetailsModalVisible] = useState(false);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [selectedLocationFlat, setSelectedLocationFlat] = useState(null);
+  const [imageUploadModalVisible, setImageUploadModalVisible] = useState(false);
+  const [imageLabel, setImageLabel] = useState("");
+  
+  // Use the custom hook to fetch house/villas
+  const { houseVillas, loading, fetchHouseVillas, saveHouseVillaDetails, saveHouseVillaPlcDetails, fetchHouseVillaDetailsForPlc, deleteHouseVilla, saving, saveError } = useHouseVillasByProject(propertyData?.projectId);
+  
+  // Use the custom hook to fetch furnishing statuses
+  const { statuses: furnishingStatuses, loading: furnishingLoading } = useFurnishingStatusActions();
+  
+  // Use the custom hook to fetch face directions
+  const { faceDirections, loading: faceDirectionsLoading } = useFaceDirectionActions();
+  
+  // Use the custom hook to fetch amenities
+  const { amenities, loading: amenitiesLoading } = useAmenityActions();
+  
+  // Use the custom hook to fetch facilities
+  const { facilities, loading: facilitiesLoading } = useFacilityActions();
+  
+  // Use the custom hook to fetch measurement units
+  const { units: measurementUnits, loading: measurementUnitsLoading } = useMeasurements();
+  
+  // State for PLC data
+  const [plcData, setPlcData] = useState([]);
+  const [plcLoading, setPlcLoading] = useState(false);
   
   // Fill Details Form State
   const [formData, setFormData] = useState({
@@ -152,33 +117,43 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
   const areaOptions = ["All Areas", "500-1000 sq ft", "1000-1500 sq ft", "1500-2000 sq ft", "2000+ sq ft"];
   
   // Fill Details Form Options
-  const furnishingOptions = ["Unfurnished", "Semi-Furnished", "Fully Furnished"];
-  const facingOptions = ["North", "South", "East", "West", "North-East", "North-West", "South-East", "South-West"];
-  const areaUnitOptions = ["sq ft", "sq m"];
-  const amenitiesOptions = [
-    "Swimming Pool", "Gym", "Club House", "Children's Play Area", "Jogging Track",
-    "Security", "Power Backup", "Lift", "Car Parking", "Visitor Parking",
-    "Garden", "Maintenance Staff", "Water Supply", "Intercom"
-  ];
-  const facilitiesOptions = [
-    "Hospital", "School", "Shopping Mall", "Bank", "ATM", "Restaurant",
-    "Public Transport", "Metro Station", "Airport", "Railway Station",
-    "Market", "Pharmacy", "Petrol Pump", "Temple"
-  ];
+  // Furnishing options now come from the useFurnishingStatusActions hook
+  const furnishingOptions = furnishingStatuses.map(status => status.name);
+  // Facing options now come from the useFaceDirectionActions hook
+  const facingOptions = faceDirections.map(direction => direction.name);
+  // Area unit options now come from the useMeasurements hook
+  const areaUnitOptions = measurementUnits.map(unit => unit.name);
+  // Amenities options now come from the useAmenityActions hook
+  const amenitiesOptions = amenities.map(amenity => amenity.name);
+  // Facilities options now come from the useFacilityActions hook
+  const facilitiesOptions = facilities.map(facility => facility.name);
   
-  // Location Modal Options
-  const placeOptions = [
-    "Near Metro Station", "Near Shopping Mall", "Near Hospital", "Near School",
-    "Near Park", "Near Market", "Main Road", "Highway Access", "Airport Nearby",
-    "Railway Station", "Bus Stop", "Commercial Area", "Residential Area"
-  ];
+  // Location Modal Options - PLC options now come from the getAllPlc API
+  const placeOptions = plcData.map(plc => plc.plcName || plc.name || plc.place);
   
-  const rateUnitOptions = [
-    "₹/sq ft", "₹/sq m", "% appreciation", "% premium", "₹ lakh total", "₹ crore total"
-  ];
+  const rateUnitOptions = ["Amount", "Percentage"];
 
+  // Remove dummy data useEffect - now using API hook
+  // useEffect(() => {
+  //   setFlats(dummyFlats);
+  // }, []);
+
+  // Fetch PLC data on component mount
   useEffect(() => {
-    setFlats(dummyFlats);
+    const fetchPlcData = async () => {
+      setPlcLoading(true);
+      try {
+        const data = await getAllPlc();
+        setPlcData(data);
+      } catch (error) {
+        console.error("Error fetching PLC data:", error);
+        Alert.alert("Error", "Failed to fetch PLC data");
+      } finally {
+        setPlcLoading(false);
+      }
+    };
+
+    fetchPlcData();
   }, []);
 
   // Update select all state based on selected flats
@@ -229,10 +204,28 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
     setActionsModalVisible(true);
   };
 
-  const handleViewPress = (flat) => {
-    setSelectedFlat(flat);
+  const handleViewPress = async (flat) => {
     setViewModalCurrentIndex(0); // Reset to first tab
     setViewModalVisible(true);
+    
+    // Fetch detailed house/villa information
+    if (flat?.houseVillaId) {
+      try {
+        const result = await fetchHouseVillaDetailsForPlc(flat.houseVillaId);
+        if (result.success) {
+          setSelectedFlat(result.data);
+        } else {
+          // If fetch fails, use the basic house/villa data
+          setSelectedFlat(flat);
+          Alert.alert('Warning', 'Could not load detailed information. Showing basic details.');
+        }
+      } catch (error) {
+        console.error('Error fetching house/villa details:', error);
+        setSelectedFlat(flat);
+      }
+    } else {
+      setSelectedFlat(flat);
+    }
   };
 
   const handleActionOptionPress = (option) => {
@@ -281,8 +274,30 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
         setActionsModalVisible(false);
         break;
       case "Delete":
-        console.log("Delete Flat:", selectedFlat?.unitNumber);
-        // Add delete logic here
+        Alert.alert(
+          "Delete House/Villa",
+          `Are you sure you want to delete ${selectedFlat?.unitNumber}?`,
+          [
+            {
+              text: "Cancel",
+              style: "cancel"
+            },
+            {
+              text: "Delete",
+              style: "destructive",
+              onPress: async () => {
+                if (selectedFlat?.houseVillaId) {
+                  const result = await deleteHouseVilla(selectedFlat.houseVillaId);
+                  if (result.success) {
+                    Alert.alert("Success", "House/Villa deleted successfully");
+                  } else {
+                    Alert.alert("Error", result.message || "Failed to delete house/villa");
+                  }
+                }
+              }
+            }
+          ]
+        );
         setActionsModalVisible(false);
         break;
       case "Location":
@@ -303,7 +318,7 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
 
     return (
       <View style={styles.actionOptionsContainer}>
-        <Text style={styles.modalTitle}>Flat Actions:</Text>
+        <Text style={styles.modalTitle}>House/Villa Actions:</Text>
         {options.map((option, index) => (
           <TouchableOpacity
             key={index}
@@ -328,48 +343,50 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
         icon: "information-circle-outline",
         content: (
           <View style={styles.sectionContent}>
-          
-           
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Villa/House No:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.unitNumber}</Text>
-            </View>
-             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Facing Direction:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.facing}</Text>
+              <Text style={styles.detailValue}>{selectedFlat.unitNumber || selectedFlat.blockHouseNumber || 'N/A'}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Flat Structure:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.bhk}</Text>
+              <Text style={styles.detailLabel}>Structure:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.houseStructure && selectedFlat.houseStructureType ? `${selectedFlat.houseStructure} ${selectedFlat.houseStructureType}` : selectedFlat.bhk || 'N/A'}</Text>
             </View>
-             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Possession Status:</Text>
-              <Text style={styles.detailValue}>Yes</Text>
-            </View>
-             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Build:</Text>
-              <Text style={styles.detailValue}>20-11-2014</Text>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Facing Direction:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.faceDirection || selectedFlat.facing || 'N/A'}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Furnishing Status:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.furnishing}</Text>
+              <Text style={styles.detailValue}>{selectedFlat.furnishingStatus || selectedFlat.furnishing || 'N/A'}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Parking Available:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.parking}</Text>
+              <Text style={styles.detailLabel}>Total Floors:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.totalNoOfFloors || selectedFlat.totalFloors || 'N/A'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Number of Kitchens:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.totalNoOfKitchen || 'N/A'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Added By:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.addedByName || 'N/A'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Added Date:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.addedDate || 'N/A'}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Availability:</Text>
               <View style={styles.availabilityStatus}>
                 <View style={[
                   styles.statusDot,
-                  { backgroundColor: selectedFlat.isAvailable ? "#4CAF50" : "#FF5722" }
+                  { backgroundColor: (selectedFlat.availabilityStatusEnum === 'AVAILABLE' || selectedFlat.isAvailable) ? "#4CAF50" : "#FF5722" }
                 ]} />
                 <Text style={[
                   styles.detailValue,
-                  { color: selectedFlat.isAvailable ? "#4CAF50" : "#FF5722" }
+                  { color: (selectedFlat.availabilityStatusEnum === 'AVAILABLE' || selectedFlat.isAvailable) ? "#4CAF50" : "#FF5722" }
                 ]}>
-                  {selectedFlat.status}
+                  {selectedFlat.availabilityStatusEnum || selectedFlat.status || 'N/A'}
                 </Text>
               </View>
             </View>
@@ -382,27 +399,29 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
         content: (
           <View style={styles.sectionContent}>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Carpet Area:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.area}</Text>
+              <Text style={styles.detailLabel}>Area:</Text>
+              <Text style={styles.detailValue}>
+                {selectedFlat.area || 'N/A'} {selectedFlat.areaUnit || ''}
+              </Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Loading %:</Text>
-              <Text style={styles.detailValue}>15%</Text>
+              <Text style={styles.detailLabel}>Price:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.price || 'N/A'}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Super Area:</Text>
-              <Text style={styles.detailValue}>1380 sq ft</Text>
+              <Text style={styles.detailLabel}>Project Name:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.projectName || 'N/A'}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Basic Cost:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.price}</Text>
+              <Text style={styles.detailLabel}>Property Type:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.propertyType || 'N/A'}</Text>
             </View>
-           
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Description:</Text>
-              <Text style={styles.detailValue}>refd</Text>
-            </View>
-            
+            {selectedFlat.description && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Description:</Text>
+                <Text style={styles.detailValue}>{selectedFlat.description}</Text>
+              </View>
+            )}
           </View>
         )
       },
@@ -411,14 +430,18 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
         icon: "star-outline",
         content: (
           <View style={styles.sectionContent}>
-            <View style={styles.amenitiesGrid}>
-              {["Swimming Pool", "Gym", "Club House", "Children's Play Area", "Jogging Track", "Security", "Power Backup", "Lift"].map((amenity, index) => (
-                <View key={index} style={styles.amenityItem}>
-                  <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                  <Text style={styles.amenityText}>{amenity}</Text>
-                </View>
-              ))}
-            </View>
+            {selectedFlat.amenities && selectedFlat.amenities.length > 0 ? (
+              <View style={styles.amenitiesGrid}>
+                {selectedFlat.amenities.map((amenity, index) => (
+                  <View key={index} style={styles.amenityItem}>
+                    <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                    <Text style={styles.amenityText}>{amenity.amenityName || amenity}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noDataText}>No amenities available</Text>
+            )}
           </View>
         )
       },
@@ -427,14 +450,18 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
         icon: "location-outline",
         content: (
           <View style={styles.sectionContent}>
-            <View style={styles.amenitiesGrid}>
-              {["Hospital", "School", "Shopping Mall", "Bank", "ATM", "Restaurant", "Public Transport", "Metro Station"].map((facility, index) => (
-                <View key={index} style={styles.amenityItem}>
-                  <Ionicons name="location" size={16} color="#2196F3" />
-                  <Text style={styles.amenityText}>{facility}</Text>
-                </View>
-              ))}
-            </View>
+            {selectedFlat.facilities && selectedFlat.facilities.length > 0 ? (
+              <View style={styles.amenitiesGrid}>
+                {selectedFlat.facilities.map((facility, index) => (
+                  <View key={index} style={styles.amenityItem}>
+                    <Ionicons name="location" size={16} color="#2196F3" />
+                    <Text style={styles.amenityText}>{facility.facilityName || facility}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noDataText}>No facilities available</Text>
+            )}
           </View>
         )
       },
@@ -443,19 +470,31 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
         icon: "images-outline",
         content: (
           <View style={styles.sectionContent}>
-            <View style={styles.mediaSection}>
-              <View style={styles.mediaRow}>
-                <Ionicons name="image-outline" size={24} color="#FF9800" />
-                <Text style={styles.mediaText}>Images: 5 files</Text>
+            {selectedFlat.propertyMediaDTOs && selectedFlat.propertyMediaDTOs.length > 0 ? (
+              <View style={styles.mediaSection}>
+                {selectedFlat.propertyMediaDTOs.some(media => media.mediaType === 'IMAGE') && (
+                  <View style={styles.mediaRow}>
+                    <Ionicons name="image-outline" size={24} color="#FF9800" />
+                    <Text style={styles.mediaText}>
+                      Images: {selectedFlat.propertyMediaDTOs.filter(m => m.mediaType === 'IMAGE').length} files
+                    </Text>
+                  </View>
+                )}
+                {selectedFlat.propertyMediaDTOs.some(media => media.mediaType === 'VIDEO') && (
+                  <View style={styles.mediaRow}>
+                    <Ionicons name="videocam-outline" size={24} color="#9C27B0" />
+                    <Text style={styles.mediaText}>
+                      Videos: {selectedFlat.propertyMediaDTOs.filter(m => m.mediaType === 'VIDEO').length} files
+                    </Text>
+                  </View>
+                )}
+                <TouchableOpacity style={styles.viewMediaBtn}>
+                  <Text style={styles.viewMediaText}>View All Media</Text>
+                </TouchableOpacity>
               </View>
-              <View style={styles.mediaRow}>
-                <Ionicons name="videocam-outline" size={24} color="#9C27B0" />
-                <Text style={styles.mediaText}>Videos: 2 files</Text>
-              </View>
-              <TouchableOpacity style={styles.viewMediaBtn}>
-                <Text style={styles.viewMediaText}>View All Media</Text>
-              </TouchableOpacity>
-            </View>
+            ) : (
+              <Text style={styles.noDataText}>No media files available</Text>
+            )}
           </View>
         )
       }
@@ -476,8 +515,14 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
                 
                 {/* Header */}
                 <View style={styles.viewModalHeader}>
-                  <Text style={styles.modalTitle}>{selectedFlat.unitNumber}</Text>
-                  <Text style={styles.modalSubtitle}>{selectedFlat.bhk} - {selectedFlat.area}</Text>
+                  <Text style={styles.modalTitle}>
+                    {selectedFlat.unitNumber || selectedFlat.blockHouseNumber || 'Villa/House'}
+                  </Text>
+                  <Text style={styles.modalSubtitle}>
+                    {(selectedFlat.houseStructure && selectedFlat.houseStructureType) 
+                      ? `${selectedFlat.houseStructure} ${selectedFlat.houseStructureType}` 
+                      : selectedFlat.bhk || 'N/A'} - {selectedFlat.area || 'N/A'} {selectedFlat.areaUnit || ''}
+                  </Text>
                 </View>
 
                 {/* Tab Navigation */}
@@ -565,19 +610,19 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
         <View style={styles.floorFlatRow}>
           
           <Text style={styles.flatNumber}>#{item.unitNumber}</Text>
-          <Text style={styles.floorText}>Total Floor: {item.floor}</Text>
+          <Text style={styles.floorText}>{item.totalFloors || 'N/A'}</Text>
         </View>
 
         {/* Structure and Area Row */}
         <View style={styles.structureAreaRow}>
           <Text style={styles.structureText}>{item.bhk}</Text>
-          <Text style={styles.areaText}>{item.area}</Text>
+          <Text style={styles.areaText}>{item.areaDisplay}</Text>
         </View>
 
         {/* Availability Status */}
         <View style={styles.availabilityRow}>
           <View style={styles.availabilityIndicator}>
-            <Text style={styles.availabilityText}>{item.facing}</Text>
+            <Text style={styles.availabilityText}>Facing: {item.facing}</Text>
           </View>
         </View>
 
@@ -629,7 +674,32 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => console.log("Delete:", item.unitNumber)}
+            onPress={() => {
+              Alert.alert(
+                "Delete House/Villa",
+                `Are you sure you want to delete ${item.unitNumber}?`,
+                [
+                  {
+                    text: "Cancel",
+                    style: "cancel"
+                  },
+                  {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                      if (item.houseVillaId) {
+                        const result = await deleteHouseVilla(item.houseVillaId);
+                        if (result.success) {
+                          Alert.alert("Success", "House/Villa deleted successfully");
+                        } else {
+                          Alert.alert("Error", result.message || "Failed to delete house/villa");
+                        }
+                      }
+                    }
+                  }
+                ]
+              );
+            }}
           >
             <Feather name="trash-2" size={16} color="#fff" />
           </TouchableOpacity>
@@ -644,12 +714,12 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
     </View>
   );
 
-  const filteredFlats = flats.filter((flat) => {
+  const filteredFlats = houseVillas.filter((flat) => {
     const lowerCaseQuery = searchQuery?.toLowerCase() || "";
-    const lowerCaseFlatNumber = flat.flatNumber?.toLowerCase() || "";
+    const lowerCaseUnitNumber = flat.unitNumber?.toLowerCase() || "";
     
-    // Filter by flat number
-    const matchesFlatNumber = !searchQuery || lowerCaseFlatNumber.includes(lowerCaseQuery);
+    // Filter by unit number
+    const matchesUnitNumber = !searchQuery || lowerCaseUnitNumber.includes(lowerCaseQuery);
     
     // Filter by structure (BHK)
     const matchesStructure = !selectedStructure || 
@@ -659,7 +729,7 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
     // Filter by area
     let matchesArea = !selectedArea || selectedArea === "All Areas";
     if (selectedArea && selectedArea !== "All Areas") {
-      const areaValue = parseInt(flat.area.replace(/[^\d]/g, ''));
+      const areaValue = parseInt(flat.areaDisplay?.replace(/[^\d]/g, '') || '0');
       switch (selectedArea) {
         case "500-1000 sq ft":
           matchesArea = areaValue >= 500 && areaValue <= 1000;
@@ -676,7 +746,7 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
       }
     }
     
-    return matchesFlatNumber && matchesStructure && matchesArea;
+    return matchesUnitNumber && matchesStructure && matchesArea;
   });
 
   // Helper functions for Fill Details Modal
@@ -719,37 +789,86 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
     }));
   };
 
-  const handleSaveDetails = () => {
-    // Here you would typically save the form data
-    console.log('Saving details for flats:', selectedFlats);
-    console.log('Form data:', formData);
-    Alert.alert('Success', 'Details saved successfully!');
-    setFillDetailsModalVisible(false);
-    
-    // Reset form
-    setFormData({
-      furnishing: "",
-      facing: "",
-      carpetArea: "",
-      carpetAreaUnit: "",
-      loadingPercentage: "",
-      superArea: "",
-      numberOfKitchens: "",
-      numberOfFloors: "",
-      basicCost: "",
-      amenities: [],
-      facilities: [],
-      description: "",
-      images: [],
-      videos: [],
-      deleteExistingFiles: false,
-      // Reset all dropdown visibility states
-      furnishingDropdownVisible: false,
-      facingDropdownVisible: false,
-      unitDropdownVisible: false,
-      amenitiesDropdownVisible: false,
-      facilitiesDropdownVisible: false,
-    });
+  const handleSaveDetails = async () => {
+    try {
+      // Validate required fields
+      if (!formData.furnishing || !formData.facing || !formData.carpetArea) {
+        Alert.alert('Validation Error', 'Please fill in all required fields (Furnishing, Facing, Carpet Area)');
+        return;
+      }
+
+      // Get the IDs from the names selected
+      const furnishingStatusId = furnishingStatuses.find(s => s.name === formData.furnishing)?.id;
+      const faceDirectionId = faceDirections.find(d => d.name === formData.facing)?.id;
+      const carpetAreaUnitId = measurementUnits.find(u => u.name === formData.carpetAreaUnit)?.id;
+      const amenitiesIds = amenities.filter(a => formData.amenities.includes(a.name)).map(a => a.id);
+      const facilitiesIds = facilities.filter(f => formData.facilities.includes(f.name)).map(f => f.id);
+
+      // Prepare the data payload for each selected house/villa
+      const savePromises = selectedFlats.map(async (houseVillaId) => {
+        const payload = {
+          furnishingStatusId,
+          faceDirectionId,
+          carpetArea: parseFloat(formData.carpetArea),
+          carpetAreaUnitId,
+          loadingPercentage: parseFloat(formData.loadingPercentage) || 0,
+          totalNoOfKitchen: parseInt(formData.numberOfKitchens) || 0,
+          totalNoOfFloors: parseInt(formData.numberOfFloors) || 0,
+          basicAmount: parseFloat(formData.basicCost) || 0,
+          amenitiesIds,
+          facilitiesIds,
+          description: formData.description,
+          villaIds: [parseInt(houseVillaId)],
+          propertyMediaDTOs: formData.images.map(img => ({
+            mediaLabel: img.label || "Image",
+            mediaBase64: img.base64 || "",
+            contentType: img.contentType || "image/jpg"
+          })),
+          shouldDeletePreviousMedia: formData.deleteExistingFiles
+        };
+
+        return saveHouseVillaDetails(payload);
+      });
+
+      const results = await Promise.all(savePromises);
+      
+      const allSuccess = results.every(r => r.success);
+      
+      if (allSuccess) {
+        Alert.alert('Success', 'House/Villa details saved successfully!');
+        setFillDetailsModalVisible(false);
+        
+        // Reset form
+        setFormData({
+          furnishing: "",
+          facing: "",
+          carpetArea: "",
+          carpetAreaUnit: "",
+          loadingPercentage: "",
+          superArea: "",
+          numberOfKitchens: "",
+          numberOfFloors: "",
+          basicCost: "",
+          amenities: [],
+          facilities: [],
+          description: "",
+          images: [],
+          videos: [],
+          deleteExistingFiles: false,
+          furnishingDropdownVisible: false,
+          facingDropdownVisible: false,
+          unitDropdownVisible: false,
+          amenitiesDropdownVisible: false,
+          facilitiesDropdownVisible: false,
+        });
+        setSelectedFlats([]);
+      } else {
+        Alert.alert('Error', 'Some house/villa details failed to save. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error saving house/villa details:', error);
+      Alert.alert('Error', 'Failed to save house/villa details. Please try again.');
+    }
   };
 
   // Location Modal Handlers
@@ -791,26 +910,65 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
     }
   };
 
-  const handleSaveLocation = () => {
-    // Here you would typically save the location data
-    console.log('Saving location for flat:', selectedLocationFlat?.flatNumber);
-    console.log('Location data:', locationFormData);
-    Alert.alert('Success', 'Location details saved successfully!');
-    setLocationModalVisible(false);
-    
-    // Reset location form
-    setLocationFormData({
-      places: [
-        {
-          id: 1,
-          place: "",
-          rateValue: "",
-          rateUnit: "",
-          placeDropdownVisible: false,
-          rateUnitDropdownVisible: false,
-        }
-      ],
-    });
+  const handleSaveLocation = async () => {
+    try {
+      // Validate required fields
+      const hasEmptyFields = locationFormData.places.some(place => 
+        !place.place || !place.rateValue || place.rateUnit === ""
+      );
+      
+      if (hasEmptyFields) {
+        Alert.alert('Validation Error', 'Please fill in all PLC fields');
+        return;
+      }
+
+      // Validate that houseVillaId exists
+      if (!selectedLocationFlat?.houseVillaId) {
+        Alert.alert('Error', 'House/Villa ID is missing');
+        return;
+      }
+
+      // Get PLC IDs from the names selected and construct plcDetails array
+      const plcDetailsArray = locationFormData.places.map(place => {
+        const plcItem = plcData.find(p => (p.plcName || p.name || p.place) === place.place);
+        
+        // Determine if it's a percentage or amount based on the rateUnit
+        const isPercentage = place.rateUnit === "Percentage" || place.rateUnit === true;
+        
+        return {
+          plcId: plcItem?.id || plcItem?.plcId,
+          rate: parseFloat(place.rateValue),
+          isPercentage: isPercentage
+        };
+      });
+
+      // Call the API with houseVillaId and plcDetailsArray
+      const result = await saveHouseVillaPlcDetails(selectedLocationFlat.houseVillaId, plcDetailsArray);
+      
+      if (result.success) {
+        Alert.alert('Success', 'PLC details saved successfully!');
+        setLocationModalVisible(false);
+        
+        // Reset location form
+        setLocationFormData({
+          places: [
+            {
+              id: 1,
+              place: "",
+              rateValue: "",
+              rateUnit: "",
+              placeDropdownVisible: false,
+              rateUnitDropdownVisible: false,
+            }
+          ],
+        });
+      } else {
+        Alert.alert('Error', result.message || 'Failed to save PLC details');
+      }
+    } catch (error) {
+      console.error('Error saving PLC details:', error);
+      Alert.alert('Error', 'Failed to save PLC details. Please try again.');
+    }
   };
 
   const renderDropdownModal = (visible, setVisible, options, selectedValue, onSelect, title) => (
@@ -914,7 +1072,17 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
           <Text style={styles.propertyBuilder}>by {propertyData.builderName}</Text>
         </View>
       )}
-      
+
+      {/* Loading Indicator */}
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#5aaf57" />
+          <Text style={styles.loadingText}>Loading house/villas...</Text>
+        </View>
+      )}
+
+      {!loading && (
+        <>
       
       
       {/* Filter Section */}
@@ -1029,7 +1197,7 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
             
             if (selectedFlats.length === 1) {
               // Pre-fill form with single flat's data
-              const selectedFlatData = flats.find(flat => flat.id === selectedFlats[0]);
+              const selectedFlatData = houseVillas.find(flat => flat.id === selectedFlats[0]);
               if (selectedFlatData) {
                 setFormData({
                   furnishing: selectedFlatData.furnishing || "",
@@ -1134,8 +1302,8 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
                 <View style={styles.fillDetailsHeader}>
                   <Text style={styles.fillDetailsTitle}>
                     {selectedFlats.length === 1 
-                      ? `Edit Flat Details (${flats.find(f => f.id === selectedFlats[0])?.flatNumber || 'Unknown'})`
-                      : `Fill Details (${selectedFlats.length} flats selected)`
+                      ? `Edit House/Villa Details (${houseVillas.find(f => f.id === selectedFlats[0])?.unitNumber || 'Unknown'})`
+                      : `Fill Details (${selectedFlats.length} house/villas selected)`
                     }
                   </Text>
                   <TouchableOpacity onPress={() => setFillDetailsModalVisible(false)}>
@@ -1440,7 +1608,7 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
                 {/* Modal Header */}
                 <View style={styles.locationModalHeader}>
                   <Text style={styles.locationModalTitle}>
-                    Location Details - {selectedLocationFlat?.flatNumber}
+                    Location Details - {selectedLocationFlat?.unitNumber}
                   </Text>
                   <TouchableOpacity onPress={() => setLocationModalVisible(false)}>
                     <Ionicons name="close" size={24} color="#666" />
@@ -1558,6 +1726,8 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+      </>
+      )}
     </SafeAreaView>
   );
 };
@@ -1567,6 +1737,18 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: Platform.OS === "android" ? 25 : 0,
     backgroundColor: "#fff",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 50,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: "#666",
+    fontFamily: "PlusM",
   },
   header: {
     flexDirection: "row",
@@ -2542,6 +2724,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "PlusSB",
     color: "#5aaf57",
+  },
+  noDataText: {
+    fontSize: 14,
+    fontFamily: "PlusR",
+    color: "#999",
+    textAlign: "center",
+    paddingVertical: 20,
+    fontStyle: "italic",
   },
 });
 

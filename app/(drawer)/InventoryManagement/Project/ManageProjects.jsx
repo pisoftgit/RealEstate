@@ -129,7 +129,7 @@ const ManageProjects = () => {
         setBuilderValue(editingProperty.builderId.toString());
       } else if (editingProperty.builderName) {
         const matchedBuilder = builderItems.find(b => 
-          b.label.toLowerCase() === editingProperty.builderName.toLowerCase()
+          b.label && b.label.toLowerCase() === editingProperty.builderName.toLowerCase()
         );
         if (matchedBuilder) {
           setBuilderValue(matchedBuilder.value);
@@ -142,10 +142,15 @@ const ManageProjects = () => {
   useEffect(() => {
     if (editingProperty && plcItems.length > 0 && (!plcValue || plcValue.length === 0)) {
       if (editingProperty.plcIds && Array.isArray(editingProperty.plcIds)) {
+        // Format: plcIds as array of IDs
         setPlcValue(editingProperty.plcIds.map(id => id?.toString()));
+      } else if (editingProperty.plcs && Array.isArray(editingProperty.plcs)) {
+        // Format: plcs as array of objects with id and name
+        setPlcValue(editingProperty.plcs.map(plc => plc.id?.toString()));
       } else if (editingProperty.plcNames && Array.isArray(editingProperty.plcNames)) {
+        // Format: plcNames as array - match by names
         const matchedPlcs = editingProperty.plcNames.map(name => {
-          const matched = plcItems.find(p => p.label.toLowerCase() === name.toLowerCase());
+          const matched = plcItems.find(p => p.label && p.label.toLowerCase() === name.toLowerCase());
           return matched ? matched.value : null;
         }).filter(id => id !== null);
         if (matchedPlcs.length > 0) {
@@ -162,7 +167,7 @@ const ManageProjects = () => {
         setCountryValue(editingProperty.countryId.toString());
       } else if (editingProperty.country) {
         const matchedCountry = countries.find(c => 
-          c.label.toLowerCase() === editingProperty.country.toLowerCase()
+          c.label && c.label.toLowerCase() === editingProperty.country.toLowerCase()
         );
         if (matchedCountry) {
           setCountryValue(matchedCountry.value);
@@ -178,7 +183,7 @@ const ManageProjects = () => {
         setStateValue(editingProperty.stateId.toString());
       } else if (editingProperty.state) {
         const matchedState = states.find(s => 
-          s.label.toLowerCase() === editingProperty.state.toLowerCase()
+          s.label && s.label.toLowerCase() === editingProperty.state.toLowerCase()
         );
         if (matchedState) {
           setStateValue(matchedState.value);
@@ -194,7 +199,7 @@ const ManageProjects = () => {
         setDistrictValue(editingProperty.districtId.toString());
       } else if (editingProperty.district) {
         const matchedDistrict = districts.find(d => 
-          d.label.toLowerCase() === editingProperty.district.toLowerCase()
+          d.label && d.label.toLowerCase() === editingProperty.district.toLowerCase()
         );
         if (matchedDistrict) {
           setDistrictValue(matchedDistrict.value);
@@ -210,7 +215,7 @@ const ManageProjects = () => {
         setReraDropdownValue(editingProperty.reraId.toString());
       } else if (editingProperty.reraName) {
         const matchedRera = reras.find(r => 
-          r.name.toLowerCase() === editingProperty.reraName.toLowerCase()
+          r.name && r.name.toLowerCase() === editingProperty.reraName.toLowerCase()
         );
         if (matchedRera) {
           setReraDropdownValue(matchedRera.id.toString());
@@ -387,7 +392,7 @@ const ManageProjects = () => {
       setBuilderValue(property.builderId.toString());
     } else if (property.builderName && builderItems.length > 0) {
       const matchedBuilder = builderItems.find(b => 
-        b.label.toLowerCase() === property.builderName.toLowerCase()
+        b.label && b.label.toLowerCase() === property.builderName.toLowerCase()
       );
       setBuilderValue(matchedBuilder ? matchedBuilder.value : null);
     } else {
@@ -413,7 +418,7 @@ const ManageProjects = () => {
       setCountryValue(property.countryId.toString());
     } else if (property.country && countries.length > 0) {
       const matchedCountry = countries.find(c => 
-        c.label.toLowerCase() === property.country.toLowerCase()
+        c.label && c.label.toLowerCase() === property.country.toLowerCase()
       );
       setCountryValue(matchedCountry ? matchedCountry.value : null);
     } else {
@@ -425,7 +430,7 @@ const ManageProjects = () => {
       setStateValue(property.stateId.toString());
     } else if (property.state && states.length > 0) {
       const matchedState = states.find(s => 
-        s.label.toLowerCase() === property.state.toLowerCase()
+        s.label && s.label.toLowerCase() === property.state.toLowerCase()
       );
       setStateValue(matchedState ? matchedState.value : null);
     } else {
@@ -437,22 +442,27 @@ const ManageProjects = () => {
       setDistrictValue(property.districtId.toString());
     } else if (property.district && districts.length > 0) {
       const matchedDistrict = districts.find(d => 
-        d.label.toLowerCase() === property.district.toLowerCase()
+        d.label && d.label.toLowerCase() === property.district.toLowerCase()
       );
       setDistrictValue(matchedDistrict ? matchedDistrict.value : null);
     } else {
       setDistrictValue(null);
     }
     
-    // Set PLC values - handle both array and single value
+    // Set PLC values - handle different formats
     if (property.plcIds && Array.isArray(property.plcIds)) {
+      // Format: plcIds as array of IDs
       setPlcValue(property.plcIds.map(id => id?.toString()));
+    } else if (property.plcs && Array.isArray(property.plcs)) {
+      // Format: plcs as array of objects with id and name
+      setPlcValue(property.plcs.map(plc => plc.id?.toString()));
     } else if (property.plcId) {
+      // Format: single plcId
       setPlcValue([property.plcId?.toString()]);
     } else if (property.plcNames && Array.isArray(property.plcNames) && plcItems.length > 0) {
-      // Match by names if IDs not available
+      // Format: plcNames as array - match by names
       const matchedPlcs = property.plcNames.map(name => {
-        const matched = plcItems.find(p => p.label.toLowerCase() === name.toLowerCase());
+        const matched = plcItems.find(p => p.label && p.label.toLowerCase() === name.toLowerCase());
         return matched ? matched.value : null;
       }).filter(id => id !== null);
       setPlcValue(matchedPlcs);
@@ -468,7 +478,7 @@ const ManageProjects = () => {
       setReraDropdownValue(property.reraId.toString());
     } else if (property.reraName && reras.length > 0) {
       const matchedRera = reras.find(r => 
-        r.name.toLowerCase() === property.reraName.toLowerCase()
+        r.name && r.name.toLowerCase() === property.reraName.toLowerCase()
       );
       setReraDropdownValue(matchedRera ? matchedRera.id.toString() : null);
     } else {
@@ -511,13 +521,14 @@ const ManageProjects = () => {
         router.push({
           pathname: "./PropertySummaryPage",
           params: { 
-            propertyData: JSON.stringify(selectedProperty) 
+            propertyData: JSON.stringify(selectedProperty),
+            projectId: selectedProperty?.id?.toString() || ''
           },
         });
         setActionsModalVisible(false);
         break;
-      case "Manage Property Summary":
-        console.log("Manage Property Summary for:", selectedProperty?.projectName);
+      case "View Property Summary":
+        console.log("View Property Summary for:", selectedProperty?.projectName);
         setActionsModalVisible(false);
         break;
       default:
@@ -964,7 +975,7 @@ const ManageProjects = () => {
   const renderActionOptions = () => {
     if (!selectedProperty) return null;
 
-    const options = ["Add Property Summary", "Manage Property Summary"];
+    const options = ["Add Property Summary", "View Property Summary"];
 
     return (
       <View style={styles.actionOptionsContainer}>

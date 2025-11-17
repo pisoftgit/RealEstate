@@ -52,7 +52,9 @@ const CustomDrawer = ({ navigation }) => {
 
   const handleItemClick = (module) => {
     setClickedItem(module.name);
-    router.push(module.path);
+    // Use replace instead of push to prevent navigation stack buildup
+    // This ensures back button goes to Home instead of previous screens
+    router.replace(module.path);
     navigation.closeDrawer(); // Close the drawer after navigation
   };
 

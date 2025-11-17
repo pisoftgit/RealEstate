@@ -52,10 +52,10 @@ const CustomHeader = ({ navigation, title }) => (
       <Text style={STYLES.headerText}>{title}</Text>
     </LinearGradient>
     <TouchableOpacity
-      onPress={() => navigation.goBack()}
+      onPress={() =>  navigation.openDrawer()}
       style={STYLES.backButton}
     >
-      <Ionicons name="arrow-back" size={24} color={COLORS.card} />
+      <Ionicons name="menu" size={24} color={COLORS.card} />
     </TouchableOpacity>
   </View>
 );
