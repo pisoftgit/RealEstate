@@ -19,60 +19,12 @@ import FlatDetailsPage from "../../../../components/FlatDetailsPage";
 import HouseVillaDetailsPage from "../../../../components/HouseVillaDetailsPage";
 import PlotsDetailsPage from "../../../../components/PlotsDetailsPage";
 import CommercialUnitDetailsPage from "../../../../components/CommercialUnitDetailsPage";
+import useProject from "../../../../hooks/useProject";
 
 const screenHeight = Dimensions.get("window").height;
 
-const dummyPropertyDetails = [
-  {
-    id: "1",
-    projectName: "Greenwood Residency",
-    builderName: "Eco Builders",
-    startDate: "2023-01-15",
-    endDate: "2025-06-30",
-    possessionStatus: "Ready to Move",
-    isReady: true,
-  },
-  {
-    id: "2",
-    projectName: "Lakeview Apartments",
-    builderName: "Urban Homes Inc.",
-    startDate: "2022-05-10",
-    endDate: "2024-12-15",
-    possessionStatus: "Not Ready",
-    isReady: false,
-  },
-  {
-    id: "3",
-    projectName: "The Cedars Villa",
-    builderName: "Luxury Estates Co.",
-    startDate: "2021-09-01",
-    endDate: "2023-11-20",
-    possessionStatus: "Ready to Move",
-    isReady: true,
-  },
-  {
-    id: "4",
-    projectName: "Sunset Farmhouse",
-    builderName: "Country Living Ltd.",
-    startDate: "2020-03-15",
-    endDate: "2022-08-30",
-    possessionStatus: "Ready to Move",
-    isReady: true,
-  },
-  {
-    id: "5",
-    projectName: "Tech Park Office Spaces",
-    builderName: "Corporate Devs",
-    startDate: "2024-01-01",
-    endDate: "2026-12-31",
-    possessionStatus: "Not Ready",
-    isReady: false,
-  },
-];
-
 const ManagePropertyDetail = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [propertyDetails, setPropertyDetails] = useState([]);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [actionsModalVisible, setActionsModalVisible] = useState(false);
   const [showFlatDetails, setShowFlatDetails] = useState(false);
@@ -81,10 +33,9 @@ const ManagePropertyDetail = () => {
   const [showCommercialUnitDetails, setShowCommercialUnitDetails] = useState(false);
   const navigation = useNavigation();
   const router = useRouter();
-
-  useEffect(() => {
-    setPropertyDetails(dummyPropertyDetails);
-  }, []);
+  
+  // Fetch projects from API
+  const { projects, loading, refetch } = useProject();
 
   const handleSearch = (text) => {
     setSearchQuery(text);
@@ -161,39 +112,45 @@ const ManagePropertyDetail = () => {
     );
   };
 
-  const renderPropertyDetail = ({ item }) => (
-    <View style={styles.item}>
-      <View style={styles.propertyInfoWrapper}>
-        <View style={styles.nameBuilderRow}>
-          <Text style={styles.projectName} numberOfLines={1}>
-            {item.projectName}
+  const renderPropertyDetail = ({ item }) => {
+    const isReady = item.possessionStatusEnum === "READY_TO_MOVE";
+    const possessionStatus = item.possessionStatusEnum 
+      ? item.possessionStatusEnum.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())
+      : "N/A";
+    
+    return (
+      <View style={styles.item}>
+        <View style={styles.propertyInfoWrapper}>
+          <View style={styles.nameBuilderRow}>
+            <Text style={styles.projectName} numberOfLines={1}>
+              {item.projectName || "N/A"}
+            </Text>
+           
+            <View style={styles.badgeRow}>
+              <View style={[
+                styles.statusBadge, 
+                { 
+                  backgroundColor: isReady 
+                    ? "rgba(50, 245, 11, 0.2)" 
+                    : "rgba(255, 87, 34, 0.3)" 
+                }
+              ]}>
+                <Text style={styles.badgeText}>
+                  {possessionStatus}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <Text style={styles.builderName} numberOfLines={1}>
+            by {item.builderName || "Unknown Builder"}
           </Text>
-         
-          <View style={styles.badgeRow}>
-          <View style={[
-            styles.statusBadge, 
-            { 
-              backgroundColor: item.isReady 
-                ? "rgba(50, 245, 11, 0.2)" 
-                : "rgba(255, 87, 34, 0.3)" 
-            }
-          ]}>
-            <Text style={styles.badgeText}>
-              {item.possessionStatus}
+          
+          <View style={styles.dateRow}>
+            <Text style={styles.dateText} numberOfLines={1}>
+              {item.projectStartDate || "N/A"}  to  {item.projectCompletionDate || "N/A"}
             </Text>
           </View>
-        </View>
-        </View>
-
-         <Text style={styles.builderName} numberOfLines={1}>
-            by {item.builderName}
-          </Text>
-        
-        <View style={styles.dateRow}>
-          <Text style={styles.dateText} numberOfLines={1}>
-            {item.startDate}  to  {item.endDate}
-          </Text>
-        </View>
         
         
       </View>
@@ -207,9 +164,10 @@ const ManagePropertyDetail = () => {
         </TouchableOpacity>
       </View>
     </View>
-  );
+    );
+  };
 
-  const filteredPropertyDetails = propertyDetails.filter((prop) => {
+  const filteredPropertyDetails = projects.filter((prop) => {
     const lowerCaseQuery = searchQuery?.toLowerCase() || "";
     const lowerCaseName = prop.projectName?.toLowerCase() || "";
     const lowerCaseBuilder = prop.builderName?.toLowerCase() || "";
@@ -223,7 +181,11 @@ const ManagePropertyDetail = () => {
   if (showFlatDetails && selectedProperty) {
     return (
       <FlatDetailsPage 
-        propertyData={selectedProperty}
+        propertyData={{
+          projectId: selectedProperty.id,
+          projectName: selectedProperty.projectName,
+          builderName: selectedProperty.builderName,
+        }}
         onBack={handleBackFromFlatDetails}
       />
     );
@@ -233,7 +195,11 @@ const ManagePropertyDetail = () => {
   if (showHouseVillaDetails && selectedProperty) {
     return (
       <HouseVillaDetailsPage 
-        propertyData={selectedProperty}
+        propertyData={{
+          projectId: selectedProperty.id,
+          projectName: selectedProperty.projectName,
+          builderName: selectedProperty.builderName,
+        }}
         onBack={handleBackFromHouseVillaDetails}
       />
     );
@@ -243,7 +209,11 @@ const ManagePropertyDetail = () => {
   if (showPlotsDetails && selectedProperty) {
     return (
       <PlotsDetailsPage 
-        propertyData={selectedProperty}
+        propertyData={{
+          projectId: selectedProperty.id,
+          projectName: selectedProperty.projectName,
+          builderName: selectedProperty.builderName,
+        }}
         onBack={handleBackFromPlotsDetails}
       />
     );
@@ -253,7 +223,11 @@ const ManagePropertyDetail = () => {
   if (showCommercialUnitDetails && selectedProperty) {
     return (
       <CommercialUnitDetailsPage 
-        propertyData={selectedProperty}
+        propertyData={{
+          projectId: selectedProperty.id,
+          projectName: selectedProperty.projectName,
+          builderName: selectedProperty.builderName,
+        }}
         onBack={handleBackFromCommercialUnitDetails}
       />
     );
@@ -304,13 +278,32 @@ const ManagePropertyDetail = () => {
         )}
       </View>
       
-      <FlatList
-        data={filteredPropertyDetails}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        renderItem={renderPropertyDetail}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <LottieView
+            source={require("../../../../assets/svg/reales.json")}
+            autoPlay
+            loop
+            style={styles.loadingLottie}
+          />
+          <Text style={styles.loadingText}>Loading projects...</Text>
+        </View>
+      ) : filteredPropertyDetails.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No projects found</Text>
+          <TouchableOpacity onPress={refetch} style={styles.retryButton}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredPropertyDetails}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          renderItem={renderPropertyDetail}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
       
       <Modal
         visible={actionsModalVisible}
@@ -527,6 +520,45 @@ const styles = StyleSheet.create({
   actionOptionText: {
     fontSize: 15,
     fontFamily: 'PlusR',
+    color: "#fff",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  loadingLottie: {
+    width: 150,
+    height: 150,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: "PlusR",
+    color: "#666",
+    marginTop: 10,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontFamily: "PlusR",
+    color: "#666",
+    marginBottom: 20,
+  },
+  retryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: "#5aaf57",
+    borderRadius: 8,
+  },
+  retryText: {
+    fontSize: 14,
+    fontFamily: "PlusSB",
     color: "#fff",
   },
 });

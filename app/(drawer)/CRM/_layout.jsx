@@ -6,7 +6,7 @@ import React from "react";
 const Layout = () => {
   return (
 
-    <Stack screenOptions={{ headerShown: false, gestureEnabled: true }}>
+    <Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
          <Stack.Screen name="AddLeads" options={{ title: "Add Leads", headerShown: false }} />
          <Stack.Screen name="ManageLeads" options={{ title: "Manage Leads", headerShown: false }} />
          <Stack.Screen name="Appointments" options={{ title: "Appointments", headerShown: false }} />

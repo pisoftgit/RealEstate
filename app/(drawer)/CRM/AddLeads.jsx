@@ -12,12 +12,13 @@ import {
   Modal,
   Alert,
   RefreshControl,
+  BackHandler,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import moment from 'moment';
 import { useUser } from '../../../context/UserContext';
@@ -29,6 +30,7 @@ const AddLead = () => {
   const [imageBytes, setImageBytes] = useState(null);
   const [imageType, setImageType] = useState(null);
   const Navigation = useNavigation();
+  const router = useRouter();
   const { user, branch } = useUser();
 
   const [countryOpen, setCountryOpen] = useState(false);
@@ -118,6 +120,16 @@ const AddLead = () => {
 
   useEffect(() => {
     fetchInitialData();
+  }, []);
+
+  // Handle Android back button to navigate to Home
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      router.replace('/(drawer)/(tabs)/Home');
+      return true; // Prevent default back behavior
+    });
+
+    return () => backHandler.remove();
   }, []);
 
   useEffect(() => {

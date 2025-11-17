@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { Ionicons } from '@expo/vector-icons';
 import usePropertyNatureActions from '../hooks/usePropertyNatureActions';
@@ -8,15 +8,18 @@ import useRealEstatePropertyTypeActions from '../hooks/useRealEstatePropertyType
 import useSubPropertyTypes from '../hooks/useSubPropertyTypes';
 import useMeasurementUnits from '../hooks/useMeasurements';
 import useStructure from '../hooks/useStructure';
+import useSavePropertySummary from '../hooks/useSavePropertySummary';
 
-const PropertySummary = ({ onSave, initialData = {} }) => {
+const PropertySummary = ({ onSave, initialData = {}, projectId }) => {
   const { propertyNatures, loading: propertyNaturesLoading } = usePropertyNatureActions();
   const { propertyItems, loading: propertyItemsLoading } = usePropertyItemActions();
   const { propertyTypes, loading: propertyTypesLoading } = useRealEstatePropertyTypeActions();
   const { fetchPropertyTypeWithSubTypes, loading: subPropertyTypesLoading } = useSubPropertyTypes();
   const { units, loading: unitsLoading } = useMeasurementUnits();
   const { structures, loading: structuresLoading } = useStructure();
+  const savePropertySummary = useSavePropertySummary();
   
+  const [saving, setSaving] = useState(false);
   const [propertyNature, setPropertyNature] = useState(initialData.propertyNature || '');
   const [propertyType, setPropertyType] = useState(initialData.propertyType || '');
   const [subPropertyType, setSubPropertyType] = useState(initialData.subPropertyType || '');
@@ -125,7 +128,7 @@ const PropertySummary = ({ onSave, initialData = {} }) => {
     ...units.map(unit => ({
       label: unit.name,
       value: unit.id
-    }))
+    }))                                                                           
   ];
 
   const residentialPropertyOptions = [
@@ -233,28 +236,118 @@ const PropertySummary = ({ onSave, initialData = {} }) => {
     setPropertySummaryItems(newItems);
   };
 
-  const handleSave = () => {
-    const propertyData = {
-      propertyType,
-      subPropertyType,
-      propertyNature,
-      residentialProperty,
-      isGated,
-      propertyName,
-      blockTower,
-      totalFloors,
-      floorData,
-      commercialProperty,
-      commercialQuantity,
-      propertySummaryItems,
-    };
+  const handleSave = async () => {
+    console.log('=== SAVE PROPERTY SUMMARY STARTED ===');
+    console.log('Raw projectId:', projectId, 'Type:', typeof projectId);
+    console.log('Raw subPropertyType:', subPropertyType, 'Type:', typeof subPropertyType);
+    console.log('Raw propertySummaryItems:', JSON.stringify(propertySummaryItems, null, 2));
     
-    if (onSave) {
-      onSave(propertyData);
+    if (!projectId) {
+      Alert.alert('Error', 'Project ID is required');
+      return;
+    }
+
+    if (!subPropertyType) {
+      Alert.alert('Error', 'Please select a sub-property type');
+      return;
+    }
+
+    // Validate that at least one item has required fields
+    const hasValidItems = propertySummaryItems.some(item => {
+      const hasArea = item.area && item.area.trim() !== '';
+      const hasUnit = item.unit && item.unit !== '';
+      const hasQuantity = item.quantity && item.quantity.trim() !== '';
+      return hasArea && hasUnit && hasQuantity;
+    });
+
+    if (!hasValidItems) {
+      Alert.alert('Validation Error', 'Please fill in at least one complete property summary item with Area, Unit, and Quantity.');
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      // Build metaRows from propertySummaryItems - filter out incomplete items
+      const metaRows = propertySummaryItems
+        .filter(item => {
+          // Only include items with area, unit, and quantity
+          return item.area && item.area.trim() !== '' && 
+                 item.unit && item.unit !== '' && 
+                 item.quantity && item.quantity.trim() !== '';
+        })
+        .map(item => ({
+          area: parseFloat(item.area) || 0,
+          areaUnitId: parseInt(item.unit) || 0,
+          noOfItems: parseInt(item.quantity) || 1,
+          flatHouseStructureId: item.structure ? parseInt(item.structure) : null,
+          propertyItemId: item.propertyItem ? parseInt(item.propertyItem) : null,
+        }));
+
+      if (metaRows.length === 0) {
+        Alert.alert('Validation Error', 'No valid property summary items to save.');
+        return;
+      }
+
+      console.log('=== TRANSFORMED DATA ===');
+      console.log('Transformed metaRows:', JSON.stringify(metaRows, null, 2));
+
+      const summaryData = {
+        projectId: parseInt(projectId),
+        subPropertyTypeId: parseInt(subPropertyType),
+        metaRows: metaRows,
+      };
+
+      console.log('=== FINAL SUMMARY DATA ===');
+      console.log('Saving Property Summary with data:', JSON.stringify(summaryData, null, 2));
+
+      // Call the API
+      const response = await savePropertySummary(summaryData);
+      
+      console.log('Save successful:', response);
+
+      // Call the parent onSave callback if provided
+      if (onSave) {
+        const propertyData = {
+          propertyType,
+          subPropertyType,
+          propertyNature,
+          residentialProperty,
+          isGated,
+          propertyName,
+          blockTower,
+          totalFloors,
+          floorData,
+          commercialProperty,
+          commercialQuantity,
+          propertySummaryItems,
+        };
+        onSave(propertyData);
+      }
+    } catch (error) {
+      console.error('Error saving property summary:', error);
+      // Error alert is already shown by the hook
+    } finally {
+      setSaving(false);
     }
   };
 
-  const isFormValid = propertyType && subPropertyType;
+  // Enhanced form validation
+  const isFormValid = () => {
+    if (!propertyType || !subPropertyType) {
+      return false;
+    }
+    
+    // Check if at least one property summary item has the required fields filled
+    const hasValidItem = propertySummaryItems.some(item => {
+      const hasArea = item.area && item.area.trim() !== '';
+      const hasUnit = item.unit && item.unit !== '';
+      const hasQuantity = item.quantity && item.quantity.trim() !== '';
+      return hasArea && hasUnit && hasQuantity;
+    });
+    
+    return hasValidItem;
+  };
 
   // Helper function to determine which fields to show based on sub-property type
   const getFieldsToShow = () => {
@@ -264,7 +357,9 @@ const PropertySummary = ({ onSave, initialData = {} }) => {
     const normalizedName = subPropertyName.toLowerCase().trim();
     
     // Define field configurations for different sub-property types
-    if (normalizedName.includes('pent house') || normalizedName.includes('penthouse')) {
+    if (normalizedName.includes('apartment complex') || normalizedName.includes('apartment')) {
+      return { area: true, unit: true, structure: true, quantity: true, propertyItem: true };
+    } else if (normalizedName.includes('pent house') || normalizedName.includes('penthouse')) {
       return { area: true, unit: true, structure: true, quantity: true, propertyItem: false };
     } else if (normalizedName.includes('super sub property')) {
       return { area: true, unit: true, structure: false, quantity: true, propertyItem: false };
@@ -623,12 +718,12 @@ const PropertySummary = ({ onSave, initialData = {} }) => {
       {/* Save Button - Fixed at Bottom */}
       <View style={styles.bottomButtonContainer}>
         <TouchableOpacity 
-          style={[styles.saveButton, !isFormValid && styles.saveButtonDisabled]}
+          style={[styles.saveButton, (!isFormValid() || saving) && styles.saveButtonDisabled]}
           onPress={handleSave}
-          disabled={!isFormValid}
+          disabled={!isFormValid() || saving}
         >
-          <Text style={[styles.saveButtonText, !isFormValid && styles.saveButtonTextDisabled]}>
-            Save Property Summary
+          <Text style={[styles.saveButtonText, (!isFormValid() || saving) && styles.saveButtonTextDisabled]}>
+            {saving ? 'Saving...' : 'Save Property Summary'}
           </Text>
         </TouchableOpacity>
       </View>

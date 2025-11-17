@@ -14,88 +14,29 @@ import {
   TouchableWithoutFeedback,
   Switch,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import LottieView from "lottie-react-native";
 import { Feather, AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as DocumentPicker from 'expo-document-picker';
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
+import useFlatsByProject from "../hooks/useFlatsByProject";
+import useFurnishingStatusActions from "../hooks/useFurnishingStatusActions";
+import useFaceDirectionActions from "../hooks/useFaceDirectionActions";
+import useAmenityActions from "../hooks/useAmenityActions";
+import useFacilityActions from "../hooks/useFacilityActions";
+import useMeasurements from "../hooks/useMeasurements";
+import { getAllPlc } from "../services/api";
 
 const screenHeight = Dimensions.get("window").height;
-
-const dummyFlats = [
-  {
-    id: "1",
-    towerName: "Tower A",
-    flatNumber: "A-101",
-    floor: "1st Floor",
-    bhk: "2 BHK",
-    area: "1200 sq ft",
-    price: "₹45,00,000",
-    status: "Available",
-    isAvailable: true,
-    furnishing: "Semi-Furnished",
-    facing: "East",
-    balconies: 2,
-    bathrooms: 2,
-    parking: "Covered",
-  },
-  {
-    id: "2",
-    towerName: "Tower B",
-    flatNumber: "B-205",
-    floor: "2nd Floor",
-    bhk: "3 BHK",
-    area: "1650 sq ft",
-    price: "₹62,50,000",
-    status: "Sold",
-    isAvailable: false,
-    furnishing: "Fully-Furnished",
-    facing: "North",
-    balconies: 3,
-    bathrooms: 3,
-    parking: "Covered + Open",
-  },
-  {
-    id: "3",
-    towerName: "Tower C",
-    flatNumber: "C-310",
-    floor: "3rd Floor",
-    bhk: "1 BHK",
-    area: "850 sq ft",
-    price: "₹32,00,000",
-    status: "Available",
-    isAvailable: true,
-    furnishing: "Unfurnished",
-    facing: "South",
-    balconies: 1,
-    bathrooms: 1,
-    parking: "Open",
-  },
-  {
-    id: "4",
-    towerName: "Tower D",
-    flatNumber: "D-405",
-    floor: "4th Floor",
-    bhk: "4 BHK",
-    area: "2200 sq ft",
-    price: "₹85,00,000",
-    status: "Reserved",
-    isAvailable: false,
-    furnishing: "Semi-Furnished",
-    facing: "West",
-    balconies: 4,
-    bathrooms: 4,
-    parking: "Covered + Open",
-  },
-];
 
 const FlatDetailsPage = ({ propertyData, onBack }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStructure, setSelectedStructure] = useState("");
   const [selectedArea, setSelectedArea] = useState("");
+  
   const [structureDropdownVisible, setStructureDropdownVisible] = useState(false);
   const [areaDropdownVisible, setAreaDropdownVisible] = useState(false);
-  const [flats, setFlats] = useState([]);
   const [selectedFlat, setSelectedFlat] = useState(null);
   const [actionsModalVisible, setActionsModalVisible] = useState(false);
   const [viewModalVisible, setViewModalVisible] = useState(false);
@@ -104,6 +45,30 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
   const [fillDetailsModalVisible, setFillDetailsModalVisible] = useState(false);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [selectedLocationFlat, setSelectedLocationFlat] = useState(null);
+  const [imageUploadModalVisible, setImageUploadModalVisible] = useState(false);
+  const [imageLabel, setImageLabel] = useState("");
+  
+  // Use the custom hook to fetch flats
+  const { flats, loading, fetchFlats, saveFlatDetails, saveFlatPlcDetails, fetchFlatDetailsForPlc, saving, saveError } = useFlatsByProject(propertyData?.projectId);
+  
+  // Use the custom hook to fetch furnishing statuses
+  const { statuses: furnishingStatuses, loading: furnishingLoading } = useFurnishingStatusActions();
+  
+  // Use the custom hook to fetch face directions
+  const { faceDirections, loading: faceDirectionsLoading } = useFaceDirectionActions();
+  
+  // Use the custom hook to fetch amenities
+  const { amenities, loading: amenitiesLoading } = useAmenityActions();
+  
+  // Use the custom hook to fetch facilities
+  const { facilities, loading: facilitiesLoading } = useFacilityActions();
+  
+  // Use the custom hook to fetch measurement units
+  const { units: measurementUnits, loading: measurementUnitsLoading } = useMeasurements();
+  
+  // State for PLC data
+  const [plcData, setPlcData] = useState([]);
+  const [plcLoading, setPlcLoading] = useState(false);
   
   // Fill Details Form State
   const [formData, setFormData] = useState({
@@ -119,7 +84,6 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
     facilities: [],
     description: "",
     images: [],
-    videos: [],
     deleteExistingFiles: false,
     // Dropdown visibility states
     furnishingDropdownVisible: false,
@@ -151,33 +115,46 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
   const areaOptions = ["All Areas", "500-1000 sq ft", "1000-1500 sq ft", "1500-2000 sq ft", "2000+ sq ft"];
   
   // Fill Details Form Options
-  const furnishingOptions = ["Unfurnished", "Semi-Furnished", "Fully Furnished"];
-  const facingOptions = ["North", "South", "East", "West", "North-East", "North-West", "South-East", "South-West"];
-  const areaUnitOptions = ["sq ft", "sq m"];
-  const amenitiesOptions = [
-    "Swimming Pool", "Gym", "Club House", "Children's Play Area", "Jogging Track",
-    "Security", "Power Backup", "Lift", "Car Parking", "Visitor Parking",
-    "Garden", "Maintenance Staff", "Water Supply", "Intercom"
-  ];
-  const facilitiesOptions = [
-    "Hospital", "School", "Shopping Mall", "Bank", "ATM", "Restaurant",
-    "Public Transport", "Metro Station", "Airport", "Railway Station",
-    "Market", "Pharmacy", "Petrol Pump", "Temple"
-  ];
+  // Furnishing options now come from the useFurnishingStatusActions hook
+  const furnishingOptions = furnishingStatuses.map(status => status.name);
+  // Facing options now come from the useFaceDirectionActions hook
+  const facingOptions = faceDirections.map(direction => direction.name);
+  // Area unit options now come from the useMeasurements hook
+  const areaUnitOptions = measurementUnits.map(unit => unit.name);
+  // Amenities options now come from the useAmenityActions hook
+  const amenitiesOptions = amenities.map(amenity => amenity.name);
+  // Facilities options now come from the useFacilityActions hook
+  const facilitiesOptions = facilities.map(facility => facility.name);
   
-  // Location Modal Options
-  const placeOptions = [
-    "Near Metro Station", "Near Shopping Mall", "Near Hospital", "Near School",
-    "Near Park", "Near Market", "Main Road", "Highway Access", "Airport Nearby",
-    "Railway Station", "Bus Stop", "Commercial Area", "Residential Area"
-  ];
+  // Location Modal Options - PLC options now come from the getAllPlc API
+  const placeOptions = plcData.map(plc => plc.plcName || plc.name || plc.place);
   
   const rateUnitOptions = [
-    "₹/sq ft", "₹/sq m", "% appreciation", "% premium", "₹ lakh total", "₹ crore total"
+    { label: "Amount", value: false },
+    { label: "Percentage", value: true }
   ];
 
+  // Remove dummy data useEffect - now using API hook
+  // useEffect(() => {
+  //   setFlats(dummyFlats);
+  // }, []);
+
+  // Fetch PLC data on component mount
   useEffect(() => {
-    setFlats(dummyFlats);
+    const fetchPlcData = async () => {
+      setPlcLoading(true);
+      try {
+        const data = await getAllPlc();
+        setPlcData(data);
+      } catch (error) {
+        console.error("Error fetching PLC data:", error);
+        Alert.alert("Error", "Failed to fetch PLC data");
+      } finally {
+        setPlcLoading(false);
+      }
+    };
+
+    fetchPlcData();
   }, []);
 
   // Update select all state based on selected flats
@@ -228,10 +205,28 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
     setActionsModalVisible(true);
   };
 
-  const handleViewPress = (flat) => {
-    setSelectedFlat(flat);
+  const handleViewPress = async (flat) => {
     setViewModalCurrentIndex(0); // Reset to first tab
     setViewModalVisible(true);
+    
+    // Fetch detailed flat information
+    if (flat?.flatId) {
+      try {
+        const result = await fetchFlatDetailsForPlc(flat.flatId);
+        if (result.success) {
+          setSelectedFlat(result.data);
+        } else {
+          // If fetch fails, use the basic flat data
+          setSelectedFlat(flat);
+          Alert.alert('Warning', 'Could not load detailed information. Showing basic details.');
+        }
+      } catch (error) {
+        console.error('Error fetching flat details:', error);
+        setSelectedFlat(flat);
+      }
+    } else {
+      setSelectedFlat(flat);
+    }
   };
 
   const handleActionOptionPress = (option) => {
@@ -252,17 +247,16 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
           setFormData({
             furnishing: selectedFlat.furnishing || "",
             facing: selectedFlat.facing || "",
-            carpetArea: selectedFlat.area ? selectedFlat.area.replace(/[^\d]/g, '') : "",
+            carpetArea: selectedFlat.area ? selectedFlat.area.toString() : "",
             carpetAreaUnit: "sq ft",
             loadingPercentage: "",
             superArea: "",
             numberOfKitchens: "",
-            basicCost: selectedFlat.price ? selectedFlat.price.replace(/[^\d]/g, '') : "",
-            amenities: [],
-            facilities: [],
+            basicCost: "",
+            amenities: selectedFlat.amenities || [],
+            facilities: selectedFlat.facilities || [],
             description: "",
             images: [],
-            videos: [],
             deleteExistingFiles: false,
             // Reset all dropdown visibility states
             furnishingDropdownVisible: false,
@@ -375,19 +369,23 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
           <View style={styles.sectionContent}>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Carpet Area:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.area}</Text>
+              <Text style={styles.detailValue}>{selectedFlat.carpetAreaDisplay || selectedFlat.areaDisplay}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Loading %:</Text>
-              <Text style={styles.detailValue}>15%</Text>
+              <Text style={styles.detailValue}>{selectedFlat.loadingDisplay || "N/A"}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Super Area:</Text>
-              <Text style={styles.detailValue}>1380 sq ft</Text>
+              <Text style={styles.detailValue}>{selectedFlat.superAreaDisplay || "N/A"}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Basic Cost:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.price}</Text>
+              <Text style={styles.detailValue}>{selectedFlat.basicCostDisplay || "N/A"}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Total Cost:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.totalCostDisplay || "N/A"}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Facing:</Text>
@@ -395,12 +393,18 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Balconies:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.balconies}</Text>
+              <Text style={styles.detailValue}>{selectedFlat.balconies || "N/A"}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Bathrooms:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.bathrooms}</Text>
+              <Text style={styles.detailValue}>{selectedFlat.bathrooms || "N/A"}</Text>
             </View>
+            {selectedFlat.description && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Description:</Text>
+                <Text style={styles.detailValue}>{selectedFlat.description}</Text>
+              </View>
+            )}
           </View>
         )
       },
@@ -409,14 +413,18 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
         icon: "star-outline",
         content: (
           <View style={styles.sectionContent}>
-            <View style={styles.amenitiesGrid}>
-              {["Swimming Pool", "Gym", "Club House", "Children's Play Area", "Jogging Track", "Security", "Power Backup", "Lift"].map((amenity, index) => (
-                <View key={index} style={styles.amenityItem}>
-                  <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                  <Text style={styles.amenityText}>{amenity}</Text>
-                </View>
-              ))}
-            </View>
+            {selectedFlat.amenities && selectedFlat.amenities.length > 0 ? (
+              <View style={styles.amenitiesGrid}>
+                {selectedFlat.amenities.map((amenity, index) => (
+                  <View key={index} style={styles.amenityItem}>
+                    <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                    <Text style={styles.amenityText}>{amenity.amenityName || amenity.name || amenity}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noDataText}>No amenities available</Text>
+            )}
           </View>
         )
       },
@@ -425,14 +433,18 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
         icon: "location-outline",
         content: (
           <View style={styles.sectionContent}>
-            <View style={styles.amenitiesGrid}>
-              {["Hospital", "School", "Shopping Mall", "Bank", "ATM", "Restaurant", "Public Transport", "Metro Station"].map((facility, index) => (
-                <View key={index} style={styles.amenityItem}>
-                  <Ionicons name="location" size={16} color="#2196F3" />
-                  <Text style={styles.amenityText}>{facility}</Text>
-                </View>
-              ))}
-            </View>
+            {selectedFlat.facilities && selectedFlat.facilities.length > 0 ? (
+              <View style={styles.amenitiesGrid}>
+                {selectedFlat.facilities.map((facility, index) => (
+                  <View key={index} style={styles.amenityItem}>
+                    <Ionicons name="location" size={16} color="#2196F3" />
+                    <Text style={styles.amenityText}>{facility.facilityName || facility.name || facility}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noDataText}>No facilities available</Text>
+            )}
           </View>
         )
       },
@@ -442,17 +454,36 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
         content: (
           <View style={styles.sectionContent}>
             <View style={styles.mediaSection}>
-              <View style={styles.mediaRow}>
-                <Ionicons name="image-outline" size={24} color="#FF9800" />
-                <Text style={styles.mediaText}>Images: 5 files</Text>
-              </View>
-              <View style={styles.mediaRow}>
-                <Ionicons name="videocam-outline" size={24} color="#9C27B0" />
-                <Text style={styles.mediaText}>Videos: 2 files</Text>
-              </View>
-              <TouchableOpacity style={styles.viewMediaBtn}>
-                <Text style={styles.viewMediaText}>View All Media</Text>
-              </TouchableOpacity>
+              {selectedFlat.propertyMediaDTOs && selectedFlat.propertyMediaDTOs.length > 0 ? (
+                <>
+                  <View style={styles.mediaRow}>
+                    <Ionicons name="images-outline" size={24} color="#FF9800" />
+                    <Text style={styles.mediaText}>
+                      Total Images: {selectedFlat.propertyMediaDTOs.filter(m => m.filePath).length}
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.imageListContainer}>
+                    {selectedFlat.propertyMediaDTOs.map((media, index) => (
+                      media.filePath && (
+                        <View key={index} style={styles.imageItemRow}>
+                          <Ionicons name="image" size={20} color="#5aaf57" />
+                          <View style={styles.imageItemInfo}>
+                            <Text style={styles.imageItemLabel}>
+                              {media.mediaLabel || `Image ${index + 1}`}
+                            </Text>
+                            <Text style={styles.imageItemPath} numberOfLines={1}>
+                              {media.filePath}
+                            </Text>
+                          </View>
+                        </View>
+                      )
+                    ))}
+                  </View>
+                </>
+              ) : (
+                <Text style={styles.noDataText}>No images available</Text>
+              )}
             </View>
           </View>
         )
@@ -475,7 +506,7 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
                 {/* Header */}
                 <View style={styles.viewModalHeader}>
                   <Text style={styles.modalTitle}>{selectedFlat.flatNumber}</Text>
-                  <Text style={styles.modalSubtitle}>{selectedFlat.bhk} - {selectedFlat.area}</Text>
+                  <Text style={styles.modalSubtitle}>{selectedFlat.bhk} - {selectedFlat.areaDisplay}</Text>
                 </View>
 
                 {/* Tab Navigation */}
@@ -586,7 +617,7 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
         {/* Structure and Area Row */}
         <View style={styles.structureAreaRow}>
           <Text style={styles.structureText}>{item.bhk}</Text>
-          <Text style={styles.areaText}>{item.area}</Text>
+          <Text style={styles.areaText}>{item.areaDisplay}</Text>
         </View>
 
         {/* Availability Status */}
@@ -617,17 +648,16 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
               setFormData({
                 furnishing: item.furnishing || "",
                 facing: item.facing || "",
-                carpetArea: item.area ? item.area.replace(/[^\d]/g, '') : "",
+                carpetArea: item.area ? item.area.toString() : "",
                 carpetAreaUnit: "sq ft",
                 loadingPercentage: "",
                 superArea: "",
                 numberOfKitchens: "",
-                basicCost: item.price ? item.price.replace(/[^\d]/g, '') : "",
-                amenities: [],
-                facilities: [],
+                basicCost: "",
+                amenities: item.amenities || [],
+                facilities: item.facilities || [],
                 description: "",
                 images: [],
-                videos: [],
                 deleteExistingFiles: false,
                 // Reset all dropdown visibility states
                 furnishingDropdownVisible: false,
@@ -679,7 +709,7 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
     // Filter by area
     let matchesArea = !selectedArea || selectedArea === "All Areas";
     if (selectedArea && selectedArea !== "All Areas") {
-      const areaValue = parseInt(flat.area.replace(/[^\d]/g, ''));
+      const areaValue = flat.area || 0; // Use numeric area directly
       switch (selectedArea) {
         case "500-1000 sq ft":
           matchesArea = areaValue >= 500 && areaValue <= 1000;
@@ -722,12 +752,52 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
       });
       
       if (!result.canceled) {
+        // Add label and convert to base64 for each image
+        const imagesWithLabels = await Promise.all(
+          result.assets.map(async (asset) => {
+            // Read file as base64
+            let base64 = "";
+            try {
+              // For React Native/Expo, we'll store the URI and convert later if needed
+              // Or you can use FileReader or expo-file-system here
+              const response = await fetch(asset.uri);
+              const blob = await response.blob();
+              const reader = new FileReader();
+              
+              base64 = await new Promise((resolve, reject) => {
+                reader.onloadend = () => {
+                  const base64String = reader.result.split(',')[1]; // Remove data:image/xxx;base64, prefix
+                  resolve(base64String);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+            } catch (error) {
+              console.error("Error converting to base64:", error);
+              // If conversion fails, we'll send empty string
+              base64 = "";
+            }
+
+            return {
+              ...asset,
+              label: imageLabel || asset.name,
+              base64: base64,
+              contentType: asset.mimeType || 'image/jpeg'
+            };
+          })
+        );
+        
         setFormData(prev => ({
           ...prev,
-          [type]: [...prev[type], ...result.assets]
+          [type]: [...prev[type], ...imagesWithLabels]
         }));
+        
+        // Reset and close modal
+        setImageLabel("");
+        setImageUploadModalVisible(false);
       }
     } catch (error) {
+      console.error('Error picking document:', error);
       Alert.alert('Error', 'Failed to pick files');
     }
   };
@@ -739,36 +809,107 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
     }));
   };
 
-  const handleSaveDetails = () => {
-    // Here you would typically save the form data
-    console.log('Saving details for flats:', selectedFlats);
-    console.log('Form data:', formData);
-    Alert.alert('Success', 'Details saved successfully!');
-    setFillDetailsModalVisible(false);
-    
-    // Reset form
-    setFormData({
-      furnishing: "",
-      facing: "",
-      carpetArea: "",
-      carpetAreaUnit: "",
-      loadingPercentage: "",
-      superArea: "",
-      numberOfKitchens: "",
-      basicCost: "",
-      amenities: [],
-      facilities: [],
-      description: "",
-      images: [],
-      videos: [],
-      deleteExistingFiles: false,
-      // Reset all dropdown visibility states
-      furnishingDropdownVisible: false,
-      facingDropdownVisible: false,
-      unitDropdownVisible: false,
-      amenitiesDropdownVisible: false,
-      facilitiesDropdownVisible: false,
-    });
+  const handleSaveDetails = async () => {
+    try {
+      // Validate required fields
+      if (!formData.furnishing) {
+        Alert.alert('Validation Error', 'Please select furnishing status');
+        return;
+      }
+      if (!formData.facing) {
+        Alert.alert('Validation Error', 'Please select facing direction');
+        return;
+      }
+      if (!formData.carpetArea) {
+        Alert.alert('Validation Error', 'Please enter carpet area');
+        return;
+      }
+      if (!formData.carpetAreaUnit) {
+        Alert.alert('Validation Error', 'Please select carpet area unit');
+        return;
+      }
+
+      // Find IDs from the selected values
+      const furnishingStatusId = furnishingStatuses.find(s => s.name === formData.furnishing)?.id;
+      const faceDirectionId = faceDirections.find(d => d.name === formData.facing)?.id;
+      const carpetAreaUnitId = measurementUnits.find(u => u.name === formData.carpetAreaUnit)?.id;
+      
+      // Get amenity IDs from selected amenities
+      const amenitiesIds = formData.amenities
+        .map(amenityName => amenities.find(a => a.name === amenityName)?.id)
+        .filter(id => id !== undefined);
+      
+      // Get facility IDs from selected facilities
+      const facilitiesIds = formData.facilities
+        .map(facilityName => facilities.find(f => f.name === facilityName)?.id)
+        .filter(id => id !== undefined);
+
+      // Prepare property media DTOs from images
+      const propertyMediaDTOs = formData.images.map(image => ({
+        mediaLabel: image.label || image.name || "Image",
+        mediaBase64: image.base64 || "",
+        contentType: image.mimeType || image.contentType || "image/jpeg"
+      }));
+
+      // Prepare the API payload
+      const payload = {
+        furnishingStatusId: furnishingStatusId,
+        faceDirectionId: faceDirectionId,
+        carpetArea: parseFloat(formData.carpetArea),
+        carpetAreaUnitId: carpetAreaUnitId,
+        loadingPercentage: formData.loadingPercentage ? parseFloat(formData.loadingPercentage) : 0,
+        totalNoOfKitchen: formData.numberOfKitchens ? parseInt(formData.numberOfKitchens) : 1,
+        basicAmount: formData.basicCost ? parseFloat(formData.basicCost) : 0,
+        amenitiesIds: amenitiesIds,
+        facilitiesIds: facilitiesIds,
+        description: formData.description || "",
+        flatIds: selectedFlats.map(id => parseInt(id)),
+        propertyMediaDTOs: propertyMediaDTOs,
+        shouldDeletePreviousMedia: formData.deleteExistingFiles
+      };
+
+      console.log('Saving details for flats:', selectedFlats);
+      console.log('Payload:', payload);
+
+      // Call the API
+      const result = await saveFlatDetails(payload);
+
+      if (result.success) {
+        Alert.alert('Success', 'Flat details saved successfully!');
+        setFillDetailsModalVisible(false);
+        
+        // Reset form
+        setFormData({
+          furnishing: "",
+          facing: "",
+          carpetArea: "",
+          carpetAreaUnit: "",
+          loadingPercentage: "",
+          superArea: "",
+          numberOfKitchens: "",
+          basicCost: "",
+          amenities: [],
+          facilities: [],
+          description: "",
+          images: [],
+          deleteExistingFiles: false,
+          furnishingDropdownVisible: false,
+          facingDropdownVisible: false,
+          unitDropdownVisible: false,
+          amenitiesDropdownVisible: false,
+          facilitiesDropdownVisible: false,
+        });
+        
+        // Clear selected flats
+        setSelectedFlats([]);
+        setSelectAll(false);
+      } else {
+        Alert.alert('Error', result.message || 'Failed to save flat details');
+      }
+    } catch (error) {
+      console.error('Error in handleSaveDetails:', error);
+      Alert.alert('Error', 'An unexpected error occurred while saving');
+    }
   };
 
   // Location Modal Handlers
@@ -810,71 +951,138 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
     }
   };
 
-  const handleSaveLocation = () => {
-    // Here you would typically save the location data
-    console.log('Saving location for flat:', selectedLocationFlat?.flatNumber);
-    console.log('Location data:', locationFormData);
-    Alert.alert('Success', 'Location details saved successfully!');
-    setLocationModalVisible(false);
-    
-    // Reset location form
-    setLocationFormData({
-      places: [
-        {
-          id: 1,
-          place: "",
-          rateValue: "",
-          rateUnit: "",
-          placeDropdownVisible: false,
-          rateUnitDropdownVisible: false,
+  const handleSaveLocation = async () => {
+    try {
+      // Validate required fields
+      const hasEmptyFields = locationFormData.places.some(
+        place => !place.place || !place.rateValue || !place.rateUnit
+      );
+
+      if (hasEmptyFields) {
+        Alert.alert('Validation Error', 'Please fill all PLC fields');
+        return;
+      }
+
+      if (!selectedLocationFlat?.flatId) {
+        Alert.alert('Error', 'No flat selected');
+        return;
+      }
+
+      // Find the selected PLC IDs and prepare the plcDetails array
+      const plcDetails = locationFormData.places.map(place => {
+        // Find the PLC ID from the selected place name
+        const selectedPlc = plcData.find(plc => 
+          (plc.plcName || plc.name || plc.place) === place.place
+        );
+
+        if (!selectedPlc) {
+          throw new Error(`PLC not found for: ${place.place}`);
         }
-      ],
-    });
+
+        // Determine if the rate unit is "Percentage" (true) or "Amount" (false)
+        const isPercentage = place.rateUnit === "Percentage";
+
+        return {
+          plcId: selectedPlc.id,
+          rate: parseFloat(place.rateValue),
+          isPercentage: isPercentage
+        };
+      });
+
+      // Prepare the API payload
+      const payload = {
+        id: selectedLocationFlat.flatId,
+        plcDetails: plcDetails
+      };
+
+      console.log('Saving PLC details for flat:', selectedLocationFlat.flatNumber);
+      console.log('Payload:', payload);
+
+      // Call the API
+      const result = await saveFlatPlcDetails(payload);
+
+      if (result.success) {
+        Alert.alert('Success', 'PLC details saved successfully!');
+        setLocationModalVisible(false);
+        
+        // Reset location form
+        setLocationFormData({
+          places: [
+            {
+              id: 1,
+              place: "",
+              rateValue: "",
+              rateUnit: "",
+              placeDropdownVisible: false,
+              rateUnitDropdownVisible: false,
+            }
+          ],
+        });
+      } else {
+        Alert.alert('Error', result.message || 'Failed to save PLC details');
+      }
+    } catch (error) {
+      console.error('Error in handleSaveLocation:', error);
+      Alert.alert('Error', error.message || 'An unexpected error occurred while saving PLC details');
+    }
   };
 
-  const renderDropdownModal = (visible, setVisible, options, selectedValue, onSelect, title) => (
-    <Modal
-      animationType="fade"
-      transparent={true}
-      visible={visible}
-      onRequestClose={() => setVisible(false)}
-    >
-      <TouchableWithoutFeedback onPress={() => setVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <TouchableWithoutFeedback onPress={() => {}}>
-            <View style={styles.dropdownModal}>
-              <Text style={styles.dropdownModalTitle}>{title}</Text>
-              <ScrollView style={styles.dropdownList}>
-                {options.map((option, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.dropdownOption,
-                      selectedValue === option && styles.selectedOption
-                    ]}
-                    onPress={() => {
-                      onSelect(option);
-                      setVisible(false);
-                    }}
-                  >
-                    <Text style={[
-                      styles.dropdownOptionText,
-                      selectedValue === option && styles.selectedOptionText
-                    ]}>
-                      {option}
-                    </Text>
-                    {selectedValue === option && (
-                      <Ionicons name="checkmark" size={20} color="#5aaf57" />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
-    </Modal>
-  );
+  const renderDropdownModal = (visible, setVisible, options, selectedValue, onSelect, title) => {
+    // Check if options are objects with label/value or simple strings
+    const isObjectOption = options.length > 0 && typeof options[0] === 'object' && options[0].label;
+    
+    return (
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={visible}
+        onRequestClose={() => setVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.dropdownModal}>
+                <Text style={styles.dropdownModalTitle}>{title}</Text>
+                <ScrollView style={styles.dropdownList}>
+                  {options.map((option, index) => {
+                    const displayText = isObjectOption ? option.label : option;
+                    const optionValue = isObjectOption ? option.value : option;
+                    const isSelected = isObjectOption 
+                      ? selectedValue === option.value || selectedValue === option.label
+                      : selectedValue === option;
+                    
+                    return (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.dropdownOption,
+                          isSelected && styles.selectedOption
+                        ]}
+                        onPress={() => {
+                          onSelect(isObjectOption ? option.label : option);
+                          setVisible(false);
+                        }}
+                      >
+                        <Text style={[
+                          styles.dropdownOptionText,
+                          isSelected && styles.selectedOptionText
+                        ]}>
+                          {displayText}
+                        </Text>
+                        {isSelected && (
+                          <Ionicons name="checkmark" size={20} color="#5aaf57" />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    );
+  };
 
   const renderMultiSelectModal = (visible, setVisible, options, selectedValues, onToggle, title) => (
     <Modal
@@ -934,10 +1142,25 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
         </View>
       )}
       
-      
-      
-      {/* Filter Section */}
-      <View style={styles.filtersContainer}>
+      {/* Loading State */}
+      {(loading || furnishingLoading) && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#5aaf57" />
+          <Text style={styles.loadingText}>
+            {loading && furnishingLoading 
+              ? "Loading data..." 
+              : loading 
+              ? "Loading flats..." 
+              : "Loading furnishing options..."}
+          </Text>
+        </View>
+      )}
+
+      {/* Show content when not loading */}
+      {!loading && !furnishingLoading && (
+        <>
+          {/* Filter Section */}
+          <View style={styles.filtersContainer}>
         {/* Structure Dropdown */}
         <View style={styles.dropdownContainer}>
           <TouchableOpacity
@@ -1053,17 +1276,16 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
                 setFormData({
                   furnishing: selectedFlatData.furnishing || "",
                   facing: selectedFlatData.facing || "",
-                  carpetArea: selectedFlatData.area ? selectedFlatData.area.replace(/[^\d]/g, '') : "",
+                  carpetArea: selectedFlatData.area ? selectedFlatData.area.toString() : "",
                   carpetAreaUnit: "sq ft",
                   loadingPercentage: "",
                   superArea: "",
                   numberOfKitchens: "",
-                  basicCost: selectedFlatData.price ? selectedFlatData.price.replace(/[^\d]/g, '') : "",
-                  amenities: [],
-                  facilities: [],
+                  basicCost: "",
+                  amenities: selectedFlatData.amenities || [],
+                  facilities: selectedFlatData.facilities || [],
                   description: "",
                   images: [],
-                  videos: [],
                   deleteExistingFiles: false,
                   // Reset all dropdown visibility states
                   furnishingDropdownVisible: false,
@@ -1088,7 +1310,6 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
                 facilities: [],
                 description: "",
                 images: [],
-                videos: [],
                 deleteExistingFiles: false,
                 // Reset all dropdown visibility states
                 furnishingDropdownVisible: false,
@@ -1311,56 +1532,8 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
                     {/* File Uploads */}
                     <Text style={styles.subsectionTitle}>Media</Text>
                     
-                    <View style={styles.formRow}>
-                      <Text style={styles.formLabel}>Images</Text>
-                      <TouchableOpacity
-                        style={styles.uploadButton}
-                        onPress={() => pickDocument('images')}
-                      >
-                        <Ionicons name="image-outline" size={20} color="#5aaf57" />
-                        <Text style={styles.uploadButtonText}>Upload Images</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    {formData.images.length > 0 && (
-                      <View style={styles.filesList}>
-                        {formData.images.map((file, index) => (
-                          <View key={index} style={styles.fileItem}>
-                            <Text style={styles.fileName} numberOfLines={1}>{file.name}</Text>
-                            <TouchableOpacity onPress={() => removeFile('images', index)}>
-                              <Ionicons name="close-circle" size={20} color="#ff4444" />
-                            </TouchableOpacity>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-
-                    <View style={styles.formRow}>
-                      <Text style={styles.formLabel}>Videos</Text>
-                      <TouchableOpacity
-                        style={styles.uploadButton}
-                        onPress={() => pickDocument('videos')}
-                      >
-                        <Ionicons name="videocam-outline" size={20} color="#5aaf57" />
-                        <Text style={styles.uploadButtonText}>Upload Videos</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    {formData.videos.length > 0 && (
-                      <View style={styles.filesList}>
-                        {formData.videos.map((file, index) => (
-                          <View key={index} style={styles.fileItem}>
-                            <Text style={styles.fileName} numberOfLines={1}>{file.name}</Text>
-                            <TouchableOpacity onPress={() => removeFile('videos', index)}>
-                              <Ionicons name="close-circle" size={20} color="#ff4444" />
-                            </TouchableOpacity>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-
                     {/* Delete Existing Files Toggle */}
-                    <View style={styles.formRow}>
+                    <View style={styles.formRowInline}>
                       <Text style={styles.formLabel}>Delete Existing Files</Text>
                       <Switch
                         value={formData.deleteExistingFiles}
@@ -1369,13 +1542,55 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
                         thumbColor={formData.deleteExistingFiles ? "#fff" : "#f4f3f4"}
                       />
                     </View>
+
+                    <View style={styles.formRow}>
+                      <Text style={styles.formLabel}>Images</Text>
+                      <TouchableOpacity
+                        style={styles.uploadButton}
+                        onPress={() => setImageUploadModalVisible(true)}
+                      >
+                        <Ionicons name="image-outline" size={20} color="#5aaf57" />
+                        <Text style={styles.uploadButtonText}>Upload Images</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {formData.images.length > 0 && (
+                      <View style={styles.filesList}>
+                        <Text style={styles.filesListLabel}>Uploaded Images:</Text>
+                        {formData.images.map((file, index) => (
+                          <View key={index} style={styles.fileItem}>
+                            <View style={styles.fileInfo}>
+                              <Ionicons name="image" size={16} color="#5aaf57" />
+                              <View style={styles.fileNameContainer}>
+                                <Text style={styles.fileNameLabel}>Image Label:</Text>
+                                <Text style={styles.fileName} numberOfLines={1}>{file.label || file.name}</Text>
+                              </View>
+                            </View>
+                            <TouchableOpacity onPress={() => removeFile('images', index)}>
+                              <Ionicons name="close-circle" size={20} color="#ff4444" />
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    )}
                   </View>
                 </ScrollView>
 
                 {/* Save Button */}
                 <View style={styles.fillDetailsFooter}>
-                  <TouchableOpacity style={styles.saveButton} onPress={handleSaveDetails}>
-                    <Text style={styles.saveButtonText}>Save Details</Text>
+                  <TouchableOpacity 
+                    style={[styles.saveButton, saving && { opacity: 0.7 }]} 
+                    onPress={handleSaveDetails}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <>
+                        <ActivityIndicator size="small" color="#fff" />
+                        <Text style={[styles.saveButtonText, { marginLeft: 10 }]}>Saving...</Text>
+                      </>
+                    ) : (
+                      <Text style={styles.saveButtonText}>Save Details</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
 
@@ -1531,9 +1746,22 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
 
                 {/* Save Button */}
                 <View style={styles.locationModalFooter}>
-                  <TouchableOpacity style={styles.locationSaveButton} onPress={handleSaveLocation}>
-                    <Ionicons name="save-outline" size={20} color="#fff" />
-                    <Text style={styles.locationSaveButtonText}>Save Plc</Text>
+                  <TouchableOpacity 
+                    style={[styles.locationSaveButton, saving && { opacity: 0.7 }]} 
+                    onPress={handleSaveLocation}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <>
+                        <ActivityIndicator size="small" color="#fff" />
+                        <Text style={[styles.locationSaveButtonText, { marginLeft: 10 }]}>Saving...</Text>
+                      </>
+                    ) : (
+                      <>
+                        <Ionicons name="save-outline" size={20} color="#fff" />
+                        <Text style={styles.locationSaveButtonText}>Save Plc</Text>
+                      </>
+                    )}
                   </TouchableOpacity>
                 </View>
 
@@ -1564,6 +1792,69 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* Image Upload Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={imageUploadModalVisible}
+        onRequestClose={() => {
+          setImageUploadModalVisible(false);
+          setImageLabel("");
+        }}
+      >
+        <TouchableWithoutFeedback onPress={() => {
+          setImageUploadModalVisible(false);
+          setImageLabel("");
+        }}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.imageUploadModal}>
+                <View style={styles.modalHandle} />
+                
+                {/* Modal Header */}
+                <View style={styles.imageUploadModalHeader}>
+                  <Text style={styles.imageUploadModalTitle}>Upload Image</Text>
+                  <TouchableOpacity onPress={() => {
+                    setImageUploadModalVisible(false);
+                    setImageLabel("");
+                  }}>
+                    <Ionicons name="close" size={24} color="#666" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Modal Content */}
+                <View style={styles.imageUploadModalContent}>
+                  <View style={styles.imageUploadFormRow}>
+                    <Text style={styles.imageUploadFormLabel}>Image Label</Text>
+                    <TextInput
+                      style={styles.imageUploadFormInput}
+                      value={imageLabel}
+                      onChangeText={setImageLabel}
+                      placeholder="Enter image label (optional)"
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.imageUploadButton}
+                    onPress={() => pickDocument('images')}
+                  >
+                    <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
+                    <Text style={styles.imageUploadButtonText}>Choose & Upload Images</Text>
+                  </TouchableOpacity>
+
+                  <Text style={styles.imageUploadNote}>
+                    Note: If no label is provided, the image filename will be used.
+                  </Text>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+        </>
+      )}
     </SafeAreaView>
   );
 };
@@ -2108,21 +2399,39 @@ const styles = StyleSheet.create({
   },
   mediaText: {
     fontSize: 14,
-    fontFamily: "PlusR",
+    fontFamily: "PlusSB",
     color: "#333",
     marginLeft: 12,
   },
-  viewMediaBtn: {
-    backgroundColor: "#5aaf57",
-    paddingHorizontal: 25,
-    paddingVertical: 12,
-    borderRadius: 20,
-    marginTop: 10,
+  imageListContainer: {
+    width: "100%",
+    marginTop: 15,
   },
-  viewMediaText: {
+  imageItemRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 10,
+    marginBottom: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: "#5aaf57",
+  },
+  imageItemInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  imageItemLabel: {
     fontSize: 14,
     fontFamily: "PlusSB",
-    color: "#fff",
+    color: "#333",
+    marginBottom: 4,
+  },
+  imageItemPath: {
+    fontSize: 12,
+    fontFamily: "PlusR",
+    color: "#666",
   },
   paginationContainer: {
     flexDirection: "row",
@@ -2198,6 +2507,13 @@ const styles = StyleSheet.create({
   },
   formRow: {
     marginBottom: 15,
+  },
+  formRowInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 15,
+    paddingVertical: 8,
   },
   formLabel: {
     fontSize: 14,
@@ -2299,21 +2615,41 @@ const styles = StyleSheet.create({
   filesList: {
     marginTop: 10,
   },
+  filesListLabel: {
+    fontSize: 14,
+    fontFamily: "PlusSB",
+    color: "#333",
+    marginBottom: 8,
+  },
   fileItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "#f5f5f5",
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 6,
-    marginBottom: 6,
+    marginBottom: 8,
+  },
+  fileInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    gap: 8,
+  },
+  fileNameContainer: {
+    flex: 1,
+  },
+  fileNameLabel: {
+    fontSize: 11,
+    fontFamily: "PlusSB",
+    color: "#999",
+    marginBottom: 2,
   },
   fileName: {
-    flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "PlusR",
-    color: "#666",
+    color: "#333",
   },
   fillDetailsFooter: {
     paddingHorizontal: 20,
@@ -2322,10 +2658,12 @@ const styles = StyleSheet.create({
     borderTopColor: "#f0f0f0",
   },
   saveButton: {
+    flexDirection: "row",
     backgroundColor: "#5aaf57",
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: "center",
+    justifyContent: "center",
   },
   saveButtonText: {
     fontSize: 16,
@@ -2548,6 +2886,94 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "PlusSB",
     color: "#5aaf57",
+  },
+  // Loading State Styles
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 15,
+    fontSize: 16,
+    color: "#666",
+    fontFamily: "PlusR",
+  },
+  // Image Upload Modal Styles
+  imageUploadModal: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    maxHeight: "40%",
+    width: "100%",
+    position: "absolute",
+    bottom: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  imageUploadModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  imageUploadModalTitle: {
+    fontSize: 18,
+    fontFamily: "PlusSB",
+    color: "#333",
+  },
+  imageUploadModalContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  imageUploadFormRow: {
+    marginBottom: 20,
+  },
+  imageUploadFormLabel: {
+    fontSize: 14,
+    fontFamily: "PlusSB",
+    color: "#333",
+    marginBottom: 8,
+  },
+  imageUploadFormInput: {
+    backgroundColor: "#f8f9fa",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    fontSize: 14,
+    fontFamily: "PlusR",
+    color: "#333",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  imageUploadButton: {
+    backgroundColor: "#5aaf57",
+    borderRadius: 12,
+    paddingVertical: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginBottom: 15,
+  },
+  imageUploadButtonText: {
+    fontSize: 16,
+    fontFamily: "PlusSB",
+    color: "#fff",
+  },
+  imageUploadNote: {
+    fontSize: 12,
+    fontFamily: "PlusR",
+    color: "#999",
+    textAlign: "center",
+    fontStyle: "italic",
   },
 });
 
