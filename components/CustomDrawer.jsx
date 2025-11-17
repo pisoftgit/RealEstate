@@ -52,7 +52,7 @@ const CustomDrawer = ({ navigation }) => {
 
   const handleItemClick = (module) => {
     setClickedItem(module.name);
-    router.push(module.path);
+    router.replace(module.path);
     navigation.closeDrawer(); // Close the drawer after navigation
   };
 

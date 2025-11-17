@@ -15,7 +15,7 @@ const COLORS = {
   primary: "#004d40", 
   primaryLight: "#218373ff",
   secondary: "#198170ff",
-  background: "#e4ffe8ff", 
+  background: "#fff", 
   card: "#f4fcf4",
   input: "#f0f8f0",
   border: "#c8e6c9",
