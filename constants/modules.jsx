@@ -63,6 +63,7 @@ export const defaultModules = [
             name: "LocationMaster",
             path: "/(drawer)/Adminstrative/General/LocationMaster",
             title: "Location Master",
+            icon: Brief,
             children: [
               {
                 name: "Country",
@@ -83,6 +84,66 @@ export const defaultModules = [
           },
         ],
       },
+      {
+    name: "HRAdministrative",
+    path: "/(drawer)/Adminstrative/HR",
+    title: "HR",
+    icon: Brief,
+    children: [
+      {
+        name: "GeneralSetup",
+        path: "/(drawer)/Adminstrative/HR/GeneralSetup",
+        title: "General Setup",
+        icon: Brief,
+        children: [
+          {
+            name: "Branch",
+            path: "/(drawer)/Adminstrative/HR/GeneralSetup/Branch",
+            title: "Branch",
+          },
+           {
+            name: "Department",
+            path: "/(drawer)/Adminstrative/HR/GeneralSetup/Department",
+            title: "Department",
+          },
+          {
+            name: "Designation",
+            path: "/(drawer)/Adminstrative/HR/GeneralSetup/Designation",
+            title: "Designation",
+          },
+          {
+            name: "EmployeeType",
+            path: "/(drawer)/Adminstrative/HR/GeneralSetup/EmployeeType",
+            title: "Employee Type",
+          },
+          {
+            name: "Document",
+            path: "/(drawer)/Adminstrative/HR/GeneralSetup/Document",
+            title: "Document",
+          },
+        ],
+      },
+    ],
+  },
+       {
+    name: "CRMadministrative",
+    path: "/(drawer)/Adminstrative/CRM",
+    title: "CRM",
+
+    icon: Brief,
+    children: [
+      {
+        name: "DocumentName",
+        path: "/(drawer)/Adminstrative/CRM/DocumentName",
+        title: "Document Name",
+      },
+      {
+        name: "LeadGeneration",
+        path: "/(drawer)/Adminstrative/CRM/LeadGeneration",
+        title: "Lead Generation",
+      },
+      ]
+    },
       {
         name: "Property",
         path: "/(drawer)/Administrative/Property",
