@@ -49,7 +49,7 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
   const [imageLabel, setImageLabel] = useState("");
   
   // Use the custom hook to fetch house/villas
-  const { houseVillas, loading, fetchHouseVillas, saveHouseVillaDetails, saveHouseVillaPlcDetails, fetchHouseVillaDetailsForPlc, deleteHouseVilla, saving, saveError } = useHouseVillasByProject(propertyData?.projectId);
+  const { houseVillas, loading, fetchHouseVillas, saveHouseVillaDetails, updateHouseVillaDetails, saveHouseVillaPlcDetails, fetchHouseVillaDetailsForPlc, deleteHouseVilla, saving, saveError } = useHouseVillasByProject(propertyData?.projectId);
   
   // Use the custom hook to fetch furnishing statuses
   const { statuses: furnishingStatuses, loading: furnishingLoading } = useFurnishingStatusActions();
@@ -244,18 +244,18 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
           setSelectedFlats([selectedFlat.id]);
           // Pre-fill form with current flat's data
           setFormData({
-            furnishing: selectedFlat.furnishing || "",
-            facing: selectedFlat.facing || "",
-            carpetArea: selectedFlat.area ? selectedFlat.area.replace(/[^\d]/g, '') : "",
-            carpetAreaUnit: "sq ft",
-            loadingPercentage: "",
+            furnishing: selectedFlat.furnishing || selectedFlat.furnishingStatus || "",
+            facing: selectedFlat.facing || selectedFlat.faceDirection || "",
+            carpetArea: selectedFlat.carpetArea ? String(selectedFlat.carpetArea) : (selectedFlat.area ? String(selectedFlat.area).replace(/[^\d.]/g, '') : ""),
+            carpetAreaUnit: selectedFlat.areaUnit || "sq ft",
+            loadingPercentage: selectedFlat.loadingPercentage ? String(selectedFlat.loadingPercentage) : "",
             superArea: "",
-            numberOfKitchens: "",
-            numberOfFloors: "",
-            basicCost: selectedFlat.price ? selectedFlat.price.replace(/[^\d]/g, '') : "",
+            numberOfKitchens: selectedFlat.totalNoOfKitchen ? String(selectedFlat.totalNoOfKitchen) : "",
+            numberOfFloors: selectedFlat.totalNoOfFloors ? String(selectedFlat.totalNoOfFloors) : "",
+            basicCost: selectedFlat.basicAmount ? String(selectedFlat.basicAmount) : (selectedFlat.price ? String(selectedFlat.price).replace(/[^\d.]/g, '') : ""),
             amenities: [],
             facilities: [],
-            description: "",
+            description: selectedFlat.description || "",
             images: [],
             videos: [],
             deleteExistingFiles: false,
@@ -630,37 +630,94 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
         <View style={styles.actionSection}>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => {
+            onPress={async () => {
               // Close all dropdowns first
               setStructureDropdownVisible(false);
               setAreaDropdownVisible(false);
               
               // Select the current flat and open Fill Details modal
               setSelectedFlats([item.id]);
-              // Pre-fill form with current flat's data
-              setFormData({
-                furnishing: item.furnishing || "",
-                facing: item.facing || "",
-                carpetArea: item.area ? item.area.replace(/[^\d]/g, '') : "",
-                carpetAreaUnit: "sq ft",
-                loadingPercentage: "",
-                superArea: "",
-                numberOfKitchens: "",
-                numberOfFloors: "",
-                basicCost: item.price ? item.price.replace(/[^\d]/g, '') : "",
-                amenities: [],
-                facilities: [],
-                description: "",
-                images: [],
-                videos: [],
-                deleteExistingFiles: false,
-                // Reset all dropdown visibility states
-                furnishingDropdownVisible: false,
-                facingDropdownVisible: false,
-                unitDropdownVisible: false,
-                amenitiesDropdownVisible: false,
-                facilitiesDropdownVisible: false,
-              });
+              
+              // Pre-fill form with current flat's data from detailed API
+              if (item.houseVillaId) {
+                try {
+                  // Fetch detailed data from API
+                  const response = await fetchHouseVillaDetailsForPlc(item.houseVillaId);
+                  
+                  if (response.success && response.data) {
+                    const detailedData = response.data;
+                    // Map API response to form fields
+                    // API returns furnishingStatus and faceDirection as direct strings, not objects
+                    const furnishingName = detailedData.furnishingStatus || "";
+                    const facingName = detailedData.faceDirection || "";
+                    // Find carpet area unit name from measurementUnits using carpetAreaUnitId
+                    const carpetAreaUnit = measurementUnits.find(u => u.id === detailedData.carpetAreaUnitId);
+                    const carpetAreaUnitName = carpetAreaUnit?.name || detailedData.areaUnit || "Sq. ft.";
+                    const amenitiesNames = detailedData.amenities?.map(a => a.amenityName || a.name) || [];
+                    const facilitiesNames = detailedData.facilities?.map(f => f.facilityName || f.name) || [];
+                    
+                    setFormData({
+                      furnishing: furnishingName,
+                      facing: facingName,
+                      carpetArea: detailedData.carpetArea ? String(detailedData.carpetArea) : "",
+                      carpetAreaUnit: carpetAreaUnitName,
+                      loadingPercentage: detailedData.loadingPercentage ? String(detailedData.loadingPercentage) : "",
+                      superArea: detailedData.superArea ? String(detailedData.superArea) : "",
+                      numberOfKitchens: detailedData.totalNoOfKitchen ? String(detailedData.totalNoOfKitchen) : "",
+                      numberOfFloors: detailedData.totalNoOfFloors ? String(detailedData.totalNoOfFloors) : "",
+                      basicCost: detailedData.basicAmount ? String(detailedData.basicAmount) : "",
+                      amenities: amenitiesNames,
+                      facilities: facilitiesNames,
+                      description: detailedData.description || "",
+                      images: detailedData.propertyMediaDTOs?.filter(m => m.mediaType === 'IMAGE').map(m => ({
+                        name: m.mediaName || 'Image',
+                        uri: m.mediaUrl,
+                        label: m.mediaLabel || ''
+                      })) || [],
+                      videos: detailedData.propertyMediaDTOs?.filter(m => m.mediaType === 'VIDEO').map(m => ({
+                        name: m.mediaName || 'Video',
+                        uri: m.mediaUrl,
+                        label: m.mediaLabel || ''
+                      })) || [],
+                      deleteExistingFiles: false,
+                      // Reset all dropdown visibility states
+                      furnishingDropdownVisible: false,
+                      facingDropdownVisible: false,
+                      unitDropdownVisible: false,
+                      amenitiesDropdownVisible: false,
+                      facilitiesDropdownVisible: false,
+                    });
+                  } else {
+                    throw new Error(response.message || 'Failed to fetch details');
+                  }
+                } catch (error) {
+                  console.error('Error fetching house/villa details:', error);
+                  Alert.alert('Error', 'Failed to load house/villa details. Using basic data.');
+                  // Fallback to basic data if API fails
+                  setFormData({
+                    furnishing: item.furnishingStatus || item.furnishing || "",
+                    facing: item.faceDirection || item.facing || "",
+                    carpetArea: item.carpetArea ? String(item.carpetArea) : "",
+                    carpetAreaUnit: item.areaUnit || "Sq. ft.",
+                    loadingPercentage: item.loadingPercentage ? String(item.loadingPercentage) : "",
+                    superArea: "",
+                    numberOfKitchens: item.totalNoOfKitchen ? String(item.totalNoOfKitchen) : "",
+                    numberOfFloors: item.totalNoOfFloors ? String(item.totalNoOfFloors) : "",
+                    basicCost: "",
+                    amenities: [],
+                    facilities: [],
+                    description: "",
+                    images: [],
+                    videos: [],
+                    deleteExistingFiles: false,
+                    furnishingDropdownVisible: false,
+                    facingDropdownVisible: false,
+                    unitDropdownVisible: false,
+                    amenitiesDropdownVisible: false,
+                    facilitiesDropdownVisible: false,
+                  });
+                }
+              }
               setFillDetailsModalVisible(true);
             }}
           >
@@ -772,10 +829,25 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
       });
       
       if (!result.canceled) {
-        setFormData(prev => ({
-          ...prev,
-          [type]: [...prev[type], ...result.assets]
-        }));
+        if (type === 'images') {
+          // Add label to each image
+          const imagesWithLabels = result.assets.map(asset => ({
+            ...asset,
+            label: imageLabel || asset.name
+          }));
+          setFormData(prev => ({
+            ...prev,
+            [type]: [...prev[type], ...imagesWithLabels]
+          }));
+          // Close the modal after successful upload
+          setImageUploadModalVisible(false);
+          setImageLabel(""); // Clear the label
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            [type]: [...prev[type], ...result.assets]
+          }));
+        }
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to pick files');
@@ -805,7 +877,16 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
       const facilitiesIds = facilities.filter(f => formData.facilities.includes(f.name)).map(f => f.id);
 
       // Prepare the data payload for each selected house/villa
-      const savePromises = selectedFlats.map(async (houseVillaId) => {
+      const savePromises = selectedFlats.map(async (flatId) => {
+        // Find the houseVillaId from the selected flat
+        const selectedFlatData = houseVillas.find(flat => flat.id === flatId);
+        const villaId = selectedFlatData?.houseVillaId;
+        
+        if (!villaId) {
+          return { success: false, message: 'House/Villa ID not found' };
+        }
+        
+        // Prepare payload matching the update API structure
         const payload = {
           furnishingStatusId,
           faceDirectionId,
@@ -818,16 +899,23 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
           amenitiesIds,
           facilitiesIds,
           description: formData.description,
-          villaIds: [parseInt(houseVillaId)],
-          propertyMediaDTOs: formData.images.map(img => ({
-            mediaLabel: img.label || "Image",
-            mediaBase64: img.base64 || "",
-            contentType: img.contentType || "image/jpg"
-          })),
+          propertyMediaDTOs: [
+            ...formData.images.map(img => ({
+              mediaLabel: img.label || "Image",
+              mediaBase64: img.base64 || "",
+              contentType: img.mimeType || img.type || "image/jpeg"
+            })),
+            ...formData.videos.map(vid => ({
+              mediaLabel: vid.label || "Video",
+              mediaBase64: vid.base64 || "",
+              contentType: vid.mimeType || vid.type || "video/mp4"
+            }))
+          ],
           shouldDeletePreviousMedia: formData.deleteExistingFiles
         };
 
-        return saveHouseVillaDetails(payload);
+        // Use updateHouseVillaDetails for editing existing records
+        return updateHouseVillaDetails(villaId, payload);
       });
 
       const results = await Promise.all(savePromises);
@@ -1190,38 +1278,92 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
             }
           ]}
           disabled={selectedFlats.length === 0}
-          onPress={() => {
+          onPress={async () => {
             // Close all dropdowns first
             setStructureDropdownVisible(false);
             setAreaDropdownVisible(false);
             
             if (selectedFlats.length === 1) {
-              // Pre-fill form with single flat's data
+              // Pre-fill form with single flat's data from detailed API
               const selectedFlatData = houseVillas.find(flat => flat.id === selectedFlats[0]);
-              if (selectedFlatData) {
-                setFormData({
-                  furnishing: selectedFlatData.furnishing || "",
-                  facing: selectedFlatData.facing || "",
-                  carpetArea: selectedFlatData.area ? selectedFlatData.area.replace(/[^\d]/g, '') : "",
-                  carpetAreaUnit: "sq ft",
-                  loadingPercentage: "",
-                  superArea: "",
-                  numberOfKitchens: "",
-                  numberOfFloors: "",
-                  basicCost: selectedFlatData.price ? selectedFlatData.price.replace(/[^\d]/g, '') : "",
-                  amenities: [],
-                  facilities: [],
-                  description: "",
-                  images: [],
-                  videos: [],
-                  deleteExistingFiles: false,
-                  // Reset all dropdown visibility states
-                  furnishingDropdownVisible: false,
-                  facingDropdownVisible: false,
-                  unitDropdownVisible: false,
-                  amenitiesDropdownVisible: false,
-                  facilitiesDropdownVisible: false,
-                });
+              if (selectedFlatData && selectedFlatData.houseVillaId) {
+                try {
+                  // Fetch detailed data from API
+                  const response = await fetchHouseVillaDetailsForPlc(selectedFlatData.houseVillaId);
+                  
+                  if (response.success && response.data) {
+                    const detailedData = response.data;
+                    // Map API response to form fields
+                    // API returns furnishingStatus and faceDirection as direct strings, not objects
+                    const furnishingName = detailedData.furnishingStatus || "";
+                    const facingName = detailedData.faceDirection || "";
+                    // Find carpet area unit name from measurementUnits using carpetAreaUnitId
+                    const carpetAreaUnit = measurementUnits.find(u => u.id === detailedData.carpetAreaUnitId);
+                    const carpetAreaUnitName = carpetAreaUnit?.name || detailedData.areaUnit || "Sq. ft.";
+                    const amenitiesNames = detailedData.amenities?.map(a => a.amenityName || a.name) || [];
+                    const facilitiesNames = detailedData.facilities?.map(f => f.facilityName || f.name) || [];
+                    
+                    setFormData({
+                      furnishing: furnishingName,
+                      facing: facingName,
+                      carpetArea: detailedData.carpetArea ? String(detailedData.carpetArea) : "",
+                      carpetAreaUnit: carpetAreaUnitName,
+                      loadingPercentage: detailedData.loadingPercentage ? String(detailedData.loadingPercentage) : "",
+                      superArea: detailedData.superArea ? String(detailedData.superArea) : "",
+                      numberOfKitchens: detailedData.totalNoOfKitchen ? String(detailedData.totalNoOfKitchen) : "",
+                      numberOfFloors: detailedData.totalNoOfFloors ? String(detailedData.totalNoOfFloors) : "",
+                      basicCost: detailedData.basicAmount ? String(detailedData.basicAmount) : "",
+                      amenities: amenitiesNames,
+                      facilities: facilitiesNames,
+                      description: detailedData.description || "",
+                      images: detailedData.propertyMediaDTOs?.filter(m => m.mediaType === 'IMAGE').map(m => ({
+                        name: m.mediaName || 'Image',
+                        uri: m.mediaUrl,
+                        label: m.mediaLabel || ''
+                      })) || [],
+                      videos: detailedData.propertyMediaDTOs?.filter(m => m.mediaType === 'VIDEO').map(m => ({
+                        name: m.mediaName || 'Video',
+                        uri: m.mediaUrl,
+                        label: m.mediaLabel || ''
+                      })) || [],
+                      deleteExistingFiles: false,
+                      // Reset all dropdown visibility states
+                      furnishingDropdownVisible: false,
+                      facingDropdownVisible: false,
+                      unitDropdownVisible: false,
+                      amenitiesDropdownVisible: false,
+                      facilitiesDropdownVisible: false,
+                    });
+                  } else {
+                    throw new Error(response.message || 'Failed to fetch details');
+                  }
+                } catch (error) {
+                  console.error('Error fetching house/villa details:', error);
+                  Alert.alert('Error', 'Failed to load house/villa details. Using basic data.');
+                  // Fallback to basic data if API fails
+                  setFormData({
+                    furnishing: selectedFlatData.furnishingStatus || selectedFlatData.furnishing || "",
+                    facing: selectedFlatData.faceDirection || selectedFlatData.facing || "",
+                    carpetArea: selectedFlatData.carpetArea ? String(selectedFlatData.carpetArea) : "",
+                    carpetAreaUnit: selectedFlatData.areaUnit || "Sq. ft.",
+                    loadingPercentage: selectedFlatData.loadingPercentage ? String(selectedFlatData.loadingPercentage) : "",
+                    superArea: "",
+                    numberOfKitchens: selectedFlatData.totalNoOfKitchen ? String(selectedFlatData.totalNoOfKitchen) : "",
+                    numberOfFloors: selectedFlatData.totalNoOfFloors ? String(selectedFlatData.totalNoOfFloors) : "",
+                    basicCost: "",
+                    amenities: [],
+                    facilities: [],
+                    description: "",
+                    images: [],
+                    videos: [],
+                    deleteExistingFiles: false,
+                    furnishingDropdownVisible: false,
+                    facingDropdownVisible: false,
+                    unitDropdownVisible: false,
+                    amenitiesDropdownVisible: false,
+                    facilitiesDropdownVisible: false,
+                  });
+                }
               }
             } else {
               // Multiple flats selected - empty form
@@ -1473,56 +1615,8 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
                     {/* File Uploads */}
                     <Text style={styles.subsectionTitle}>Media</Text>
                     
-                    <View style={styles.formRow}>
-                      <Text style={styles.formLabel}>Images</Text>
-                      <TouchableOpacity
-                        style={styles.uploadButton}
-                        onPress={() => pickDocument('images')}
-                      >
-                        <Ionicons name="image-outline" size={20} color="#5aaf57" />
-                        <Text style={styles.uploadButtonText}>Upload Images</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    {formData.images.length > 0 && (
-                      <View style={styles.filesList}>
-                        {formData.images.map((file, index) => (
-                          <View key={index} style={styles.fileItem}>
-                            <Text style={styles.fileName} numberOfLines={1}>{file.name}</Text>
-                            <TouchableOpacity onPress={() => removeFile('images', index)}>
-                              <Ionicons name="close-circle" size={20} color="#ff4444" />
-                            </TouchableOpacity>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-
-                    <View style={styles.formRow}>
-                      <Text style={styles.formLabel}>Videos</Text>
-                      <TouchableOpacity
-                        style={styles.uploadButton}
-                        onPress={() => pickDocument('videos')}
-                      >
-                        <Ionicons name="videocam-outline" size={20} color="#5aaf57" />
-                        <Text style={styles.uploadButtonText}>Upload Videos</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    {formData.videos.length > 0 && (
-                      <View style={styles.filesList}>
-                        {formData.videos.map((file, index) => (
-                          <View key={index} style={styles.fileItem}>
-                            <Text style={styles.fileName} numberOfLines={1}>{file.name}</Text>
-                            <TouchableOpacity onPress={() => removeFile('videos', index)}>
-                              <Ionicons name="close-circle" size={20} color="#ff4444" />
-                            </TouchableOpacity>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-
                     {/* Delete Existing Files Toggle */}
-                    <View style={styles.formRow}>
+                    <View style={styles.formRowInline}>
                       <Text style={styles.formLabel}>Delete Existing Files</Text>
                       <Switch
                         value={formData.deleteExistingFiles}
@@ -1531,6 +1625,37 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
                         thumbColor={formData.deleteExistingFiles ? "#fff" : "#f4f3f4"}
                       />
                     </View>
+
+                    <View style={styles.formRow}>
+                      <Text style={styles.formLabel}>Images</Text>
+                      <TouchableOpacity
+                        style={styles.uploadButton}
+                        onPress={() => setImageUploadModalVisible(true)}
+                      >
+                        <Ionicons name="image-outline" size={20} color="#5aaf57" />
+                        <Text style={styles.uploadButtonText}>Upload Images</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {formData.images.length > 0 && (
+                      <View style={styles.filesList}>
+                        <Text style={styles.filesListLabel}>Uploaded Images:</Text>
+                        {formData.images.map((file, index) => (
+                          <View key={index} style={styles.fileItem}>
+                            <View style={styles.fileInfo}>
+                              <Ionicons name="image" size={16} color="#5aaf57" />
+                              <View style={styles.fileNameContainer}>
+                                <Text style={styles.fileNameLabel}>Image Label:</Text>
+                                <Text style={styles.fileName} numberOfLines={1}>{file.label || file.name}</Text>
+                              </View>
+                            </View>
+                            <TouchableOpacity onPress={() => removeFile('images', index)}>
+                              <Ionicons name="close-circle" size={20} color="#ff4444" />
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    )}
                   </View>
                 </ScrollView>
 
@@ -1721,6 +1846,61 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
                     )}
                   </Fragment>
                 ))}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Image Upload Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={imageUploadModalVisible}
+        onRequestClose={() => setImageUploadModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setImageUploadModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.imageUploadModal}>
+                <View style={styles.modalHandle} />
+                
+                {/* Modal Header */}
+                <View style={styles.imageUploadModalHeader}>
+                  <Text style={styles.imageUploadModalTitle}>Upload Images</Text>
+                  <TouchableOpacity onPress={() => setImageUploadModalVisible(false)}>
+                    <Ionicons name="close" size={24} color="#666" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.imageUploadModalContent}>
+                  {/* Image Label Input */}
+                  <View style={styles.imageUploadFormRow}>
+                    <Text style={styles.imageUploadFormLabel}>Image Label</Text>
+                    <TextInput
+                      style={styles.imageUploadFormInput}
+                      value={imageLabel}
+                      onChangeText={setImageLabel}
+                      placeholder="Enter image label (optional)"
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+
+                  {/* Choose and Upload Button */}
+                  <TouchableOpacity
+                    style={styles.imageUploadButton}
+                    onPress={() => pickDocument('images')}
+                  >
+                    <Ionicons name="image" size={24} color="#fff" />
+                    <Text style={styles.imageUploadButtonText}>Choose & Upload Images</Text>
+                  </TouchableOpacity>
+
+                  <Text style={styles.imageUploadNote}>
+                    {formData.images.length > 0 
+                      ? `${formData.images.length} image(s) selected` 
+                      : "No images selected"}
+                  </Text>
+                </View>
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -2375,6 +2555,13 @@ const styles = StyleSheet.create({
   formRow: {
     marginBottom: 15,
   },
+  formRowInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 15,
+    paddingVertical: 8,
+  },
   formLabel: {
     fontSize: 14,
     fontFamily: "PlusSB",
@@ -2475,21 +2662,41 @@ const styles = StyleSheet.create({
   filesList: {
     marginTop: 10,
   },
+  filesListLabel: {
+    fontSize: 14,
+    fontFamily: "PlusSB",
+    color: "#333",
+    marginBottom: 8,
+  },
   fileItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "#f5f5f5",
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 6,
-    marginBottom: 6,
+    marginBottom: 8,
+  },
+  fileInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    gap: 8,
+  },
+  fileNameContainer: {
+    flex: 1,
+  },
+  fileNameLabel: {
+    fontSize: 11,
+    fontFamily: "PlusSB",
+    color: "#999",
+    marginBottom: 2,
   },
   fileName: {
-    flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "PlusR",
-    color: "#666",
+    color: "#333",
   },
   fillDetailsFooter: {
     paddingHorizontal: 20,
@@ -2731,6 +2938,81 @@ const styles = StyleSheet.create({
     color: "#999",
     textAlign: "center",
     paddingVertical: 20,
+    fontStyle: "italic",
+  },
+  // Image Upload Modal Styles
+  imageUploadModal: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    maxHeight: "40%",
+    width: "100%",
+    position: "absolute",
+    bottom: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  imageUploadModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  imageUploadModalTitle: {
+    fontSize: 18,
+    fontFamily: "PlusSB",
+    color: "#333",
+  },
+  imageUploadModalContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  imageUploadFormRow: {
+    marginBottom: 20,
+  },
+  imageUploadFormLabel: {
+    fontSize: 14,
+    fontFamily: "PlusSB",
+    color: "#333",
+    marginBottom: 8,
+  },
+  imageUploadFormInput: {
+    backgroundColor: "#f8f9fa",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    fontSize: 14,
+    fontFamily: "PlusR",
+    color: "#333",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  imageUploadButton: {
+    backgroundColor: "#5aaf57",
+    borderRadius: 12,
+    paddingVertical: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginBottom: 15,
+  },
+  imageUploadButtonText: {
+    fontSize: 16,
+    fontFamily: "PlusSB",
+    color: "#fff",
+  },
+  imageUploadNote: {
+    fontSize: 12,
+    fontFamily: "PlusR",
+    color: "#999",
+    textAlign: "center",
     fontStyle: "italic",
   },
 });

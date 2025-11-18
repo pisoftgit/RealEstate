@@ -49,7 +49,7 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
   const [imageLabel, setImageLabel] = useState("");
   
   // Use the custom hook to fetch flats
-  const { flats, loading, fetchFlats, saveFlatDetails, saveFlatPlcDetails, fetchFlatDetailsForPlc, saving, saveError } = useFlatsByProject(propertyData?.projectId);
+  const { flats, loading, fetchFlats, saveFlatDetails, updateFlatDetails, saveFlatPlcDetails, fetchFlatDetailsForPlc, saving, saveError } = useFlatsByProject(propertyData?.projectId);
   
   // Use the custom hook to fetch furnishing statuses
   const { statuses: furnishingStatuses, loading: furnishingLoading } = useFurnishingStatusActions();
@@ -637,35 +637,86 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
         <View style={styles.actionSection}>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => {
+            onPress={async () => {
               // Close all dropdowns first
               setStructureDropdownVisible(false);
               setAreaDropdownVisible(false);
               
               // Select the current flat and open Fill Details modal
               setSelectedFlats([item.id]);
-              // Pre-fill form with current flat's data
-              setFormData({
-                furnishing: item.furnishing || "",
-                facing: item.facing || "",
-                carpetArea: item.area ? item.area.toString() : "",
-                carpetAreaUnit: "sq ft",
-                loadingPercentage: "",
-                superArea: "",
-                numberOfKitchens: "",
-                basicCost: "",
-                amenities: item.amenities || [],
-                facilities: item.facilities || [],
-                description: "",
-                images: [],
-                deleteExistingFiles: false,
-                // Reset all dropdown visibility states
-                furnishingDropdownVisible: false,
-                facingDropdownVisible: false,
-                unitDropdownVisible: false,
-                amenitiesDropdownVisible: false,
-                facilitiesDropdownVisible: false,
-              });
+              
+              // Pre-fill form with current flat's data from detailed API
+              if (item.flatId) {
+                try {
+                  // Fetch detailed data from API
+                  const response = await fetchFlatDetailsForPlc(item.flatId);
+                  
+                  if (response.success && response.data) {
+                    const detailedData = response.data;
+                    // Map API response to form fields
+                    // API returns furnishingStatus and faceDirection as direct strings, not objects
+                    const furnishingName = detailedData.furnishingStatus || "";
+                    const facingName = detailedData.faceDirection || "";
+                    // Find carpet area unit name from measurementUnits using carpetAreaUnitId
+                    const carpetAreaUnit = measurementUnits.find(u => u.id === detailedData.carpetAreaUnitId);
+                    const carpetAreaUnitName = carpetAreaUnit?.name || detailedData.areaUnit || "Sq. ft.";
+                    const amenitiesNames = detailedData.amenities?.map(a => a.amenityName || a.name) || [];
+                    const facilitiesNames = detailedData.facilities?.map(f => f.facilityName || f.name) || [];
+                    
+                    setFormData({
+                      furnishing: furnishingName,
+                      facing: facingName,
+                      carpetArea: detailedData.carpetArea ? String(detailedData.carpetArea) : "",
+                      carpetAreaUnit: carpetAreaUnitName,
+                      loadingPercentage: detailedData.loadingPercentage ? String(detailedData.loadingPercentage) : "",
+                      superArea: detailedData.superArea ? String(detailedData.superArea) : "",
+                      numberOfKitchens: detailedData.totalNoOfKitchen ? String(detailedData.totalNoOfKitchen) : "",
+                      basicCost: detailedData.basicAmount ? String(detailedData.basicAmount) : "",
+                      amenities: amenitiesNames,
+                      facilities: facilitiesNames,
+                      description: detailedData.description || "",
+                      images: detailedData.propertyMediaDTOs?.filter(m => m.mediaType === 'IMAGE').map(m => ({
+                        name: m.mediaName || 'Image',
+                        uri: m.mediaUrl,
+                        label: m.mediaLabel || ''
+                      })) || [],
+                      deleteExistingFiles: false,
+                      // Reset all dropdown visibility states
+                      furnishingDropdownVisible: false,
+                      facingDropdownVisible: false,
+                      unitDropdownVisible: false,
+                      amenitiesDropdownVisible: false,
+                      facilitiesDropdownVisible: false,
+                    });
+                  } else {
+                    throw new Error(response.message || 'Failed to fetch details');
+                  }
+                } catch (error) {
+                  console.error('Error fetching flat details:', error);
+                  Alert.alert('Error', 'Failed to load flat details. Using basic data.');
+                  // Fallback to basic data if API fails
+                  setFormData({
+                    furnishing: item.furnishingStatus || item.furnishing || "",
+                    facing: item.faceDirection || item.facing || "",
+                    carpetArea: item.carpetArea ? String(item.carpetArea) : "",
+                    carpetAreaUnit: item.areaUnit || "Sq. ft.",
+                    loadingPercentage: item.loadingPercentage ? String(item.loadingPercentage) : "",
+                    superArea: "",
+                    numberOfKitchens: item.totalNoOfKitchen ? String(item.totalNoOfKitchen) : "",
+                    basicCost: "",
+                    amenities: [],
+                    facilities: [],
+                    description: "",
+                    images: [],
+                    deleteExistingFiles: false,
+                    furnishingDropdownVisible: false,
+                    facingDropdownVisible: false,
+                    unitDropdownVisible: false,
+                    amenitiesDropdownVisible: false,
+                    facilitiesDropdownVisible: false,
+                  });
+                }
+              }
               setFillDetailsModalVisible(true);
             }}
           >
@@ -812,69 +863,59 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
   const handleSaveDetails = async () => {
     try {
       // Validate required fields
-      if (!formData.furnishing) {
-        Alert.alert('Validation Error', 'Please select furnishing status');
-        return;
-      }
-      if (!formData.facing) {
-        Alert.alert('Validation Error', 'Please select facing direction');
-        return;
-      }
-      if (!formData.carpetArea) {
-        Alert.alert('Validation Error', 'Please enter carpet area');
-        return;
-      }
-      if (!formData.carpetAreaUnit) {
-        Alert.alert('Validation Error', 'Please select carpet area unit');
+      if (!formData.furnishing || !formData.facing || !formData.carpetArea) {
+        Alert.alert('Validation Error', 'Please fill in all required fields (Furnishing, Facing, Carpet Area)');
         return;
       }
 
-      // Find IDs from the selected values
+      // Get the IDs from the names selected
       const furnishingStatusId = furnishingStatuses.find(s => s.name === formData.furnishing)?.id;
       const faceDirectionId = faceDirections.find(d => d.name === formData.facing)?.id;
       const carpetAreaUnitId = measurementUnits.find(u => u.name === formData.carpetAreaUnit)?.id;
+      const amenitiesIds = amenities.filter(a => formData.amenities.includes(a.name)).map(a => a.id);
+      const facilitiesIds = facilities.filter(f => formData.facilities.includes(f.name)).map(f => f.id);
+
+      // Prepare the data payload for each selected flat
+      const savePromises = selectedFlats.map(async (selectedFlatId) => {
+        // Find the flatId from the selected flat
+        const selectedFlatData = flats.find(flat => flat.id === selectedFlatId);
+        const flatId = selectedFlatData?.flatId;
+        
+        if (!flatId) {
+          return { success: false, message: 'Flat ID not found' };
+        }
+        
+        // Prepare payload matching the update API structure
+        const payload = {
+          furnishingStatusId,
+          faceDirectionId,
+          carpetArea: parseFloat(formData.carpetArea),
+          carpetAreaUnitId,
+          loadingPercentage: parseFloat(formData.loadingPercentage) || 0,
+          totalNoOfKitchen: parseInt(formData.numberOfKitchens) || 0,
+          basicAmount: parseFloat(formData.basicCost) || 0,
+          amenitiesIds,
+          facilitiesIds,
+          description: formData.description,
+          propertyMediaDTOs: [
+            ...formData.images.map(img => ({
+              mediaLabel: img.label || "Image",
+              mediaBase64: img.base64 || "",
+              contentType: img.mimeType || img.type || "image/jpeg"
+            }))
+          ],
+          shouldDeletePreviousMedia: formData.deleteExistingFiles
+        };
+
+        // Use updateFlatDetails for editing existing records
+        return updateFlatDetails(flatId, payload);
+      });
+
+      const results = await Promise.all(savePromises);
       
-      // Get amenity IDs from selected amenities
-      const amenitiesIds = formData.amenities
-        .map(amenityName => amenities.find(a => a.name === amenityName)?.id)
-        .filter(id => id !== undefined);
+      const allSuccess = results.every(r => r.success);
       
-      // Get facility IDs from selected facilities
-      const facilitiesIds = formData.facilities
-        .map(facilityName => facilities.find(f => f.name === facilityName)?.id)
-        .filter(id => id !== undefined);
-
-      // Prepare property media DTOs from images
-      const propertyMediaDTOs = formData.images.map(image => ({
-        mediaLabel: image.label || image.name || "Image",
-        mediaBase64: image.base64 || "",
-        contentType: image.mimeType || image.contentType || "image/jpeg"
-      }));
-
-      // Prepare the API payload
-      const payload = {
-        furnishingStatusId: furnishingStatusId,
-        faceDirectionId: faceDirectionId,
-        carpetArea: parseFloat(formData.carpetArea),
-        carpetAreaUnitId: carpetAreaUnitId,
-        loadingPercentage: formData.loadingPercentage ? parseFloat(formData.loadingPercentage) : 0,
-        totalNoOfKitchen: formData.numberOfKitchens ? parseInt(formData.numberOfKitchens) : 1,
-        basicAmount: formData.basicCost ? parseFloat(formData.basicCost) : 0,
-        amenitiesIds: amenitiesIds,
-        facilitiesIds: facilitiesIds,
-        description: formData.description || "",
-        flatIds: selectedFlats.map(id => parseInt(id)),
-        propertyMediaDTOs: propertyMediaDTOs,
-        shouldDeletePreviousMedia: formData.deleteExistingFiles
-      };
-
-      console.log('Saving details for flats:', selectedFlats);
-      console.log('Payload:', payload);
-
-      // Call the API
-      const result = await saveFlatDetails(payload);
-
-      if (result.success) {
+      if (allSuccess) {
         Alert.alert('Success', 'Flat details saved successfully!');
         setFillDetailsModalVisible(false);
         
@@ -899,16 +940,13 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
           amenitiesDropdownVisible: false,
           facilitiesDropdownVisible: false,
         });
-        
-        // Clear selected flats
         setSelectedFlats([]);
-        setSelectAll(false);
       } else {
-        Alert.alert('Error', result.message || 'Failed to save flat details');
+        Alert.alert('Error', 'Some flat details failed to save. Please try again.');
       }
     } catch (error) {
-      console.error('Error in handleSaveDetails:', error);
-      Alert.alert('Error', 'An unexpected error occurred while saving');
+      console.error('Error saving flat details:', error);
+      Alert.alert('Error', 'Failed to save flat details. Please try again.');
     }
   };
 
@@ -1264,36 +1302,81 @@ const FlatDetailsPage = ({ propertyData, onBack }) => {
             }
           ]}
           disabled={selectedFlats.length === 0}
-          onPress={() => {
+          onPress={async () => {
             // Close all dropdowns first
             setStructureDropdownVisible(false);
             setAreaDropdownVisible(false);
             
             if (selectedFlats.length === 1) {
-              // Pre-fill form with single flat's data
+              // Pre-fill form with single flat's data from detailed API
               const selectedFlatData = flats.find(flat => flat.id === selectedFlats[0]);
-              if (selectedFlatData) {
-                setFormData({
-                  furnishing: selectedFlatData.furnishing || "",
-                  facing: selectedFlatData.facing || "",
-                  carpetArea: selectedFlatData.area ? selectedFlatData.area.toString() : "",
-                  carpetAreaUnit: "sq ft",
-                  loadingPercentage: "",
-                  superArea: "",
-                  numberOfKitchens: "",
-                  basicCost: "",
-                  amenities: selectedFlatData.amenities || [],
-                  facilities: selectedFlatData.facilities || [],
-                  description: "",
-                  images: [],
-                  deleteExistingFiles: false,
-                  // Reset all dropdown visibility states
-                  furnishingDropdownVisible: false,
-                  facingDropdownVisible: false,
-                  unitDropdownVisible: false,
-                  amenitiesDropdownVisible: false,
-                  facilitiesDropdownVisible: false,
-                });
+              if (selectedFlatData?.flatId) {
+                try {
+                  // Fetch detailed data from API
+                  const response = await fetchFlatDetailsForPlc(selectedFlatData.flatId);
+                  
+                  if (response.success && response.data) {
+                    const detailedData = response.data;
+                    // Map API response to form fields
+                    const furnishingName = detailedData.furnishingStatus || "";
+                    const facingName = detailedData.faceDirection || "";
+                    const carpetAreaUnit = measurementUnits.find(u => u.id === detailedData.carpetAreaUnitId);
+                    const carpetAreaUnitName = carpetAreaUnit?.name || detailedData.areaUnit || "Sq. ft.";
+                    const amenitiesNames = detailedData.amenities?.map(a => a.amenityName || a.name) || [];
+                    const facilitiesNames = detailedData.facilities?.map(f => f.facilityName || f.name) || [];
+                    
+                    setFormData({
+                      furnishing: furnishingName,
+                      facing: facingName,
+                      carpetArea: detailedData.carpetArea ? String(detailedData.carpetArea) : "",
+                      carpetAreaUnit: carpetAreaUnitName,
+                      loadingPercentage: detailedData.loadingPercentage ? String(detailedData.loadingPercentage) : "",
+                      superArea: detailedData.superArea ? String(detailedData.superArea) : "",
+                      numberOfKitchens: detailedData.totalNoOfKitchen ? String(detailedData.totalNoOfKitchen) : "",
+                      basicCost: detailedData.basicAmount ? String(detailedData.basicAmount) : "",
+                      amenities: amenitiesNames,
+                      facilities: facilitiesNames,
+                      description: detailedData.description || "",
+                      images: detailedData.propertyMediaDTOs?.filter(m => m.mediaType === 'IMAGE').map(m => ({
+                        name: m.mediaName || 'Image',
+                        uri: m.mediaUrl,
+                        label: m.mediaLabel || ''
+                      })) || [],
+                      deleteExistingFiles: false,
+                      furnishingDropdownVisible: false,
+                      facingDropdownVisible: false,
+                      unitDropdownVisible: false,
+                      amenitiesDropdownVisible: false,
+                      facilitiesDropdownVisible: false,
+                    });
+                  } else {
+                    throw new Error(response.message || 'Failed to fetch details');
+                  }
+                } catch (error) {
+                  console.error('Error fetching flat details:', error);
+                  Alert.alert('Error', 'Failed to load flat details. Using basic data.');
+                  // Fallback to basic data
+                  setFormData({
+                    furnishing: selectedFlatData.furnishingStatus || selectedFlatData.furnishing || "",
+                    facing: selectedFlatData.faceDirection || selectedFlatData.facing || "",
+                    carpetArea: selectedFlatData.carpetArea ? String(selectedFlatData.carpetArea) : "",
+                    carpetAreaUnit: selectedFlatData.areaUnit || "Sq. ft.",
+                    loadingPercentage: "",
+                    superArea: "",
+                    numberOfKitchens: "",
+                    basicCost: "",
+                    amenities: [],
+                    facilities: [],
+                    description: "",
+                    images: [],
+                    deleteExistingFiles: false,
+                    furnishingDropdownVisible: false,
+                    facingDropdownVisible: false,
+                    unitDropdownVisible: false,
+                    amenitiesDropdownVisible: false,
+                    facilitiesDropdownVisible: false,
+                  });
+                }
               }
             } else {
               // Multiple flats selected - empty form

@@ -152,6 +152,48 @@ const useFlatsByProject = (projectId) => {
     }
   }, [fetchFlats]);
 
+  // Update Flat Details (for editing existing records)
+  const updateFlatDetails = useCallback(async (flatId, updateDetailsData) => {
+    try {
+      setSaving(true);
+      setSaveError(null);
+      
+      const secretKey = await SecureStore.getItemAsync("auth_token");
+      
+      const response = await axios.post(
+        `${API_BASE_URL}/flats/updateFlatDetails/${flatId}`,
+        updateDetailsData,
+        { 
+          headers: { 
+            secret_key: secretKey,
+            'Content-Type': 'application/json'
+          } 
+        }
+      );
+      
+      // Refresh the flats list after successful update
+      await fetchFlats();
+      
+      return {
+        success: true,
+        data: response.data,
+        message: "Flat details updated successfully"
+      };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message || "Failed to update flat details";
+      console.error("Error updating flat details:", errorMessage);
+      setSaveError(errorMessage);
+      
+      return {
+        success: false,
+        error: errorMessage,
+        message: errorMessage
+      };
+    } finally {
+      setSaving(false);
+    }
+  }, [fetchFlats]);
+
   // Fetch Flat Details for PLC (detailed view)
   const fetchFlatDetailsForPlc = useCallback(async (flatId) => {
     try {
@@ -211,6 +253,7 @@ const useFlatsByProject = (projectId) => {
     loading,
     fetchFlats,
     saveFlatDetails,
+    updateFlatDetails,
     saveFlatPlcDetails,
     fetchFlatDetailsForPlc,
     saving,

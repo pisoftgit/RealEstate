@@ -1,5 +1,3 @@
-
-
 import * as SecureStore from "expo-secure-store";
 
 //export const API_BASE_URL = "https://192.168.6.210:8002/realestate/api/v1";
@@ -89,7 +87,7 @@ export const addNewEmployee = async (payload) => {
 
 
 
- {/*get all employees*/}
+{/*get all employees*/}
 
 export const getAllEmployees = async () => {  
   try {
@@ -625,7 +623,7 @@ export const getAllbuilderbyid = async () => {
     return [];
   }
 };
- {/*get my movements*/}
+{/*get my movements*/}
 
 // export const getMyMovements = async (employeeId) => {
 //   try {

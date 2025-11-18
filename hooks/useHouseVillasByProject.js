@@ -286,11 +286,54 @@ const useHouseVillasByProject = (projectId) => {
     }
   }, [fetchHouseVillas]);
 
+  // Update House/Villa Details (for editing existing records)
+  const updateHouseVillaDetails = useCallback(async (villaId, updateDetailsData) => {
+    try {
+      setSaving(true);
+      setSaveError(null);
+      
+      const secretKey = await SecureStore.getItemAsync("auth_token");
+      
+      const response = await axios.post(
+        `${API_BASE_URL}/house-villas/updateHouseVillaDetails/${villaId}`,
+        updateDetailsData,
+        { 
+          headers: { 
+            secret_key: secretKey,
+            'Content-Type': 'application/json'
+          } 
+        }
+      );
+      
+      // Refresh the house/villas list after successful update
+      await fetchHouseVillas();
+      
+      return {
+        success: true,
+        data: response.data,
+        message: "House/Villa details updated successfully"
+      };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message || "Failed to update house/villa details";
+      console.error("Error updating house/villa details:", errorMessage);
+      setSaveError(errorMessage);
+      
+      return {
+        success: false,
+        error: errorMessage,
+        message: errorMessage
+      };
+    } finally {
+      setSaving(false);
+    }
+  }, [fetchHouseVillas]);
+
   return {
     houseVillas,
     loading,
     fetchHouseVillas,
     saveHouseVillaDetails,
+    updateHouseVillaDetails,
     saveHouseVillaPlcDetails,
     fetchHouseVillaDetailsForPlc,
     deleteHouseVilla,

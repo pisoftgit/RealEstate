@@ -19,6 +19,71 @@ export const defaultModules = [
     icon: Brief,
     children: [
       {
+        name: "General",
+        path: "/(drawer)/Administrative/General",
+        title: "General",
+        icon: Brief,
+        children: [
+          {
+            name: "Organization",
+            path: "/(drawer)/Adminstrative/General/Organization",
+            title: "Organization",
+          },
+          {
+            name: "FinancialYear",
+            path: "/(drawer)/Adminstrative/General/FinancialYear",
+            title: "Financial Year",
+          },
+          {
+            name: "UserCategory",
+            path: "/(drawer)/Adminstrative/General/UserCategory",
+            title: "User Category",
+          },
+          {
+            name: "Religion",
+            path: "/(drawer)/Adminstrative/General/Religion",
+            title: "Religion",
+          },
+          {
+            name: "Category",
+            path: "/(drawer)/Adminstrative/General/Category",
+            title: "Category",
+          },
+          {
+            name: "Bloodgroup",
+            path: "/(drawer)/Adminstrative/General/Bloodgroup",
+            title: "Blood Group",
+          },
+          {
+            name: "Prefix",
+            path: "/(drawer)/Adminstrative/General/Prefix",
+            title: "Name Prefix",
+          },
+          {
+            name: "LocationMaster",
+            path: "/(drawer)/Adminstrative/General/LocationMaster",
+            title: "Location Master",
+            children: [
+              {
+                name: "Country",
+                path: "/(drawer)/Adminstrative/General/LocationMaster/Country",
+                title: "Country",
+              },
+              {
+                name: "State",
+                path: "/(drawer)/Adminstrative/General/LocationMaster/State",
+                title: "State",
+              },
+              {
+                name: "District",
+                path: "/(drawer)/Adminstrative/General/LocationMaster/District",
+                title: "District",
+              },
+            ],
+          },
+        ],
+      },
+      {
         name: "Property",
         path: "/(drawer)/Administrative/Property",
         title: "Property",
@@ -235,7 +300,24 @@ export const defaultModules = [
     ],
   },
 
-
+  {
+    name: "User",
+    path: "/(drawer)/User",
+    title: "User Management",
+    icon: Brief,
+    children: [
+      {
+        name: "Adduser",
+        path: "/(drawer)/User/Adduser",
+        title: "Add User",
+      },
+      {
+        name: "ManageUser",
+        path: "/(drawer)/User/ManageUser",
+        title: "Manage User",
+      },
+    ],
+  },
 
   {
     name: "CRM",
@@ -375,6 +457,12 @@ export const defaultModules = [
     title: "My Attendance",
     icon: CRM,
     alwaysVisible: true
+  },
+  {
+    name: "DayEnd",
+    path: "/(drawer)/DayEnd",
+    title: "Day End",
+    icon: Brief,
   },
 
 ];

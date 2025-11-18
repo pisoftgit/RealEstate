@@ -14,80 +14,20 @@ import {
   TouchableWithoutFeedback,
   Switch,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import LottieView from "lottie-react-native";
 import { Feather, AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as DocumentPicker from 'expo-document-picker';
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
+import usePlotsByProject from '../hooks/usePlotsByProject';
+import useOwnership from '../hooks/useOwnership';
+import useAmenityActions from '../hooks/useAmenityActions';
+import useFacilityActions from '../hooks/useFacilityActions';
+import useMeasurements from '../hooks/useMeasurements';
+import { getAllPlc } from '../services/api';
 
 const screenHeight = Dimensions.get("window").height;
-
-const dummyFlats = [
-  {
-    id: "1",
-    type: "Residential",
-    plotNumber: "101",
-    addedby: "Dav",
-    Khasra: "204",
-    addeddate: "14-04-2025",
-    price: "₹45,00,000",
-    status: "Available",
-    isAvailable: true,
-    ownership: "Free Hold",
-    facing: "East",
-    balconies: 2,
-    bathrooms: 2,
-    
-  },
-  {
-    id: "2",
-    type: "Residential ",
-    plotNumber: "205",
-    addedby: "Sumit",
-    Khasra: "375",
-    addeddate: "14-02-2025",
-    price: "₹62,50,000",
-    status: "Not Available",
-    isAvailable: false,
-    ownership: "Lease Hold",
-    facing: "North",
-    balconies: 3,
-    bathrooms: 3,
-   
-  },
-  {
-    id: "3",
-    type: "Commercial",
-    plotNumber: "310",
-    addedby: "Rahul",
-    Khasra: "156",
-    addeddate: "18-03-2025",
-    price: "₹32,00,000",
-    status: "Available",
-    isAvailable: true,
-    ownership: "Free Hold 2",
-    facing: "South",
-    balconies: 1,
-    bathrooms: 1,
-  
-  },
-  {
-    id: "4",
-    type: "Commercial",
-    plotNumber: "405",
-    addedby: "Aman Badyal",
-    Khasra: "405",
-    addeddate: "20-01-2025",
-    price: "₹85,00,000",
-    status: "Not Available",
-    isAvailable: false,
-    ownership: "Lease Hold",
-    facing: "West",
-    balconies: 4,
-    bathrooms: 4,
-   
-  },
-];
 
 const PlotsDetailsPage = ({ propertyData, onBack }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -95,7 +35,6 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
   const [selectedArea, setSelectedArea] = useState("");
   const [structureDropdownVisible, setStructureDropdownVisible] = useState(false);
   const [areaDropdownVisible, setAreaDropdownVisible] = useState(false);
-  const [flats, setFlats] = useState([]);
   const [selectedFlat, setSelectedFlat] = useState(null);
   const [actionsModalVisible, setActionsModalVisible] = useState(false);
   const [viewModalVisible, setViewModalVisible] = useState(false);
@@ -104,16 +43,32 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
   const [fillDetailsModalVisible, setFillDetailsModalVisible] = useState(false);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [selectedLocationFlat, setSelectedLocationFlat] = useState(null);
+  const [imageUploadModalVisible, setImageUploadModalVisible] = useState(false);
+  const [imageLabel, setImageLabel] = useState("");
+  
+  // Use the custom hook to fetch plots
+  const { plots, loading, fetchPlots, savePlotDetails, updatePlotDetails, savePlotPlcDetails, fetchPlotDetailsForPlc, deletePlot, saving, saveError } = usePlotsByProject(propertyData?.projectId);
+  
+  // Use the custom hook to fetch ownership types
+  const { ownerships, loading: ownershipLoading } = useOwnership();
+  
+  // Use the custom hook to fetch amenities
+  const { amenities, loading: amenitiesLoading } = useAmenityActions();
+  
+  // Use the custom hook to fetch facilities
+  const { facilities, loading: facilitiesLoading } = useFacilityActions();
+  
+  // Use the custom hook to fetch measurement units
+  const { units: measurementUnits, loading: measurementUnitsLoading } = useMeasurements();
+  
+  // State for PLC data
+  const [plcData, setPlcData] = useState([]);
+  const [plcLoading, setPlcLoading] = useState(false);
   
   // Fill Details Form State
   const [formData, setFormData] = useState({
     ownership: "",
-    facing: "",
-    carpetArea: "",
-    carpetAreaUnit: "",
-    loadingPercentage: "",
-    superArea: "",
-    numberOfKitchens: "",
+    Khasra: "",
     basicCost: "",
     amenities: [],
     facilities: [],
@@ -123,8 +78,6 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
     deleteExistingFiles: false,
     // Dropdown visibility states
     ownershipDropdownVisible: false,
-    KhasraDropdownVisible: false,
-    unitDropdownVisible: false,
     amenitiesDropdownVisible: false,
     facilitiesDropdownVisible: false,
   });
@@ -151,36 +104,44 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
   const areaOptions = ["All Areas", "500-1000 sq ft", "1000-1500 sq ft", "1500-2000 sq ft", "2000+ sq ft"];
   
   // Fill Details Form Options
-  const ownershipOptions = ["Free Hold", "Lease Hold", "Free Hold 2"];
-  const KhasraOptions = ["204", "206", "6567", "755", "5678", "678", "668", "567"];
-  const areaUnitOptions = ["sq ft", "sq m"];
-  const amenitiesOptions = [
-    "Swimming Pool", "Gym", "Club House", "Children's Play Area", "Jogging Track",
-    "Security", "Power Backup", "Lift", "Car Parking", "Visitor Parking",
-    "Garden", "Maintenance Staff", "Water Supply", "Intercom"
-  ];
-  const facilitiesOptions = [
-    "Hospital", "School", "Shopping Mall", "Bank", "ATM", "Restaurant",
-    "Public Transport", "Metro Station", "Airport", "Railway Station",
-    "Market", "Pharmacy", "Petrol Pump", "Temple"
-  ];
+  // Ownership options now come from the useOwnership hook
+  const ownershipOptions = (ownerships || []).map(ownership => ownership.name);
+  // Amenities options now come from the useAmenityActions hook
+  const amenitiesOptions = (amenities || []).map(amenity => amenity.name);
+  // Facilities options now come from the useFacilityActions hook
+  const facilitiesOptions = (facilities || []).map(facility => facility.name);
+  // Khasra numbers - for now, this can be a manual input field rather than dropdown
+  const KhasraOptions = []; // This will be empty, we'll use TextInput instead
+  // Area unit options now come from the useMeasurements hook
+  const areaUnitOptions = (measurementUnits || []).map(unit => unit.name || unit.unit);
   
-  // Location Modal Options
-  const placeOptions = [
-    "Near Metro Station", "Near Shopping Mall", "Near Hospital", "Near School",
-    "Near Park", "Near Market", "Main Road", "Highway Access", "Airport Nearby",
-    "Railway Station", "Bus Stop", "Commercial Area", "Residential Area"
-  ];
+  // Location Modal Options - PLC options now come from the getAllPlc API
+  const placeOptions = (plcData || []).map(plc => plc.plcName || plc.name || plc.place);
   
   const rateUnitOptions = [
-    "₹/sq ft", "₹/sq m", "% appreciation", "% premium", "₹ lakh total", "₹ crore total"
+    { label: "Amount", value: false },
+    { label: "Percentage", value: true }
   ];
 
+  // Fetch PLC data on component mount
   useEffect(() => {
-    setFlats(dummyFlats);
+    const fetchPlcData = async () => {
+      setPlcLoading(true);
+      try {
+        const data = await getAllPlc();
+        setPlcData(data);
+      } catch (error) {
+        console.error("Error fetching PLC data:", error);
+        Alert.alert("Error", "Failed to fetch PLC data");
+      } finally {
+        setPlcLoading(false);
+      }
+    };
+
+    fetchPlcData();
   }, []);
 
-  // Update select all state based on selected flats
+  // Update select all state based on selected plots
   useEffect(() => {
     if (filteredFlats.length > 0) {
       const allSelected = filteredFlats.every(flat => selectedFlats.includes(flat.id));
@@ -279,7 +240,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
         setActionsModalVisible(false);
         break;
       case "Delete":
-        console.log("Delete Flat:", selectedFlat?.flatNumber);
+        console.log("Delete Plot:", selectedFlat?.plotNumber);
         // Add delete logic here
         setActionsModalVisible(false);
         break;
@@ -464,7 +425,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                 
                 {/* Header */}
                 <View style={styles.viewModalHeader}>
-                  <Text style={styles.modalTitle}>{selectedFlat.flatNumber}</Text>
+                  <Text style={styles.modalTitle}>{selectedFlat.plotNumber}</Text>
                   <Text style={styles.modalSubtitle}>{selectedFlat.bhk} - {selectedFlat.area}</Text>
                 </View>
 
@@ -628,7 +589,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => console.log("Delete:", item.flatNumber)}
+            onPress={() => console.log("Delete:", item.plotNumber)}
           >
             <Feather name="trash-2" size={16} color="#fff" />
           </TouchableOpacity>
@@ -643,22 +604,22 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
     </View>
   );
 
-  const filteredFlats = flats.filter((flat) => {
+  const filteredFlats = (plots || []).filter((plot) => {
     const lowerCaseQuery = searchQuery?.toLowerCase() || "";
-    const lowerCaseFlatNumber = flat.flatNumber?.toLowerCase() || "";
+    const lowerCasePlotNumber = plot.plotNumber?.toLowerCase() || "";
     
-    // Filter by flat number
-    const matchesFlatNumber = !searchQuery || lowerCaseFlatNumber.includes(lowerCaseQuery);
+    // Filter by plot number
+    const matchesPlotNumber = !searchQuery || lowerCasePlotNumber.includes(lowerCaseQuery);
     
-    // Filter by structure (BHK)
+    // Filter by type (Residential/Commercial)
     const matchesStructure = !selectedStructure || 
-      selectedStructure === "All Structures" || 
-      flat.bhk === selectedStructure;
+      selectedStructure === "All Plot" || 
+      plot.type === selectedStructure;
     
     // Filter by area
     let matchesArea = !selectedArea || selectedArea === "All Areas";
     if (selectedArea && selectedArea !== "All Areas") {
-      const areaValue = parseInt(flat.area.replace(/[^\d]/g, ''));
+      const areaValue = plot.area || 0; // Use numeric area directly
       switch (selectedArea) {
         case "500-1000 sq ft":
           matchesArea = areaValue >= 500 && areaValue <= 1000;
@@ -675,7 +636,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
       }
     }
     
-    return matchesFlatNumber && matchesStructure && matchesArea;
+    return matchesPlotNumber && matchesStructure && matchesArea;
   });
 
   // Helper functions for Fill Details Modal
@@ -720,7 +681,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
 
   const handleSaveDetails = () => {
     // Here you would typically save the form data
-    console.log('Saving details for flats:', selectedFlats);
+    console.log('Saving details for plots:', selectedFlats);
     console.log('Form data:', formData);
     Alert.alert('Success', 'Details saved successfully!');
     setFillDetailsModalVisible(false);
@@ -766,7 +727,9 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
   };
 
   const addNewPlace = () => {
-    const newId = Math.max(...locationFormData.places.map(p => p.id)) + 1;
+    const newId = locationFormData.places.length > 0 
+      ? Math.max(...locationFormData.places.map(p => p.id)) + 1 
+      : 1;
     setLocationFormData(prev => ({
       ...prev,
       places: [...prev.places, {
@@ -791,7 +754,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
 
   const handleSaveLocation = () => {
     // Here you would typically save the location data
-    console.log('Saving location for flat:', selectedLocationFlat?.flatNumber);
+    console.log('Saving location for plot:', selectedLocationFlat?.plotNumber);
     console.log('Location data:', locationFormData);
     Alert.alert('Success', 'Location details saved successfully!');
     setLocationModalVisible(false);
@@ -913,7 +876,14 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
         </View>
       )}
       
-      
+      {/* Loading State */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#5aaf57" />
+          <Text style={styles.loadingText}>Loading plots...</Text>
+        </View>
+      ) : (
+        <>
       
       {/* Filter Section */}
       <View style={styles.filtersContainer}>
@@ -1026,8 +996,8 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
             setAreaDropdownVisible(false);
             
             if (selectedFlats.length === 1) {
-              // Pre-fill form with single flat's data
-              const selectedFlatData = flats.find(flat => flat.id === selectedFlats[0]);
+              // Pre-fill form with single plot's data
+              const selectedFlatData = (plots || []).find(flat => flat.id === selectedFlats[0]);
               if (selectedFlatData) {
                 setFormData({
                   ownership: selectedFlatData.ownership || "",
@@ -1053,7 +1023,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                 });
               }
             } else {
-              // Multiple flats selected - empty form
+              // Multiple plots selected - empty form
               setFormData({
                 ownership: "",
                 Khasra: "",
@@ -1130,7 +1100,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                 <View style={styles.fillDetailsHeader}>
                   <Text style={styles.fillDetailsTitle}>
                     {selectedFlats.length === 1 
-                      ? `Edit Flat Details (${flats.find(f => f.id === selectedFlats[0])?.flatNumber || 'Unknown'})`
+                      ? `Edit Plot Details (${(plots || []).find(f => f.id === selectedFlats[0])?.plotNumber || 'Unknown'})`
                       : `Fill Details (${selectedFlats.length} Plots selected)`
                     }
                   </Text>
@@ -1158,18 +1128,15 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                       </TouchableOpacity>
                     </View>
 
-                    {/* Khasra Dropdown */}
+                    {/* Khasra Number Input */}
                     <View style={styles.formRow}>
                       <Text style={styles.formLabel}>Khasra Number</Text>
-                      <TouchableOpacity
-                        style={styles.formDropdown}
-                        onPress={() => setFormData(prev => ({ ...prev, KhasraDropdownVisible: !prev.KhasraDropdownVisible }))}
-                      >
-                        <Text style={[styles.formDropdownText, !formData.Khasra && styles.placeholderText]}>
-                          {formData.Khasra || "Select Khasra"}
-                        </Text>
-                        <Ionicons name="chevron-down" size={20} color="#666" />
-                      </TouchableOpacity>
+                      <TextInput
+                        style={styles.formInput}
+                        value={formData.Khasra}
+                        onChangeText={(value) => handleFormDataChange('Khasra', value)}
+                        placeholder="Enter Khasra Number"
+                      />
                     </View>
 
                   </View>
@@ -1312,15 +1279,6 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                 )}
 
                 {renderDropdownModal(
-                  formData.KhasraDropdownVisible,
-                  (visible) => handleFormDataChange('KhasraDropdownVisible', visible),
-                  KhasraOptions,
-                  formData.Khasra,
-                  (value) => handleFormDataChange('Khasra', value),
-                  "Select Khasra Number"
-                )}
-
-                {renderDropdownModal(
                   formData.unitDropdownVisible,
                   (visible) => handleFormDataChange('unitDropdownVisible', visible),
                   areaUnitOptions,
@@ -1368,7 +1326,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                 {/* Modal Header */}
                 <View style={styles.locationModalHeader}>
                   <Text style={styles.locationModalTitle}>
-                    Location Details - {selectedLocationFlat?.flatNumber}
+                    Location Details - {selectedLocationFlat?.plotNumber}
                   </Text>
                   <TouchableOpacity onPress={() => setLocationModalVisible(false)}>
                     <Ionicons name="close" size={24} color="#666" />
@@ -1486,6 +1444,8 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+      </>
+      )}
     </SafeAreaView>
   );
 };
@@ -1495,6 +1455,18 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: Platform.OS === "android" ? 25 : 0,
     backgroundColor: "#fff",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 50,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: "#666",
+    fontFamily: "PlusM",
   },
   header: {
     flexDirection: "row",
