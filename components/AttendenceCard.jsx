@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, Dimensions, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import * as Location from 'expo-location';
+import * as TaskManager from 'expo-task-manager';
 import LottieView from 'lottie-react-native';
 import moment from 'moment';
 import usePostAttendance from '../hooks/usePostAttendence';
 import useFetchAttendance from '../hooks/useFetchAttendance';
 import useSaveLocation from '../hooks/useSaveLocation';
 import * as SecureStore from 'expo-secure-store';
+import '../tasks/backgroundLocationTask'; // Import to register the task
 
 const { width, height } = Dimensions.get('window');
 
@@ -40,7 +42,24 @@ const AttendanceCard = () => {
     const interval = setInterval(() => {
       setClock(moment().format('hh:mm A'));
     }, 1000);
-    return () => clearInterval(interval);
+    
+    // Cleanup on unmount
+    return () => {
+      clearInterval(interval);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      // Stop background tracking if component unmounts
+      Location.hasStartedLocationUpdatesAsync('background-location-task')
+        .then(hasStarted => {
+          if (hasStarted && !clickOutTime) {
+            // Only stop if user hasn't checked out yet
+            // This ensures tracking continues even if component unmounts
+            console.log("Component unmounting but tracking continues...");
+          }
+        })
+        .catch(err => console.error('Error checking background task:', err));
+    };
   }, []);
 
   useEffect(() => {
@@ -54,16 +73,95 @@ const AttendanceCard = () => {
       if (hasCheckOut) {
         setClickedIn(false);
         animationRef.current?.play(30, 60);
-        clearInterval(intervalRef.current); // 👈 stop tracking if already checked out
+        clearInterval(intervalRef.current);
+        // ✅ Stop background tracking if checked out
+        stopBackgroundTracking();
       } else if (hasCheckIn) {
         setClickedIn(true);
         animationRef.current?.play(0, 30);
+        // ✅ Resume background tracking if already checked in
+        resumeBackgroundTracking();
       } else {
         setClickedIn(false);
         animationRef.current?.reset();
       }
     }
   }, [attendance]);
+
+  // ✅ Helper function to stop background tracking
+  const stopBackgroundTracking = async () => {
+    try {
+      const hasStarted = await Location.hasStartedLocationUpdatesAsync('background-location-task');
+      if (hasStarted) {
+        await Location.stopLocationUpdatesAsync('background-location-task');
+        console.log("Background tracking stopped (checked out)");
+      }
+    } catch (error) {
+      console.error("Error stopping background tracking:", error);
+    }
+  };
+
+  // ✅ Helper function to resume background tracking if already checked in
+  const resumeBackgroundTracking = async () => {
+    try {
+      const hasStarted = await Location.hasStartedLocationUpdatesAsync('background-location-task');
+      if (!hasStarted) {
+        // Check permissions first
+        const { status: foregroundStatus } = await Location.getForegroundPermissionsAsync();
+        const { status: backgroundStatus } = await Location.getBackgroundPermissionsAsync();
+        
+        if (foregroundStatus === 'granted' && backgroundStatus === 'granted') {
+          await Location.startLocationUpdatesAsync('background-location-task', {
+            accuracy: Location.Accuracy.High,
+            timeInterval: 60000, // 1 minute
+            distanceInterval: 0,
+            foregroundService: {
+              notificationTitle: 'Location Tracking Active',
+              notificationBody: 'Your location is being tracked for attendance.',
+              notificationColor: '#5aaf57',
+            },
+            pausesUpdatesAutomatically: false,
+            activityType: Location.ActivityType.Other,
+            showsBackgroundLocationIndicator: true,
+          });
+          console.log("Background tracking resumed (already checked in)");
+        } else {
+          console.log("Background permissions not granted, cannot resume tracking");
+        }
+      } else {
+        console.log("Background tracking already running");
+      }
+    } catch (error) {
+      console.error("Error resuming background tracking:", error);
+    }
+  };
+
+  // ✅ Debug helper to check tracking status
+  const checkTrackingStatus = async () => {
+    try {
+      const hasStarted = await Location.hasStartedLocationUpdatesAsync('background-location-task');
+      const foregroundPerms = await Location.getForegroundPermissionsAsync();
+      const backgroundPerms = await Location.getBackgroundPermissionsAsync();
+      
+      console.log("🔍 Tracking Status Check:");
+      console.log("- Background Task Running:", hasStarted);
+      console.log("- Foreground Permission:", foregroundPerms.status);
+      console.log("- Background Permission:", backgroundPerms.status);
+      console.log("- Checked In:", clickedIn);
+      console.log("- Interval Active:", !!intervalRef.current);
+    } catch (error) {
+      console.error("Error checking tracking status:", error);
+    }
+  };
+
+  // Run status check every 2 minutes when checked in
+  useEffect(() => {
+    if (clickedIn && !clickOutTime) {
+      const statusInterval = setInterval(checkTrackingStatus, 120000); // 2 minutes
+      checkTrackingStatus(); // Run immediately
+      return () => clearInterval(statusInterval);
+    }
+  }, [clickedIn, clickOutTime]);
 
   const handleClick = async () => {
     if (clickedIn) {
@@ -87,10 +185,20 @@ const AttendanceCard = () => {
 
   
   const proceedWithAttendance = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
+    // Request both foreground and background permissions
+    const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
+    if (foregroundStatus !== 'granted') {
       console.log('Permission to access location was denied');
       return;
+    }
+
+    const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+    if (backgroundStatus !== 'granted') {
+      Alert.alert(
+        'Background Permission Required',
+        'Please enable background location access for continuous tracking.',
+        [{ text: 'OK' }]
+      );
     }
 
     const location = await Location.getCurrentPositionAsync({});
@@ -110,7 +218,27 @@ const AttendanceCard = () => {
       animationRef.current?.play(0, 30);
       setClickedIn(true);
 
-      // Start 1-minute interval tracking
+      // Start background location tracking
+      try {
+        await Location.startLocationUpdatesAsync('background-location-task', {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 60000, // 1 minute
+          distanceInterval: 0,
+          foregroundService: {
+            notificationTitle: 'Location Tracking Active',
+            notificationBody: 'Your location is being tracked for attendance.',
+            notificationColor: '#5aaf57',
+          },
+          pausesUpdatesAutomatically: false,
+          activityType: Location.ActivityType.Other,
+          showsBackgroundLocationIndicator: true,
+        });
+        console.log("Background location tracking started");
+      } catch (error) {
+        console.error("Error starting background tracking:", error);
+      }
+
+      // Also keep foreground tracking as backup
       intervalRef.current = setInterval(async () => {
         try {
           const loc = await Location.getCurrentPositionAsync({});
@@ -123,6 +251,7 @@ const AttendanceCard = () => {
           };
          
           setLocationLogs(prev => [...prev, log]);
+          console.log("Foreground location saved:", latitude, longitude);
         } catch (error) {
           console.error("Error saving location:", error);
         }
@@ -132,6 +261,19 @@ const AttendanceCard = () => {
       // ✅ Check Out
       animationRef.current?.play(30, 60);
       setClickedIn(false);
+      
+      // Stop background location tracking
+      try {
+        const hasStarted = await Location.hasStartedLocationUpdatesAsync('background-location-task');
+        if (hasStarted) {
+          await Location.stopLocationUpdatesAsync('background-location-task');
+          console.log("Background location tracking stopped");
+        }
+      } catch (error) {
+        console.error("Error stopping background tracking:", error);
+      }
+      
+      // Stop foreground tracking
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }

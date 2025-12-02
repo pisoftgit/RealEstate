@@ -2,6 +2,7 @@ import { UserProvider } from "@/context/UserContext";
 import { ModuleProvider } from "@/context/ModuleContext";
 import { Stack } from "expo-router";
 import React from "react";
+import "../tasks/backgroundLocationTask"; // Initialize background task
 
 const RootLayout = () => {
   return (
