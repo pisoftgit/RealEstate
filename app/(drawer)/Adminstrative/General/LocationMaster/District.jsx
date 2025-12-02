@@ -1,65 +1,87 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
+import useGeneral from '../../../../../hooks/useGeneral';
 
 export default function District() {
   const navigation = useNavigation();
+  const {
+    getAllCountries,
+    getStatesByCountryId,
+    getAllDistricts,
+    saveDistrict,
+    updateDistrict,
+    deleteDistrict,
+    countries,
+    states: statesData,
+    districts: apiDistricts,
+    loading,
+    error,
+    success,
+  } = useGeneral();
 
   const [formData, setFormData] = useState({
-    country: '',
-    state: '',
+    countryId: '',
+    stateId: '',
     districtName: '',
     districtCode: '',
   });
 
   const [editing, setEditing] = useState(null);
+  const [districts, setDistricts] = useState([]);
+  const [filteredStates, setFilteredStates] = useState([]);
 
-  // Sample countries for dropdown
-  const countries = [
-    { id: 1, name: 'India' },
-    { id: 2, name: 'United States' },
-    { id: 3, name: 'United Kingdom' },
-    { id: 4, name: 'Canada' },
-    { id: 5, name: 'Australia' },
-  ];
+  // Fetch countries and districts on component mount
+  useEffect(() => {
+    loadInitialData();
+  }, []);
 
-  // Sample states for dropdown
-  const statesData = [
-    { id: 1, name: 'Maharashtra', country: 'India' },
-    { id: 2, name: 'Karnataka', country: 'India' },
-    { id: 3, name: 'California', country: 'United States' },
-    { id: 4, name: 'Texas', country: 'United States' },
-    { id: 5, name: 'Ontario', country: 'Canada' },
-  ];
+  // Update local districts when apiDistricts changes
+  useEffect(() => {
+    if (apiDistricts && Array.isArray(apiDistricts)) {
+      setDistricts(apiDistricts);
+    }
+  }, [apiDistricts]);
 
-  // Filter states based on selected country
-  const filteredStates = formData.country
-    ? statesData.filter(state => state.country === formData.country)
-    : [];
+  // Update filtered states when country changes or statesData changes
+  useEffect(() => {
+    if (statesData && Array.isArray(statesData)) {
+      setFilteredStates(statesData);
+    }
+  }, [statesData]);
 
-  const [districts, setDistricts] = useState([
-    { id: 1, name: 'Mumbai', code: 'MUM', state: 'Maharashtra', country: 'India' },
-    { id: 2, name: 'Pune', code: 'PUN', state: 'Maharashtra', country: 'India' },
-    { id: 3, name: 'Bangalore Urban', code: 'BLR', state: 'Karnataka', country: 'India' },
-    { id: 4, name: 'Los Angeles', code: 'LA', state: 'California', country: 'United States' },
-    { id: 5, name: 'Houston', code: 'HOU', state: 'Texas', country: 'United States' },
-  ]);
+  const loadInitialData = async () => {
+    try {
+      await getAllCountries();
+      await getAllDistricts();
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to load data');
+    }
+  };
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = async (field, value) => {
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
       // Reset state when country changes
-      if (field === 'country') {
-        newData.state = '';
+      if (field === 'countryId') {
+        newData.stateId = '';
+        // Fetch states for the selected country
+        if (value) {
+          getStatesByCountryId(value).catch(err => {
+            console.error('Error fetching states:', err);
+          });
+        } else {
+          setFilteredStates([]);
+        }
       }
       return newData;
     });
   };
 
-  const handleSubmit = () => {
-    if (!formData.country || !formData.state || !formData.districtName.trim() || !formData.districtCode.trim()) {
+  const handleSubmit = async () => {
+    if (!formData.countryId || !formData.stateId || !formData.districtName.trim() || !formData.districtCode.trim()) {
       Alert.alert('Validation Error', 'Please fill all required fields!');
       return;
     }
@@ -67,52 +89,44 @@ export default function District() {
     try {
       if (editing) {
         // Update existing district
-        setDistricts(prev =>
-          prev.map(item =>
-            item.id === editing.id
-              ? {
-                  ...item,
-                  name: formData.districtName,
-                  code: formData.districtCode,
-                  state: formData.state,
-                  country: formData.country,
-                }
-              : item
-          )
-        );
+        await updateDistrict(editing.id, formData);
         Alert.alert('Success', 'District updated successfully!');
         setEditing(null);
       } else {
         // Add new district
-        const newDistrict = {
-          id: districts.length + 1,
-          name: formData.districtName,
-          code: formData.districtCode,
-          state: formData.state,
-          country: formData.country,
-        };
-        setDistricts(prev => [...prev, newDistrict]);
+        await saveDistrict(formData);
         Alert.alert('Success', 'District added successfully!');
       }
 
-      // Reset form
+      // Reset form and reload data
       setFormData({
-        country: '',
-        state: '',
+        countryId: '',
+        stateId: '',
         districtName: '',
         districtCode: '',
       });
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save district');
+      setFilteredStates([]);
+      await getAllDistricts();
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to save district');
     }
   };
 
-  const handleEdit = (item) => {
+  const handleEdit = async (item) => {
+    // First load states for the country
+    if (item.state?.country?.id) {
+      try {
+        await getStatesByCountryId(item.state.country.id);
+      } catch (err) {
+        console.error('Error loading states:', err);
+      }
+    }
+    
     setFormData({
-      country: item.country,
-      state: item.state,
-      districtName: item.name,
-      districtCode: item.code,
+      countryId: item.state?.country?.id || '',
+      stateId: item.state?.id || '',
+      districtName: item.district || '',
+      districtCode: item.districtCode || '',
     });
     setEditing(item);
   };
@@ -123,9 +137,14 @@ export default function District() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setDistricts(prev => prev.filter(item => item.id !== id));
-          Alert.alert('Success', 'District deleted successfully!');
+        onPress: async () => {
+          try {
+            await deleteDistrict(id);
+            Alert.alert('Success', 'District deleted successfully!');
+            await getAllDistricts();
+          } catch (err) {
+            Alert.alert('Error', err.message || 'Failed to delete district');
+          }
         },
       },
     ]);
@@ -134,11 +153,23 @@ export default function District() {
   const handleCancel = () => {
     setEditing(null);
     setFormData({
-      country: '',
-      state: '',
+      countryId: '',
+      stateId: '',
       districtName: '',
       districtCode: '',
     });
+    setFilteredStates([]);
+  };
+
+  // Helper functions to get names by ID
+  const getCountryName = (countryId) => {
+    const country = countries?.find(c => c.id === countryId);
+    return country?.country || 'N/A';
+  };
+
+  const getStateName = (stateId) => {
+    const state = statesData?.find(s => s.id === stateId);
+    return state?.state || 'N/A';
   };
 
   return (
@@ -150,6 +181,12 @@ export default function District() {
           </TouchableOpacity>
           <Text style={styles.title}>District</Text>
         </View>
+
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#5aaf57" />
+          </View>
+        )}
 
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* Configure District Card */}
@@ -165,13 +202,13 @@ export default function District() {
               </Text>
               <View style={styles.pickerContainer}>
                 <Picker
-                  selectedValue={formData.country}
-                  onValueChange={(value) => handleInputChange('country', value)}
+                  selectedValue={formData.countryId}
+                  onValueChange={(value) => handleInputChange('countryId', value)}
                   style={styles.picker}
                 >
                   <Picker.Item label="Select Country" value="" />
-                  {countries.map((country) => (
-                    <Picker.Item key={country.id} label={country.name} value={country.name} />
+                  {countries && countries.map((country) => (
+                    <Picker.Item key={country.id} label={country.country} value={country.id} />
                   ))}
                 </Picker>
               </View>
@@ -184,14 +221,14 @@ export default function District() {
               </Text>
               <View style={styles.pickerContainer}>
                 <Picker
-                  selectedValue={formData.state}
-                  onValueChange={(value) => handleInputChange('state', value)}
+                  selectedValue={formData.stateId}
+                  onValueChange={(value) => handleInputChange('stateId', value)}
                   style={styles.picker}
-                  enabled={!!formData.country}
+                  enabled={!!formData.countryId}
                 >
                   <Picker.Item label="Select State" value="" />
-                  {filteredStates.map((state) => (
-                    <Picker.Item key={state.id} label={state.name} value={state.name} />
+                  {filteredStates && filteredStates.map((state) => (
+                    <Picker.Item key={state.id} label={state.state} value={state.id} />
                   ))}
                 </Picker>
               </View>
@@ -255,23 +292,29 @@ export default function District() {
                 </View>
 
                 {/* Table Rows */}
-                {districts.map((item, idx) => (
-                  <View key={item.id} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { width: 60 }]}>{idx + 1}</Text>
-                    <Text style={[styles.tableCell, { width: 140 }]}>{item.name}</Text>
-                    <Text style={[styles.tableCell, { width: 80 }]}>{item.code}</Text>
-                    <Text style={[styles.tableCell, { width: 120 }]}>{item.state}</Text>
-                    <Text style={[styles.tableCell, { width: 120 }]}>{item.country}</Text>
-                    <View style={[styles.actionCell, { width: 100 }]}>
-                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                        <Feather name="edit" size={18} color="#5aaf57" />
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                        <Ionicons name="trash" size={18} color="#d32f2f" />
-                      </TouchableOpacity>
+                {districts && districts.length > 0 ? (
+                  districts.map((item, idx) => (
+                    <View key={item.id} style={styles.tableRow}>
+                      <Text style={[styles.tableCell, { width: 60 }]}>{idx + 1}</Text>
+                      <Text style={[styles.tableCell, { width: 140 }]}>{item.district || 'N/A'}</Text>
+                      <Text style={[styles.tableCell, { width: 80 }]}>{item.districtCode || 'N/A'}</Text>
+                      <Text style={[styles.tableCell, { width: 120 }]}>{item.state?.state || 'N/A'}</Text>
+                      <Text style={[styles.tableCell, { width: 120 }]}>{item.state?.country?.country || 'N/A'}</Text>
+                      <View style={[styles.actionCell, { width: 100 }]}>
+                        <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
+                          <Feather name="edit" size={18} color="#5aaf57" />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
+                          <Ionicons name="trash" size={18} color="#d32f2f" />
+                        </TouchableOpacity>
+                      </View>
                     </View>
+                  ))
+                ) : (
+                  <View style={styles.emptyRow}>
+                    <Text style={styles.emptyText}>No districts found</Text>
                   </View>
-                ))}
+                )}
               </View>
             </ScrollView>
           </View>
@@ -293,6 +336,11 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusSB',
     color: '#333',
     marginLeft: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   card: {
     backgroundColor: '#fff',
@@ -401,5 +449,14 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     padding: 4,
+  },
+  emptyRow: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#999',
+    fontFamily: 'PlusR',
+    fontSize: 14,
   },
 });

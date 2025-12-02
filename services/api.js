@@ -623,6 +623,118 @@ export const getAllbuilderbyid = async () => {
     return [];
   }
 };
+// Get Organization
+// Get Organization
+export const getOrganization = async () => {
+  const secretKey = await SecureStore.getItemAsync("auth_token");
+
+  const response = await fetch(`${API_BASE_URL}/organization/getOrganization`, {
+    method: "GET",
+    headers: {
+      secret_key: secretKey,
+      Accept: "application/json",
+    },
+  });
+
+  return response;
+};
+
+// Save Organization
+export const saveOrganization = async (payload) => {
+  const secretKey = await SecureStore.getItemAsync("auth_token");
+
+  const response = await fetch(`${API_BASE_URL}/organization/save`, {
+    method: "POST",
+    headers: {
+      secret_key: secretKey,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return response;
+};
+
+// Get All Financial Years
+export const getAllFinancialYears = async () => {
+  const secretKey = await SecureStore.getItemAsync("auth_token");
+
+  const response = await fetch(`${API_BASE_URL}/FinancialYear/getAllFinancialYears`, {
+    method: "GET",
+    headers: {
+      secret_key: secretKey,
+      Accept: "application/json",
+    },
+  });
+
+  return response;
+};
+
+// Get Financial Year by ID
+export const getFinancialYearById = async (id) => {
+  const secretKey = await SecureStore.getItemAsync("auth_token");
+
+  const response = await fetch(`${API_BASE_URL}/FinancialYear/getFinancialYear/${id}`, {
+    method: "GET",
+    headers: {
+      secret_key: secretKey,
+      Accept: "application/json",
+    },
+  });
+
+  return response;
+};
+
+// Save Financial Year
+export const saveFinancialYear = async (payload) => {
+  const secretKey = await SecureStore.getItemAsync("auth_token");
+
+  const response = await fetch(`${API_BASE_URL}/FinancialYear/save`, {
+    method: "POST",
+    headers: {
+      secret_key: secretKey,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return response;
+};
+
+// Update Financial Year
+export const updateFinancialYear = async (id, payload) => {
+  const secretKey = await SecureStore.getItemAsync("auth_token");
+
+  const response = await fetch(`${API_BASE_URL}/FinancialYear/update/${id}`, {
+    method: "PUT",
+    headers: {
+      secret_key: secretKey,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return response;
+};
+
+// Delete Financial Year
+export const deleteFinancialYear = async (id) => {
+  const secretKey = await SecureStore.getItemAsync("auth_token");
+
+  const response = await fetch(`${API_BASE_URL}/FinancialYear/delete/${id}`, {
+    method: "DELETE",
+    headers: {
+      secret_key: secretKey,
+      Accept: "application/json",
+    },
+  });
+
+  return response;
+};
+
 {/*get my movements*/}
 
 // export const getMyMovements = async (employeeId) => {

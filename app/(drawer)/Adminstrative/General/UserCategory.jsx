@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+import useGeneral from '../../../../hooks/useGeneral';
 
 export default function UserCategory() {
   const navigation = useNavigation();
+  const { 
+    getAllUsersCategories, 
+    saveUserCategory, 
+    updateUserCategory, 
+    deleteUserCategory,
+    usersCategories: apiUsersCategories,
+    loading, 
+    error 
+  } = useGeneral();
 
   const [formData, setFormData] = useState({
     categoryName: '',
@@ -12,23 +22,26 @@ export default function UserCategory() {
   });
 
   const [editing, setEditing] = useState(null);
-  const [categories, setCategories] = useState([
-    {
-      id: 1,
-      name: 'Administrator',
-      code: 'ADM001',
-    },
-    {
-      id: 2,
-      name: 'Employee',
-      code: 'EMP001',
-    },
-    {
-      id: 3,
-      name: 'Manager',
-      code: 'MGR001',
-    },
-  ]);
+  const [categories, setCategories] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  // Fetch users categories on component mount
+  useEffect(() => {
+    fetchUsersCategories();
+  }, []);
+
+  const fetchUsersCategories = async () => {
+    try {
+      setIsLoadingData(true);
+      const data = await getAllUsersCategories();
+      setCategories(data || []);
+    } catch (err) {
+      console.error('Error fetching users categories:', err);
+      Alert.alert('Error', 'Failed to fetch users categories');
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -37,7 +50,7 @@ export default function UserCategory() {
     }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.categoryName.trim() || !formData.categoryCode.trim()) {
       Alert.alert('Validation Error', 'Please fill all required fields!');
       return;
@@ -46,44 +59,36 @@ export default function UserCategory() {
     try {
       if (editing) {
         // Update existing category
-        setCategories(prev =>
-          prev.map(cat =>
-            cat.id === editing.id
-              ? {
-                  ...cat,
-                  name: formData.categoryName,
-                  code: formData.categoryCode,
-                }
-              : cat
-          )
-        );
+        const result = await updateUserCategory(editing.id, formData);
+        console.log('Update result:', result);
         Alert.alert('Success', 'User category updated successfully!');
         setEditing(null);
       } else {
         // Add new category
-        const newCategory = {
-          id: categories.length + 1,
-          name: formData.categoryName,
-          code: formData.categoryCode,
-        };
-        setCategories(prev => [...prev, newCategory]);
+        const result = await saveUserCategory(formData);
+        console.log('Save result:', result);
         Alert.alert('Success', 'User category added successfully!');
       }
 
-      // Reset form
+      // Reset form and refresh list
       setFormData({
         categoryName: '',
         categoryCode: '',
       });
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save user category');
+      
+      // Refresh the list
+      await fetchUsersCategories();
+    } catch (err) {
+      console.error('Submit error:', err);
+      const errorMessage = err?.message || error || 'Failed to save user category';
+      Alert.alert('Error', errorMessage);
     }
   };
 
   const handleEdit = (item) => {
     setFormData({
-      categoryName: item.name,
-      categoryCode: item.code,
+      categoryName: item.categoryName,
+      categoryCode: item.categoryCode,
     });
     setEditing(item);
   };
@@ -94,9 +99,18 @@ export default function UserCategory() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setCategories(prev => prev.filter(cat => cat.id !== id));
-          Alert.alert('Success', 'User category deleted successfully!');
+        onPress: async () => {
+          try {
+            const result = await deleteUserCategory(id);
+            console.log('Delete result:', result);
+            Alert.alert('Success', 'User category deleted successfully!');
+            // Refresh the list
+            await fetchUsersCategories();
+          } catch (err) {
+            console.error('Delete error:', err);
+            const errorMessage = err?.message || error || 'Failed to delete user category';
+            Alert.alert('Error', errorMessage);
+          }
         },
       },
     ]);
@@ -155,8 +169,14 @@ export default function UserCategory() {
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+            <TouchableOpacity 
+              style={[styles.submitButton, loading && styles.disabledButton]} 
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              <Text style={styles.submitButtonText}>
+                {loading ? 'Saving...' : editing ? 'Update' : 'Submit'}
+              </Text>
             </TouchableOpacity>
 
             {/* Cancel Button (shown only when editing) */}
@@ -171,30 +191,41 @@ export default function UserCategory() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Existing Added Category</Text>
             
-            {/* Table Header */}
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
-              <Text style={[styles.tableHeaderText, { flex: 2 }]}>Category Name</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>Code</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
-            </View>
-
-            {/* Table Rows */}
-            {categories.map((item, idx) => (
-              <View key={item.id} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
-                <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
-                <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.code}</Text>
-                <View style={[styles.actionCell, { flex: 1 }]}>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                    <Feather name="edit" size={18} color="#5aaf57" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                    <Ionicons name="trash" size={18} color="#d32f2f" />
-                  </TouchableOpacity>
-                </View>
+            {isLoadingData ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#5aaf57" />
+                <Text style={styles.loadingText}>Loading categories...</Text>
               </View>
-            ))}
+            ) : categories.length === 0 ? (
+              <Text style={styles.emptyText}>No categories found</Text>
+            ) : (
+              <>
+                {/* Table Header */}
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 2 }]}>Category Name</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>Code</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
+                </View>
+
+                {/* Table Rows */}
+                {categories.map((item, idx) => (
+                  <View key={item.id} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
+                    <Text style={[styles.tableCell, { flex: 2 }]}>{item.categoryName}</Text>
+                    <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.categoryCode}</Text>
+                    <View style={[styles.actionCell, { flex: 1 }]}>
+                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
+                        <Feather name="edit" size={18} color="#5aaf57" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
+                        <Ionicons name="trash" size={18} color="#d32f2f" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+              </>
+            )}
           </View>
         </ScrollView>
       </View>
@@ -309,5 +340,26 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     padding: 4,
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+    fontFamily: 'PlusR',
+  },
+  emptyText: {
+    textAlign: 'center',
+    padding: 20,
+    fontSize: 16,
+    color: '#999',
+    fontFamily: 'PlusR',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });

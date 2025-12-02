@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+import useGeneral from '../../../../../hooks/useGeneral';
 
 export default function Country() {
   const navigation = useNavigation();
+  const {
+    getAllCountries,
+    saveCountry,
+    updateCountry,
+    deleteCountry,
+    countries,
+    loading,
+    error,
+  } = useGeneral();
 
   const [formData, setFormData] = useState({
     countryName: '',
@@ -12,13 +22,27 @@ export default function Country() {
   });
 
   const [editing, setEditing] = useState(null);
-  const [countries, setCountries] = useState([
-    { id: 1, name: 'India', code: 'IN' },
-    { id: 2, name: 'United States', code: 'US' },
-    { id: 3, name: 'United Kingdom', code: 'UK' },
-    { id: 4, name: 'Canada', code: 'CA' },
-    { id: 5, name: 'Australia', code: 'AU' },
-  ]);
+  const [localLoading, setLocalLoading] = useState(false);
+
+  // Fetch countries on component mount
+  useEffect(() => {
+    fetchCountries();
+  }, []);
+
+  // Show error alerts
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error);
+    }
+  }, [error]);
+
+  const fetchCountries = async () => {
+    try {
+      await getAllCountries();
+    } catch (err) {
+      console.error('Error fetching countries:', err);
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -27,36 +51,33 @@ export default function Country() {
     }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.countryName.trim() || !formData.countryCode.trim()) {
       Alert.alert('Validation Error', 'Please fill all required fields!');
       return;
     }
 
+    setLocalLoading(true);
     try {
       if (editing) {
         // Update existing country
-        setCountries(prev =>
-          prev.map(item =>
-            item.id === editing.id
-              ? {
-                  ...item,
-                  name: formData.countryName,
-                  code: formData.countryCode,
-                }
-              : item
-          )
-        );
+        const countryId = editing.countryId || editing.id;
+        if (!countryId) {
+          throw new Error('Country ID is missing');
+        }
+        console.log('Updating country with ID:', countryId);
+        await updateCountry(countryId, { 
+          country: formData.countryName,
+          countryCode: formData.countryCode,
+        });
         Alert.alert('Success', 'Country updated successfully!');
         setEditing(null);
       } else {
         // Add new country
-        const newCountry = {
-          id: countries.length + 1,
-          name: formData.countryName,
-          code: formData.countryCode,
-        };
-        setCountries(prev => [...prev, newCountry]);
+        await saveCountry({ 
+          country: formData.countryName,
+          countryCode: formData.countryCode,
+        });
         Alert.alert('Success', 'Country added successfully!');
       }
 
@@ -65,28 +86,50 @@ export default function Country() {
         countryName: '',
         countryCode: '',
       });
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save country');
+      // Refresh the list
+      await fetchCountries();
+    } catch (err) {
+      console.error('Error saving country:', err);
+      Alert.alert('Error', err.message || 'Failed to save country');
+    } finally {
+      setLocalLoading(false);
     }
   };
 
   const handleEdit = (item) => {
+    console.log('Edit item:', JSON.stringify(item)); // Debug log
     setFormData({
-      countryName: item.name,
-      countryCode: item.code,
+      countryName: item.country,
+      countryCode: item.countryCode,
     });
     setEditing(item);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (item) => {
     Alert.alert('Delete Country', 'Are you sure you want to delete this country?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setCountries(prev => prev.filter(item => item.id !== id));
-          Alert.alert('Success', 'Country deleted successfully!');
+        onPress: async () => {
+          setLocalLoading(true);
+          try {
+            // Use id or countryId, whichever is available
+            const countryId = item.countryId || item.id;
+            if (!countryId) {
+              throw new Error('Country ID is missing');
+            }
+            console.log('Deleting country with ID:', countryId);
+            await deleteCountry(countryId);
+            Alert.alert('Success', 'Country deleted successfully!');
+            // Refresh the list
+            await fetchCountries();
+          } catch (err) {
+            console.error('Error deleting country:', err);
+            Alert.alert('Error', err.message || 'Failed to delete country');
+          } finally {
+            setLocalLoading(false);
+          }
         },
       },
     ]);
@@ -146,8 +189,16 @@ export default function Country() {
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+            <TouchableOpacity 
+              style={[styles.submitButton, (loading || localLoading) && styles.disabledButton]} 
+              onPress={handleSubmit}
+              disabled={loading || localLoading}
+            >
+              {(loading || localLoading) ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+              )}
             </TouchableOpacity>
 
             {/* Cancel Button (shown only when editing) */}
@@ -162,30 +213,43 @@ export default function Country() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Existing Country</Text>
             
-            {/* Table Header */}
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
-              <Text style={[styles.tableHeaderText, { flex: 2 }]}>Country Name</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1 }]}>Code</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
-            </View>
-
-            {/* Table Rows */}
-            {countries.map((item, idx) => (
-              <View key={item.id} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
-                <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{item.code}</Text>
-                <View style={[styles.actionCell, { flex: 1 }]}>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                    <Feather name="edit" size={18} color="#5aaf57" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                    <Ionicons name="trash" size={18} color="#d32f2f" />
-                  </TouchableOpacity>
-                </View>
+            {loading && !localLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#5aaf57" />
+                <Text style={styles.loadingText}>Loading countries...</Text>
               </View>
-            ))}
+            ) : !countries || countries.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No countries found</Text>
+              </View>
+            ) : (
+              <View>
+                {/* Table Header */}
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 2 }]}>Country Name</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 1 }]}>Code</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
+                </View>
+
+                {/* Table Rows */}
+                {countries.map((item, idx) => (
+                  <View key={item.countryId || item.id || idx} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
+                    <Text style={[styles.tableCell, { flex: 2 }]}>{item.country}</Text>
+                    <Text style={[styles.tableCell, { flex: 1 }]}>{item.countryCode}</Text>
+                    <View style={[styles.actionCell, { flex: 1 }]}>
+                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
+                        <Feather name="edit" size={18} color="#5aaf57" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item)}>
+                        <Ionicons name="trash" size={18} color="#d32f2f" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         </ScrollView>
       </View>
@@ -249,6 +313,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
+  disabledButton: {
+    backgroundColor: '#a5d6a3',
+  },
   submitButtonText: {
     color: '#fff',
     fontSize: 16,
@@ -300,5 +367,25 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     padding: 4,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
+    fontFamily: 'PlusR',
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    color: '#666',
+    fontFamily: 'PlusR',
+    fontSize: 14,
   },
 });

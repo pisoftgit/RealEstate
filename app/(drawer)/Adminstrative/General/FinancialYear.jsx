@@ -1,35 +1,56 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import useGeneral from '../../../../hooks/useGeneral';
 
 export default function FinancialYear() {
   const navigation = useNavigation();
+  const { 
+    getAllFinancialYears, 
+    saveFinancialYear, 
+    updateFinancialYear, 
+    deleteFinancialYear,
+    financialYears: apiFinancialYears,
+    loading, 
+    error 
+  } = useGeneral();
 
   const [formData, setFormData] = useState({
     name: '',
     startDate: '',
     endDate: '',
-    isCurrent: false,
+    currentYear: false,
   });
 
   const [editing, setEditing] = useState(null);
-  const [financialYears, setFinancialYears] = useState([
-    {
-      id: 1,
-      name: 'FY 2023-24',
-      startDate: '2023-04-01',
-      endDate: '2024-03-31',
-      isActive: true,
-    },
-    {
-      id: 2,
-      name: 'FY 2022-23',
-      startDate: '2022-04-01',
-      endDate: '2023-03-31',
-      isActive: false,
-    },
-  ]);
+  const [financialYears, setFinancialYears] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  
+  // Date picker states
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [startDateObj, setStartDateObj] = useState(new Date());
+  const [endDateObj, setEndDateObj] = useState(new Date());
+
+  // Fetch financial years on component mount
+  useEffect(() => {
+    fetchFinancialYears();
+  }, []);
+
+  const fetchFinancialYears = async () => {
+    try {
+      setIsLoadingData(true);
+      const data = await getAllFinancialYears();
+      setFinancialYears(data || []);
+    } catch (err) {
+      console.error('Error fetching financial years:', err);
+      Alert.alert('Error', 'Failed to fetch financial years');
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -38,7 +59,7 @@ export default function FinancialYear() {
     }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name.trim() || !formData.startDate.trim() || !formData.endDate.trim()) {
       Alert.alert('Validation Error', 'Please fill all required fields!');
       return;
@@ -47,43 +68,33 @@ export default function FinancialYear() {
     try {
       if (editing) {
         // Update existing financial year
-        setFinancialYears(prev =>
-          prev.map(fy =>
-            fy.id === editing.id
-              ? {
-                  ...fy,
-                  name: formData.name,
-                  startDate: formData.startDate,
-                  endDate: formData.endDate,
-                  isActive: formData.isCurrent,
-                }
-              : fy
-          )
-        );
+        const result = await updateFinancialYear(editing.id, formData);
+        console.log('Update result:', result);
         Alert.alert('Success', 'Financial year updated successfully!');
         setEditing(null);
       } else {
         // Add new financial year
-        const newFY = {
-          id: financialYears.length + 1,
-          name: formData.name,
-          startDate: formData.startDate,
-          endDate: formData.endDate,
-          isActive: formData.isCurrent,
-        };
-        setFinancialYears(prev => [...prev, newFY]);
+        const result = await saveFinancialYear(formData);
+        console.log('Save result:', result);
         Alert.alert('Success', 'Financial year added successfully!');
       }
 
-      // Reset form
+      // Reset form and refresh list
       setFormData({
         name: '',
         startDate: '',
         endDate: '',
-        isCurrent: false,
+        currentYear: false,
       });
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save financial year');
+      setStartDateObj(new Date());
+      setEndDateObj(new Date());
+      
+      // Refresh the list
+      await fetchFinancialYears();
+    } catch (err) {
+      console.error('Submit error:', err);
+      const errorMessage = err?.message || error || 'Failed to save financial year';
+      Alert.alert('Error', errorMessage);
     }
   };
 
@@ -92,9 +103,38 @@ export default function FinancialYear() {
       name: item.name,
       startDate: item.startDate,
       endDate: item.endDate,
-      isCurrent: item.isActive,
+      currentYear: item.currentYear,
     });
+    
+    // Set date objects for pickers
+    if (item.startDate) {
+      setStartDateObj(new Date(item.startDate));
+    }
+    if (item.endDate) {
+      setEndDateObj(new Date(item.endDate));
+    }
+    
     setEditing(item);
+  };
+
+  const handleStartDateChange = (event, selectedDate) => {
+    setShowStartDatePicker(Platform.OS === 'ios');
+    
+    if (selectedDate) {
+      setStartDateObj(selectedDate);
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      handleInputChange('startDate', formattedDate);
+    }
+  };
+
+  const handleEndDateChange = (event, selectedDate) => {
+    setShowEndDatePicker(Platform.OS === 'ios');
+    
+    if (selectedDate) {
+      setEndDateObj(selectedDate);
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      handleInputChange('endDate', formattedDate);
+    }
   };
 
   const handleDelete = (id) => {
@@ -103,9 +143,18 @@ export default function FinancialYear() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setFinancialYears(prev => prev.filter(fy => fy.id !== id));
-          Alert.alert('Success', 'Financial year deleted successfully!');
+        onPress: async () => {
+          try {
+            const result = await deleteFinancialYear(id);
+            console.log('Delete result:', result);
+            Alert.alert('Success', 'Financial year deleted successfully!');
+            // Refresh the list
+            await fetchFinancialYears();
+          } catch (err) {
+            console.error('Delete error:', err);
+            const errorMessage = err?.message || error || 'Failed to delete financial year';
+            Alert.alert('Error', errorMessage);
+          }
         },
       },
     ]);
@@ -146,26 +195,50 @@ export default function FinancialYear() {
               <Text style={styles.label}>
                 Start Date <Text style={styles.required}>*</Text>
               </Text>
-              <TextInput
-                style={styles.input}
-                value={formData.startDate}
-                onChangeText={(value) => handleInputChange('startDate', value)}
-                placeholder="YYYY-MM-DD"
-              />
+              <TouchableOpacity
+                style={styles.dateInput}
+                onPress={() => setShowStartDatePicker(true)}
+              >
+                <Text style={[styles.dateText, !formData.startDate && styles.placeholderText]}>
+                  {formData.startDate || 'YYYY-MM-DD'}
+                </Text>
+                <Ionicons name="calendar-outline" size={20} color="#666" />
+              </TouchableOpacity>
             </View>
+
+            {showStartDatePicker && (
+              <DateTimePicker
+                value={startDateObj}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleStartDateChange}
+              />
+            )}
 
             {/* End Date */}
             <View style={styles.formRow}>
               <Text style={styles.label}>
                 End Date <Text style={styles.required}>*</Text>
               </Text>
-              <TextInput
-                style={styles.input}
-                value={formData.endDate}
-                onChangeText={(value) => handleInputChange('endDate', value)}
-                placeholder="YYYY-MM-DD"
-              />
+              <TouchableOpacity
+                style={styles.dateInput}
+                onPress={() => setShowEndDatePicker(true)}
+              >
+                <Text style={[styles.dateText, !formData.endDate && styles.placeholderText]}>
+                  {formData.endDate || 'YYYY-MM-DD'}
+                </Text>
+                <Ionicons name="calendar-outline" size={20} color="#666" />
+              </TouchableOpacity>
             </View>
+
+            {showEndDatePicker && (
+              <DateTimePicker
+                value={endDateObj}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleEndDateChange}
+              />
+            )}
 
             {/* Is Current */}
             <View style={styles.formRow}>
@@ -174,14 +247,14 @@ export default function FinancialYear() {
                 <TouchableOpacity
                   style={[
                     styles.toggleButton,
-                    formData.isCurrent ? styles.toggleButtonActive : styles.toggleButtonInactive,
+                    formData.currentYear ? styles.toggleButtonActive : styles.toggleButtonInactive,
                   ]}
-                  onPress={() => handleInputChange('isCurrent', true)}
+                  onPress={() => handleInputChange('currentYear', true)}
                 >
                   <Text
                     style={[
                       styles.toggleText,
-                      formData.isCurrent ? styles.toggleTextActive : styles.toggleTextInactive,
+                      formData.currentYear ? styles.toggleTextActive : styles.toggleTextInactive,
                     ]}
                   >
                     Yes
@@ -190,14 +263,14 @@ export default function FinancialYear() {
                 <TouchableOpacity
                   style={[
                     styles.toggleButton,
-                    !formData.isCurrent ? styles.toggleButtonActive : styles.toggleButtonInactive,
+                    !formData.currentYear ? styles.toggleButtonActive : styles.toggleButtonInactive,
                   ]}
-                  onPress={() => handleInputChange('isCurrent', false)}
+                  onPress={() => handleInputChange('currentYear', false)}
                 >
                   <Text
                     style={[
                       styles.toggleText,
-                      !formData.isCurrent ? styles.toggleTextActive : styles.toggleTextInactive,
+                      !formData.currentYear ? styles.toggleTextActive : styles.toggleTextInactive,
                     ]}
                   >
                     No
@@ -207,8 +280,14 @@ export default function FinancialYear() {
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+            <TouchableOpacity 
+              style={[styles.submitButton, loading && styles.disabledButton]} 
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              <Text style={styles.submitButtonText}>
+                {loading ? 'Saving...' : editing ? 'Update' : 'Submit'}
+              </Text>
             </TouchableOpacity>
 
             {editing && (
@@ -220,8 +299,10 @@ export default function FinancialYear() {
                     name: '',
                     startDate: '',
                     endDate: '',
-                    isCurrent: false,
+                    currentYear: false,
                   });
+                  setStartDateObj(new Date());
+                  setEndDateObj(new Date());
                 }}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -232,7 +313,16 @@ export default function FinancialYear() {
           {/* Existing Financial Year Card */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Existing Financial Year</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            
+            {isLoadingData ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#5aaf57" />
+                <Text style={styles.loadingText}>Loading financial years...</Text>
+              </View>
+            ) : financialYears.length === 0 ? (
+              <Text style={styles.emptyText}>No financial years found</Text>
+            ) : (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View>
                 {/* Table Header */}
                 <View style={styles.tableHeader}>
@@ -255,16 +345,16 @@ export default function FinancialYear() {
                       <View
                         style={[
                           styles.statusBadge,
-                          item.isActive ? styles.statusBadgeActive : styles.statusBadgeInactive,
+                          item.currentYear ? styles.statusBadgeActive : styles.statusBadgeInactive,
                         ]}
                       >
                         <Text
                           style={[
                             styles.statusText,
-                            item.isActive ? styles.statusTextActive : styles.statusTextInactive,
+                            item.currentYear ? styles.statusTextActive : styles.statusTextInactive,
                           ]}
                         >
-                          {item.isActive ? 'Yes' : 'No'}
+                          {item.currentYear ? 'Yes' : 'No'}
                         </Text>
                       </View>
                     </View>
@@ -280,6 +370,7 @@ export default function FinancialYear() {
                 ))}
               </View>
             </ScrollView>
+            )}
           </View>
         </ScrollView>
       </View>
@@ -335,6 +426,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     color: '#333',
     fontFamily: 'PlusR',
+  },
+  dateInput: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 8,
+    backgroundColor: '#f5f5f5',
+  },
+  dateText: {
+    color: '#333',
+    fontFamily: 'PlusR',
+    fontSize: 14,
+  },
+  placeholderText: {
+    color: '#999',
   },
   toggleContainer: {
     flex: 1,
@@ -449,5 +559,26 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     padding: 4,
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+    fontFamily: 'PlusR',
+  },
+  emptyText: {
+    textAlign: 'center',
+    padding: 20,
+    fontSize: 16,
+    color: '#999',
+    fontFamily: 'PlusR',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });

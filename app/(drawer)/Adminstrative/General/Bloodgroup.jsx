@@ -1,25 +1,45 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+import useGeneral from '../../../../hooks/useGeneral';
 
 export default function Bloodgroup() {
   const navigation = useNavigation();
+  const { 
+    getAllBloodGroups, 
+    saveBloodGroup, 
+    updateBloodGroup, 
+    deleteBloodGroup,
+    bloodGroups: apiBloodGroups,
+    loading, 
+    error 
+  } = useGeneral();
 
   const [bloodgroup, setBloodgroup] = useState('');
   const [editing, setEditing] = useState(null);
-  const [bloodgroups, setBloodgroups] = useState([
-    { id: 1, name: 'A+' },
-    { id: 2, name: 'A-' },
-    { id: 3, name: 'B+' },
-    { id: 4, name: 'B-' },
-    { id: 5, name: 'AB+' },
-    { id: 6, name: 'AB-' },
-    { id: 7, name: 'O+' },
-    { id: 8, name: 'O-' },
-  ]);
+  const [bloodgroups, setBloodgroups] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
-  const handleSubmit = () => {
+  // Fetch blood groups on component mount
+  useEffect(() => {
+    fetchBloodgroups();
+  }, []);
+
+  const fetchBloodgroups = async () => {
+    try {
+      setIsLoadingData(true);
+      const data = await getAllBloodGroups();
+      setBloodgroups(data || []);
+    } catch (err) {
+      console.error('Error fetching blood groups:', err);
+      Alert.alert('Error', 'Failed to fetch blood groups');
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!bloodgroup.trim()) {
       Alert.alert('Validation Error', 'Please enter blood group!');
       return;
@@ -28,34 +48,31 @@ export default function Bloodgroup() {
     try {
       if (editing) {
         // Update existing blood group
-        setBloodgroups(prev =>
-          prev.map(item =>
-            item.id === editing.id
-              ? { ...item, name: bloodgroup }
-              : item
-          )
-        );
+        const result = await updateBloodGroup(editing.id, { bloodGroup: bloodgroup });
+        console.log('Update result:', result);
         Alert.alert('Success', 'Blood group updated successfully!');
         setEditing(null);
       } else {
         // Add new blood group
-        const newBloodgroup = {
-          id: bloodgroups.length + 1,
-          name: bloodgroup,
-        };
-        setBloodgroups(prev => [...prev, newBloodgroup]);
+        const result = await saveBloodGroup({ bloodGroup: bloodgroup });
+        console.log('Save result:', result);
         Alert.alert('Success', 'Blood group added successfully!');
       }
 
-      // Reset form
+      // Reset form and refresh list
       setBloodgroup('');
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save blood group');
+      
+      // Refresh the list
+      await fetchBloodgroups();
+    } catch (err) {
+      console.error('Submit error:', err);
+      const errorMessage = err?.message || error || 'Failed to save blood group';
+      Alert.alert('Error', errorMessage);
     }
   };
 
   const handleEdit = (item) => {
-    setBloodgroup(item.name);
+    setBloodgroup(item.bloodGroup);
     setEditing(item);
   };
 
@@ -65,9 +82,18 @@ export default function Bloodgroup() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setBloodgroups(prev => prev.filter(item => item.id !== id));
-          Alert.alert('Success', 'Blood group deleted successfully!');
+        onPress: async () => {
+          try {
+            const result = await deleteBloodGroup(id);
+            console.log('Delete result:', result);
+            Alert.alert('Success', 'Blood group deleted successfully!');
+            // Refresh the list
+            await fetchBloodgroups();
+          } catch (err) {
+            console.error('Delete error:', err);
+            const errorMessage = err?.message || error || 'Failed to delete blood group';
+            Alert.alert('Error', errorMessage);
+          }
         },
       },
     ]);
@@ -109,8 +135,14 @@ export default function Bloodgroup() {
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+            <TouchableOpacity 
+              style={[styles.submitButton, loading && styles.disabledButton]} 
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              <Text style={styles.submitButtonText}>
+                {loading ? 'Saving...' : editing ? 'Update' : 'Submit'}
+              </Text>
             </TouchableOpacity>
 
             {/* Cancel Button (shown only when editing) */}
@@ -125,28 +157,41 @@ export default function Bloodgroup() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Existing Blood Group</Text>
             
-            {/* Table Header */}
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
-              <Text style={[styles.tableHeaderText, { flex: 2 }]}>Blood Group</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
-            </View>
-
-            {/* Table Rows */}
-            {bloodgroups.map((item, idx) => (
-              <View key={item.id} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
-                <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
-                <View style={[styles.actionCell, { flex: 1 }]}>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                    <Feather name="edit" size={18} color="#5aaf57" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                    <Ionicons name="trash" size={18} color="#d32f2f" />
-                  </TouchableOpacity>
-                </View>
+            {isLoadingData ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#5aaf57" />
+                <Text style={styles.loadingText}>Loading blood groups...</Text>
               </View>
-            ))}
+            ) : bloodgroups.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No blood groups found</Text>
+              </View>
+            ) : (
+              <>
+                {/* Table Header */}
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 2 }]}>Blood Group</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
+                </View>
+
+                {/* Table Rows */}
+                {bloodgroups.map((item, idx) => (
+                  <View key={item.id} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
+                    <Text style={[styles.tableCell, { flex: 2 }]}>{item.bloodGroup}</Text>
+                    <View style={[styles.actionCell, { flex: 1 }]}>
+                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
+                        <Feather name="edit" size={18} color="#5aaf57" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
+                        <Ionicons name="trash" size={18} color="#d32f2f" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+              </>
+            )}
           </View>
         </ScrollView>
       </View>
@@ -215,6 +260,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'PlusSB',
   },
+  disabledButton: {
+    backgroundColor: '#a0a0a0',
+    opacity: 0.6,
+  },
   cancelButton: {
     backgroundColor: '#666',
     paddingVertical: 10,
@@ -226,6 +275,26 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontFamily: 'PlusSB',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
+    fontFamily: 'PlusR',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    color: '#999',
+    fontFamily: 'PlusR',
+    fontSize: 14,
   },
   tableHeader: {
     flexDirection: 'row',

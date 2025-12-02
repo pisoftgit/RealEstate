@@ -1,22 +1,45 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+import useGeneral from '../../../../hooks/useGeneral';
 
 export default function Category() {
   const navigation = useNavigation();
+  const { 
+    getAllCategories, 
+    saveCategory, 
+    updateCategory, 
+    deleteCategory,
+    categories: apiCategories,
+    loading, 
+    error 
+  } = useGeneral();
 
   const [category, setCategory] = useState('');
   const [editing, setEditing] = useState(null);
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'General' },
-    { id: 2, name: 'OBC' },
-    { id: 3, name: 'SC' },
-    { id: 4, name: 'ST' },
-    { id: 5, name: 'EWS' },
-  ]);
+  const [categories, setCategories] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
-  const handleSubmit = () => {
+  // Fetch categories on component mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setIsLoadingData(true);
+      const data = await getAllCategories();
+      setCategories(data || []);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+      Alert.alert('Error', 'Failed to fetch categories');
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!category.trim()) {
       Alert.alert('Validation Error', 'Please enter category name!');
       return;
@@ -25,34 +48,31 @@ export default function Category() {
     try {
       if (editing) {
         // Update existing category
-        setCategories(prev =>
-          prev.map(item =>
-            item.id === editing.id
-              ? { ...item, name: category }
-              : item
-          )
-        );
+        const result = await updateCategory(editing.id, { category: category });
+        console.log('Update result:', result);
         Alert.alert('Success', 'Category updated successfully!');
         setEditing(null);
       } else {
         // Add new category
-        const newCategory = {
-          id: categories.length + 1,
-          name: category,
-        };
-        setCategories(prev => [...prev, newCategory]);
+        const result = await saveCategory({ category: category });
+        console.log('Save result:', result);
         Alert.alert('Success', 'Category added successfully!');
       }
 
-      // Reset form
+      // Reset form and refresh list
       setCategory('');
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save category');
+      
+      // Refresh the list
+      await fetchCategories();
+    } catch (err) {
+      console.error('Submit error:', err);
+      const errorMessage = err?.message || error || 'Failed to save category';
+      Alert.alert('Error', errorMessage);
     }
   };
 
   const handleEdit = (item) => {
-    setCategory(item.name);
+    setCategory(item.category);
     setEditing(item);
   };
 
@@ -62,9 +82,18 @@ export default function Category() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setCategories(prev => prev.filter(item => item.id !== id));
-          Alert.alert('Success', 'Category deleted successfully!');
+        onPress: async () => {
+          try {
+            const result = await deleteCategory(id);
+            console.log('Delete result:', result);
+            Alert.alert('Success', 'Category deleted successfully!');
+            // Refresh the list
+            await fetchCategories();
+          } catch (err) {
+            console.error('Delete error:', err);
+            const errorMessage = err?.message || error || 'Failed to delete category';
+            Alert.alert('Error', errorMessage);
+          }
         },
       },
     ]);
@@ -106,8 +135,14 @@ export default function Category() {
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+            <TouchableOpacity 
+              style={[styles.submitButton, loading && styles.disabledButton]} 
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              <Text style={styles.submitButtonText}>
+                {loading ? 'Saving...' : editing ? 'Update' : 'Submit'}
+              </Text>
             </TouchableOpacity>
 
             {/* Cancel Button (shown only when editing) */}
@@ -122,28 +157,41 @@ export default function Category() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Existing Category</Text>
             
-            {/* Table Header */}
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
-              <Text style={[styles.tableHeaderText, { flex: 2 }]}>Category</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
-            </View>
-
-            {/* Table Rows */}
-            {categories.map((item, idx) => (
-              <View key={item.id} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
-                <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
-                <View style={[styles.actionCell, { flex: 1 }]}>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                    <Feather name="edit" size={18} color="#5aaf57" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                    <Ionicons name="trash" size={18} color="#d32f2f" />
-                  </TouchableOpacity>
-                </View>
+            {isLoadingData ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#5aaf57" />
+                <Text style={styles.loadingText}>Loading categories...</Text>
               </View>
-            ))}
+            ) : categories.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No categories found</Text>
+              </View>
+            ) : (
+              <>
+                {/* Table Header */}
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 2 }]}>Category</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
+                </View>
+
+                {/* Table Rows */}
+                {categories.map((item, idx) => (
+                  <View key={item.id} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
+                    <Text style={[styles.tableCell, { flex: 2 }]}>{item.category}</Text>
+                    <View style={[styles.actionCell, { flex: 1 }]}>
+                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
+                        <Feather name="edit" size={18} color="#5aaf57" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
+                        <Ionicons name="trash" size={18} color="#d32f2f" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+              </>
+            )}
           </View>
         </ScrollView>
       </View>
@@ -212,6 +260,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'PlusSB',
   },
+  disabledButton: {
+    backgroundColor: '#a0a0a0',
+    opacity: 0.6,
+  },
   cancelButton: {
     backgroundColor: '#666',
     paddingVertical: 10,
@@ -223,6 +275,26 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontFamily: 'PlusSB',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
+    fontFamily: 'PlusR',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    color: '#999',
+    fontFamily: 'PlusR',
+    fontSize: 14,
   },
   tableHeader: {
     flexDirection: 'row',

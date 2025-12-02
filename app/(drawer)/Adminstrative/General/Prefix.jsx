@@ -1,70 +1,113 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+import useGeneral from '../../../../hooks/useGeneral';
 
 export default function Prefix() {
   const navigation = useNavigation();
+  const {
+    getAllPrefixes,
+    savePrefix,
+    updatePrefix,
+    deletePrefix,
+    prefixes,
+    loading,
+    error,
+  } = useGeneral();
 
   const [prefix, setPrefix] = useState('');
   const [editing, setEditing] = useState(null);
-  const [prefixes, setPrefixes] = useState([
-    { id: 1, name: 'Mr.' },
-    { id: 2, name: 'Mrs.' },
-    { id: 3, name: 'Ms.' },
-    { id: 4, name: 'Dr.' },
-    { id: 5, name: 'Prof.' },
-  ]);
+  const [localLoading, setLocalLoading] = useState(false);
 
-  const handleSubmit = () => {
+  // Fetch prefixes on component mount
+  useEffect(() => {
+    fetchPrefixes();
+  }, []);
+
+  // Show error alerts
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error);
+    }
+  }, [error]);
+
+  const fetchPrefixes = async () => {
+    try {
+      await getAllPrefixes();
+    } catch (err) {
+      console.error('Error fetching prefixes:', err);
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!prefix.trim()) {
       Alert.alert('Validation Error', 'Please enter prefix!');
       return;
     }
 
+    setLocalLoading(true);
     try {
       if (editing) {
         // Update existing prefix
-        setPrefixes(prev =>
-          prev.map(item =>
-            item.id === editing.id
-              ? { ...item, name: prefix }
-              : item
-          )
-        );
+        // Use id or prefixId, whichever is available
+        const prefixId = editing.prefixId || editing.id;
+        if (!prefixId) {
+          throw new Error('Prefix ID is missing');
+        }
+        console.log('Updating prefix with ID:', prefixId);
+        await updatePrefix(prefixId, { prefixName: prefix });
         Alert.alert('Success', 'Prefix updated successfully!');
         setEditing(null);
       } else {
         // Add new prefix
-        const newPrefix = {
-          id: prefixes.length + 1,
-          name: prefix,
-        };
-        setPrefixes(prev => [...prev, newPrefix]);
+        await savePrefix({ prefixName: prefix });
         Alert.alert('Success', 'Prefix added successfully!');
       }
 
       // Reset form
       setPrefix('');
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save prefix');
+      // Refresh the list
+      await fetchPrefixes();
+    } catch (err) {
+      console.error('Error saving prefix:', err);
+      Alert.alert('Error', err.message || 'Failed to save prefix');
+    } finally {
+      setLocalLoading(false);
     }
   };
 
   const handleEdit = (item) => {
-    setPrefix(item.name);
+    console.log('Edit item:', JSON.stringify(item)); // Debug log
+    setPrefix(item.prefixName);
     setEditing(item);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (item) => {
     Alert.alert('Delete Prefix', 'Are you sure you want to delete this prefix?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setPrefixes(prev => prev.filter(item => item.id !== id));
-          Alert.alert('Success', 'Prefix deleted successfully!');
+        onPress: async () => {
+          setLocalLoading(true);
+          try {
+            // Use id or prefixId, whichever is available
+            const prefixId = item.prefixId || item.id;
+            if (!prefixId) {
+              throw new Error('Prefix ID is missing');
+            }
+            console.log('Deleting prefix with ID:', prefixId);
+            await deletePrefix(prefixId);
+            Alert.alert('Success', 'Prefix deleted successfully!');
+            // Refresh the list
+            await fetchPrefixes();
+          } catch (err) {
+            console.error('Error deleting prefix:', err);
+            Alert.alert('Error', err.message || 'Failed to delete prefix');
+          } finally {
+            setLocalLoading(false);
+          }
         },
       },
     ]);
@@ -106,8 +149,16 @@ export default function Prefix() {
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+            <TouchableOpacity 
+              style={[styles.submitButton, (loading || localLoading) && styles.disabledButton]} 
+              onPress={handleSubmit}
+              disabled={loading || localLoading}
+            >
+              {(loading || localLoading) ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+              )}
             </TouchableOpacity>
 
             {/* Cancel Button (shown only when editing) */}
@@ -122,28 +173,41 @@ export default function Prefix() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Existing Prefix</Text>
             
-            {/* Table Header */}
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
-              <Text style={[styles.tableHeaderText, { flex: 2 }]}>Prefix</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
-            </View>
-
-            {/* Table Rows */}
-            {prefixes.map((item, idx) => (
-              <View key={item.id} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
-                <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
-                <View style={[styles.actionCell, { flex: 1 }]}>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                    <Feather name="edit" size={18} color="#5aaf57" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                    <Ionicons name="trash" size={18} color="#d32f2f" />
-                  </TouchableOpacity>
-                </View>
+            {loading && !localLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#5aaf57" />
+                <Text style={styles.loadingText}>Loading prefixes...</Text>
               </View>
-            ))}
+            ) : !prefixes || prefixes.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No prefixes found</Text>
+              </View>
+            ) : (
+              <View>
+                {/* Table Header */}
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 2 }]}>Prefix</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
+                </View>
+
+                {/* Table Rows */}
+                {prefixes.map((item, idx) => (
+                  <View key={item.prefixId || item.id || idx} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
+                    <Text style={[styles.tableCell, { flex: 2 }]}>{item.prefixName}</Text>
+                    <View style={[styles.actionCell, { flex: 1 }]}>
+                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
+                        <Feather name="edit" size={18} color="#5aaf57" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item)}>
+                        <Ionicons name="trash" size={18} color="#d32f2f" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         </ScrollView>
       </View>
@@ -207,6 +271,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
+  disabledButton: {
+    backgroundColor: '#a5d6a3',
+  },
   submitButtonText: {
     color: '#fff',
     fontSize: 16,
@@ -223,6 +290,26 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontFamily: 'PlusSB',
+  },
+  loadingContainer: {
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
+    fontFamily: 'PlusR',
+  },
+  emptyContainer: {
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    color: '#999',
+    fontFamily: 'PlusR',
+    fontSize: 14,
   },
   tableHeader: {
     flexDirection: 'row',

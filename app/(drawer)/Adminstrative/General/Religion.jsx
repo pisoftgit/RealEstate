@@ -1,22 +1,45 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+import useGeneral from '../../../../hooks/useGeneral';
 
 export default function Religion() {
   const navigation = useNavigation();
+  const { 
+    getAllReligions, 
+    saveReligion, 
+    updateReligion, 
+    deleteReligion,
+    religions: apiReligions,
+    loading, 
+    error 
+  } = useGeneral();
 
   const [religion, setReligion] = useState('');
   const [editing, setEditing] = useState(null);
-  const [religions, setReligions] = useState([
-    { id: 1, name: 'Islam' },
-    { id: 2, name: 'Christianity' },
-    { id: 3, name: 'Hinduism' },
-    { id: 4, name: 'Buddhism' },
-    { id: 5, name: 'Sikhism' },
-  ]);
+  const [religions, setReligions] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
-  const handleSubmit = () => {
+  // Fetch religions on component mount
+  useEffect(() => {
+    fetchReligions();
+  }, []);
+
+  const fetchReligions = async () => {
+    try {
+      setIsLoadingData(true);
+      const data = await getAllReligions();
+      setReligions(data || []);
+    } catch (err) {
+      console.error('Error fetching religions:', err);
+      Alert.alert('Error', 'Failed to fetch religions');
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!religion.trim()) {
       Alert.alert('Validation Error', 'Please enter religion name!');
       return;
@@ -25,29 +48,26 @@ export default function Religion() {
     try {
       if (editing) {
         // Update existing religion
-        setReligions(prev =>
-          prev.map(item =>
-            item.id === editing.id
-              ? { ...item, name: religion }
-              : item
-          )
-        );
+        const result = await updateReligion(editing.id, { name: religion });
+        console.log('Update result:', result);
         Alert.alert('Success', 'Religion updated successfully!');
         setEditing(null);
       } else {
         // Add new religion
-        const newReligion = {
-          id: religions.length + 1,
-          name: religion,
-        };
-        setReligions(prev => [...prev, newReligion]);
+        const result = await saveReligion({ name: religion });
+        console.log('Save result:', result);
         Alert.alert('Success', 'Religion added successfully!');
       }
 
-      // Reset form
+      // Reset form and refresh list
       setReligion('');
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save religion');
+      
+      // Refresh the list
+      await fetchReligions();
+    } catch (err) {
+      console.error('Submit error:', err);
+      const errorMessage = err?.message || error || 'Failed to save religion';
+      Alert.alert('Error', errorMessage);
     }
   };
 
@@ -62,9 +82,18 @@ export default function Religion() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setReligions(prev => prev.filter(item => item.id !== id));
-          Alert.alert('Success', 'Religion deleted successfully!');
+        onPress: async () => {
+          try {
+            const result = await deleteReligion(id);
+            console.log('Delete result:', result);
+            Alert.alert('Success', 'Religion deleted successfully!');
+            // Refresh the list
+            await fetchReligions();
+          } catch (err) {
+            console.error('Delete error:', err);
+            const errorMessage = err?.message || error || 'Failed to delete religion';
+            Alert.alert('Error', errorMessage);
+          }
         },
       },
     ]);
@@ -106,8 +135,14 @@ export default function Religion() {
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+            <TouchableOpacity 
+              style={[styles.submitButton, loading && styles.disabledButton]} 
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              <Text style={styles.submitButtonText}>
+                {loading ? 'Saving...' : editing ? 'Update' : 'Submit'}
+              </Text>
             </TouchableOpacity>
 
             {/* Cancel Button (shown only when editing) */}
@@ -122,28 +157,39 @@ export default function Religion() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Existing Religion</Text>
             
-            {/* Table Header */}
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
-              <Text style={[styles.tableHeaderText, { flex: 2 }]}>Religion</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
-            </View>
-
-            {/* Table Rows */}
-            {religions.map((item, idx) => (
-              <View key={item.id} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
-                <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
-                <View style={[styles.actionCell, { flex: 1 }]}>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                    <Feather name="edit" size={18} color="#5aaf57" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                    <Ionicons name="trash" size={18} color="#d32f2f" />
-                  </TouchableOpacity>
-                </View>
+            {isLoadingData ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#5aaf57" />
+                <Text style={styles.loadingText}>Loading religions...</Text>
               </View>
-            ))}
+            ) : religions.length === 0 ? (
+              <Text style={styles.emptyText}>No religions found</Text>
+            ) : (
+              <>
+                {/* Table Header */}
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 2 }]}>Religion</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
+                </View>
+
+                {/* Table Rows */}
+                {religions.map((item, idx) => (
+                  <View key={item.id} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
+                    <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
+                    <View style={[styles.actionCell, { flex: 1 }]}>
+                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
+                        <Feather name="edit" size={18} color="#5aaf57" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
+                        <Ionicons name="trash" size={18} color="#d32f2f" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+              </>
+            )}
           </View>
         </ScrollView>
       </View>
@@ -258,5 +304,26 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     padding: 4,
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+    fontFamily: 'PlusR',
+  },
+  emptyText: {
+    textAlign: 'center',
+    padding: 20,
+    fontSize: 16,
+    color: '#999',
+    fontFamily: 'PlusR',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });

@@ -1,36 +1,54 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
+import useGeneral from '../../../../../hooks/useGeneral';
 
 export default function State() {
   const navigation = useNavigation();
+  const {
+    getAllCountries,
+    getAllStates,
+    saveState,
+    updateState,
+    deleteState,
+    countries,
+    states: apiStates,
+    loading,
+    error,
+    success,
+  } = useGeneral();
 
   const [formData, setFormData] = useState({
     stateName: '',
     stateCode: '',
-    country: '',
+    countryId: '',
   });
 
   const [editing, setEditing] = useState(null);
+  const [states, setStates] = useState([]);
 
-  // Sample countries for dropdown
-  const countries = [
-    { id: 1, name: 'India' },
-    { id: 2, name: 'United States' },
-    { id: 3, name: 'United Kingdom' },
-    { id: 4, name: 'Canada' },
-    { id: 5, name: 'Australia' },
-  ];
+  // Fetch countries and states on component mount
+  useEffect(() => {
+    loadInitialData();
+  }, []);
 
-  const [states, setStates] = useState([
-    { id: 1, name: 'Maharashtra', code: 'MH', country: 'India' },
-    { id: 2, name: 'Karnataka', code: 'KA', country: 'India' },
-    { id: 3, name: 'California', code: 'CA', country: 'United States' },
-    { id: 4, name: 'Texas', code: 'TX', country: 'United States' },
-    { id: 5, name: 'Ontario', code: 'ON', country: 'Canada' },
-  ]);
+  // Update local states when apiStates changes
+  useEffect(() => {
+    if (apiStates && Array.isArray(apiStates)) {
+      setStates(apiStates);
+    }
+  }, [apiStates]);
+
+  const loadInitialData = async () => {
+    try {
+      await getAllCountries();
+      await getAllStates();
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to load data');
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -39,8 +57,8 @@ export default function State() {
     }));
   };
 
-  const handleSubmit = () => {
-    if (!formData.stateName.trim() || !formData.stateCode.trim() || !formData.country) {
+  const handleSubmit = async () => {
+    if (!formData.stateName.trim() || !formData.stateCode.trim() || !formData.countryId) {
       Alert.alert('Validation Error', 'Please fill all required fields!');
       return;
     }
@@ -48,48 +66,32 @@ export default function State() {
     try {
       if (editing) {
         // Update existing state
-        setStates(prev =>
-          prev.map(item =>
-            item.id === editing.id
-              ? {
-                  ...item,
-                  name: formData.stateName,
-                  code: formData.stateCode,
-                  country: formData.country,
-                }
-              : item
-          )
-        );
+        await updateState(editing.id, formData);
         Alert.alert('Success', 'State updated successfully!');
         setEditing(null);
       } else {
         // Add new state
-        const newState = {
-          id: states.length + 1,
-          name: formData.stateName,
-          code: formData.stateCode,
-          country: formData.country,
-        };
-        setStates(prev => [...prev, newState]);
+        await saveState(formData);
         Alert.alert('Success', 'State added successfully!');
       }
 
-      // Reset form
+      // Reset form and reload data
       setFormData({
         stateName: '',
         stateCode: '',
-        country: '',
+        countryId: '',
       });
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save state');
+      await getAllStates();
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to save state');
     }
   };
 
   const handleEdit = (item) => {
     setFormData({
-      stateName: item.name,
-      stateCode: item.code,
-      country: item.country,
+      stateName: item.state || '',
+      stateCode: item.stateCode || '',
+      countryId: item.country?.id || '',
     });
     setEditing(item);
   };
@@ -100,9 +102,14 @@ export default function State() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setStates(prev => prev.filter(item => item.id !== id));
-          Alert.alert('Success', 'State deleted successfully!');
+        onPress: async () => {
+          try {
+            await deleteState(id);
+            Alert.alert('Success', 'State deleted successfully!');
+            await getAllStates();
+          } catch (err) {
+            Alert.alert('Error', err.message || 'Failed to delete state');
+          }
         },
       },
     ]);
@@ -113,8 +120,14 @@ export default function State() {
     setFormData({
       stateName: '',
       stateCode: '',
-      country: '',
+      countryId: '',
     });
+  };
+
+  // Helper function to get country name by ID
+  const getCountryName = (countryId) => {
+    const country = countries?.find(c => c.id === countryId);
+    return country?.country || 'N/A';
   };
 
   return (
@@ -126,6 +139,12 @@ export default function State() {
           </TouchableOpacity>
           <Text style={styles.title}>State</Text>
         </View>
+
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#5aaf57" />
+          </View>
+        )}
 
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* Configure State Card */}
@@ -141,13 +160,13 @@ export default function State() {
               </Text>
               <View style={styles.pickerContainer}>
                 <Picker
-                  selectedValue={formData.country}
-                  onValueChange={(value) => handleInputChange('country', value)}
+                  selectedValue={formData.countryId}
+                  onValueChange={(value) => handleInputChange('countryId', value)}
                   style={styles.picker}
                 >
                   <Picker.Item label="Select Country" value="" />
-                  {countries.map((country) => (
-                    <Picker.Item key={country.id} label={country.name} value={country.name} />
+                  {countries && countries.map((country) => (
+                    <Picker.Item key={country.id} label={country.country} value={country.id} />
                   ))}
                 </Picker>
               </View>
@@ -210,22 +229,28 @@ export default function State() {
                 </View>
 
                 {/* Table Rows */}
-                {states.map((item, idx) => (
-                  <View key={item.id} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { width: 60 }]}>{idx + 1}</Text>
-                    <Text style={[styles.tableCell, { width: 140 }]}>{item.name}</Text>
-                    <Text style={[styles.tableCell, { width: 80 }]}>{item.code}</Text>
-                    <Text style={[styles.tableCell, { width: 120 }]}>{item.country}</Text>
-                    <View style={[styles.actionCell, { width: 100 }]}>
-                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                        <Feather name="edit" size={18} color="#5aaf57" />
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                        <Ionicons name="trash" size={18} color="#d32f2f" />
-                      </TouchableOpacity>
+                {states && states.length > 0 ? (
+                  states.map((item, idx) => (
+                    <View key={item.id} style={styles.tableRow}>
+                      <Text style={[styles.tableCell, { width: 60 }]}>{idx + 1}</Text>
+                      <Text style={[styles.tableCell, { width: 140 }]}>{item.state || 'N/A'}</Text>
+                      <Text style={[styles.tableCell, { width: 80 }]}>{item.stateCode || 'N/A'}</Text>
+                      <Text style={[styles.tableCell, { width: 120 }]}>{getCountryName(item.country?.id)}</Text>
+                      <View style={[styles.actionCell, { width: 100 }]}>
+                        <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
+                          <Feather name="edit" size={18} color="#5aaf57" />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
+                          <Ionicons name="trash" size={18} color="#d32f2f" />
+                        </TouchableOpacity>
+                      </View>
                     </View>
+                  ))
+                ) : (
+                  <View style={styles.emptyRow}>
+                    <Text style={styles.emptyText}>No states found</Text>
                   </View>
-                ))}
+                )}
               </View>
             </ScrollView>
           </View>
@@ -247,6 +272,11 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusSB',
     color: '#333',
     marginLeft: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   card: {
     backgroundColor: '#fff',
@@ -355,5 +385,14 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     padding: 4,
+  },
+  emptyRow: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#999',
+    fontFamily: 'PlusR',
+    fontSize: 14,
   },
 });

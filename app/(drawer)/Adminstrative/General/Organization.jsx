@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,15 +9,17 @@ import {
   Image,
   Alert,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import useGeneral from '../../../../hooks/useGeneral';
 
 const Organization = () => {
   const navigation = useNavigation();
-  const { saveOrganization, loading, error, success } = useGeneral();
+  const { saveOrganization, getOrganization, organizationData, loading, error, success } = useGeneral();
   const [formData, setFormData] = useState({
     name: '',
     gstNo: '',
@@ -28,6 +30,46 @@ const Organization = () => {
     organizationCode: '',
     logo: null,
   });
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  // Fetch organization data on component mount
+  useEffect(() => {
+    const fetchOrganizationData = async () => {
+      try {
+        setIsLoadingData(true);
+        const data = await getOrganization();
+        
+        console.log('Fetched organization data:', data);
+        
+        // If data exists, populate the form
+        if (data) {
+          // Format logo string if it exists and doesn't have data URI prefix
+          let logoUri = data.logoString || null;
+          if (logoUri && !logoUri.startsWith('data:') && !logoUri.startsWith('file:') && !logoUri.startsWith('http')) {
+            logoUri = `data:image/png;base64,${logoUri}`;
+          }
+          
+          setFormData({
+            name: data.name || '',
+            gstNo: data.gstNo || '',
+            officeNo: data.officeNo || '',
+            contactNo: data.contactNo || '',
+            email: data.email || '',
+            website: data.webSite || '',
+            organizationCode: data.organizationCode || '',
+            logo: logoUri,
+          });
+        }
+      } catch (err) {
+        console.log('Error fetching organization data:', err);
+        // Keep form empty if no data exists
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    fetchOrganizationData();
+  }, []);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -66,12 +108,31 @@ const Organization = () => {
     }
 
     try {
-      // Convert logo to base64 string if needed
       let logoString = '';
+      
       if (formData.logo) {
-        // You can implement base64 conversion here if needed
-        // For now, passing the URI
-        logoString = formData.logo;
+        // If it's a file URI (newly picked image), convert to base64
+        if (formData.logo.startsWith('file://')) {
+          try {
+            const base64 = await FileSystem.readAsStringAsync(formData.logo, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            logoString = base64; // Send only the base64 string without prefix
+          } catch (error) {
+            console.error('Error converting image to base64:', error);
+            Alert.alert('Error', 'Failed to process image');
+            return;
+          }
+        } 
+        // If it's already a data URI (existing logo from server), extract base64
+        else if (formData.logo.startsWith('data:image')) {
+          const base64Data = formData.logo.split(',')[1];
+          logoString = base64Data;
+        }
+        // If it's already plain base64, use as is
+        else {
+          logoString = formData.logo;
+        }
       }
 
       const organizationData = {
@@ -109,7 +170,13 @@ const Organization = () => {
           <Text style={styles.title}>Config Organization</Text>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false}>
+        {isLoadingData ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#5aaf57" />
+            <Text style={styles.loadingText}>Loading organization data...</Text>
+          </View>
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false}>
           {/* Logo Section */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Organization Logo</Text>
@@ -250,6 +317,7 @@ const Organization = () => {
             </View>
           </View>
         </ScrollView>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -397,6 +465,18 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.6,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+    fontFamily: 'PlusR',
   },
 });
 
