@@ -25,7 +25,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { DrawerActions } from '@react-navigation/native';
 
 import useDropdownData from '../../../../hooks/useDropdownData';
-import useReraActions from '../../../../hooks/useReraActions';
 import useSaveProject from '../../../../hooks/useSaveProject';
 import useMeasurementUnits from '../../../../hooks/useMeasurements';
 import { getAllPlc, getAllbuilderbyid } from '../../../../services/api';
@@ -316,10 +315,6 @@ const AddProject = () => {
   const [plcValue, setPlcValue] = useState(null);
   const [plcItems, setPlcItems] = useState([]);
 
-  const [reraDropdownOpen, setReraDropdownOpen] = useState(false);
-  const [reraDropdownValue, setReraDropdownValue] = useState(null);
-  const { reras, loading: reraLoading } = useReraActions();
-
   const [form, setForm] = useState({
     projectName: '',
     startDate: '',
@@ -480,7 +475,6 @@ const AddProject = () => {
     setDistrictValue(null);
     setMeasurementUnitValue(null);
     setPlcValue(null);
-    setReraDropdownValue(null);
     setAddressTypeValue('COMMERCIAL');
     setForm({
       projectName: '',
@@ -525,7 +519,6 @@ const AddProject = () => {
       projectName: form.projectName,
       isGated: form.isGated,
       isReraApproved: form.reraApproved,
-      reraId: reraDropdownValue,
       reraNumber: reraDetails.reraNo,
       possessionStatus: possessionValue,
       projectStartDate: form.startDate,
@@ -757,22 +750,6 @@ const AddProject = () => {
                 placeholderTextColor={COLORS.placeholder}
               />
               {errors.reraNo && <Text style={STYLES.errorText}>{errors.reraNo}</Text>}
-
-              <RequiredLabel text="RERA" isRequired={false} />
-              <DropDownPicker
-                open={reraDropdownOpen}
-                value={reraDropdownValue}
-                items={reras.map(r => ({ label: r.name, value: r.id }))}
-                setOpen={setReraDropdownOpen}
-                setValue={setReraDropdownValue}
-                setItems={() => {}}
-                placeholder="Select RERA"
-                style={STYLES.dropdown}
-                dropDownContainerStyle={STYLES.dropdownContainer}
-                listMode="SCROLLVIEW"
-                zIndex={500}
-                loading={reraLoading}
-              />
             </View>
           )}
           {/* Address Details Section */}

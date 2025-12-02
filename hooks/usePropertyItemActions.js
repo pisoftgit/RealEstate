@@ -5,6 +5,7 @@ import { API_BASE_URL } from "../services/api";
 
 const usePropertyItemActions = () => {
   const [propertyItems, setPropertyItems] = useState([]);
+  const [towerPropertyItems, setTowerPropertyItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch All Property Items
@@ -41,6 +42,37 @@ const usePropertyItemActions = () => {
       setPropertyItems([]);
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  // Fetch All Tower Property Items
+  const fetchTowerPropertyItems = useCallback(async () => {
+    try {
+      const secretKey = await SecureStore.getItemAsync("auth_token");
+
+      const response = await axios.get(
+        `${API_BASE_URL}/tower-property-items/getAllTowerPropertyItems`,
+        { headers: { secret_key: secretKey } }
+      );
+
+      const list = response.data.data || response.data;
+      if (Array.isArray(list)) {
+        const mapped = list.map((item) => ({
+          id: item.id?.toString(),
+          name: item.name,
+          code: item.code,
+          isFlat: item.isFlat,
+          isHouseVilla: item.isHouseVilla,
+          isMultiFloor: item.isMultiFloor,
+          isSingleFloor: item.isSingleFloor,
+        }));
+        setTowerPropertyItems(mapped);
+      } else {
+        setTowerPropertyItems([]);
+      }
+    } catch (error) {
+      console.error("Error fetching tower property items:", error.message);
+      setTowerPropertyItems([]);
     }
   }, []);
 
@@ -103,12 +135,15 @@ const usePropertyItemActions = () => {
 
   useEffect(() => {
     fetchPropertyItems();
-  }, [fetchPropertyItems]);
+    fetchTowerPropertyItems();
+  }, [fetchPropertyItems, fetchTowerPropertyItems]);
 
   return {
     propertyItems,
+    towerPropertyItems,
     loading,
     fetchPropertyItems,
+    fetchTowerPropertyItems,
     addPropertyItem,
     updatePropertyItem,
     deletePropertyItem,

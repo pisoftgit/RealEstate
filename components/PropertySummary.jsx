@@ -6,13 +6,13 @@ import usePropertyNatureActions from '../hooks/usePropertyNatureActions';
 import usePropertyItemActions from '../hooks/usePropertyItemActions';
 import useRealEstatePropertyTypeActions from '../hooks/useRealEstatePropertyTypeActions';
 import useSubPropertyTypes from '../hooks/useSubPropertyTypes';
-import useMeasurementUnits from '../hooks/useMeasurements';
+import useMeasurementUnits from '../hooks/useMeasurements'; 
 import useStructure from '../hooks/useStructure';
 import useSavePropertySummary from '../hooks/useSavePropertySummary';
 
 const PropertySummary = ({ onSave, initialData = {}, projectId }) => {
   const { propertyNatures, loading: propertyNaturesLoading } = usePropertyNatureActions();
-  const { propertyItems, loading: propertyItemsLoading } = usePropertyItemActions();
+  const { towerPropertyItems, loading: propertyItemsLoading } = usePropertyItemActions();
   const { propertyTypes, loading: propertyTypesLoading } = useRealEstatePropertyTypeActions();
   const { fetchPropertyTypeWithSubTypes, loading: subPropertyTypesLoading } = useSubPropertyTypes();
   const { units, loading: unitsLoading } = useMeasurementUnits();
@@ -131,26 +131,11 @@ const PropertySummary = ({ onSave, initialData = {}, projectId }) => {
     }))                                                                           
   ];
 
-  const residentialPropertyOptions = [
-    { label: 'Select Residential Property', value: '' },
-    { label: 'Apartment', value: 'apartment' },
-    { label: 'House/Villa', value: 'house_villa' },
-    { label: 'Residential Plot/Land', value: 'plot_land' },
-  ];
-
-  const commercialPropertyOptions = [
-    { label: 'Select Commercial Property', value: '' },
-    { label: 'Shop', value: 'shop' },
-    { label: 'Office', value: 'office' },
-    { label: 'Warehouse', value: 'warehouse' },
-    { label: 'Showroom', value: 'showroom' },
-    // Add more as needed
-  ];
-
+ 
   // Dropdown options for Property Item and Structure
   const propertyItemOptions = [
     { label: 'Select Property Item', value: '' },
-    ...propertyItems.map(item => ({
+    ...towerPropertyItems.map(item => ({
       label: item.name,
       value: item.id
     }))
@@ -353,34 +338,49 @@ const PropertySummary = ({ onSave, initialData = {}, projectId }) => {
   const getFieldsToShow = () => {
     if (!selectedSubPropertyTypeData) return null;
     
-    const subPropertyName = selectedSubPropertyTypeData.name || selectedSubPropertyTypeData.subPropertyType || '';
-    const normalizedName = subPropertyName.toLowerCase().trim();
+    // Use boolean flags from the API response to determine which fields to show
+    const {
+      isMultiTower,
+      isPlot,
+      isHouseVilla,
+      isCommercialUnit,
+      
+      isResidential,
+      isCommercial
+    } = selectedSubPropertyTypeData;
     
-    // Define field configurations for different sub-property types
-    if (normalizedName.includes('apartment complex') || normalizedName.includes('apartment')) {
-      return { area: true, unit: true, structure: true, quantity: true, propertyItem: true };
-    } else if (normalizedName.includes('pent house') || normalizedName.includes('penthouse')) {
-      return { area: true, unit: true, structure: true, quantity: true, propertyItem: false };
-    } else if (normalizedName.includes('super sub property')) {
-      return { area: true, unit: true, structure: false, quantity: true, propertyItem: false };
-    } else if (normalizedName.includes('villa')) {
-      return { area: true, unit: true, structure: true, quantity: true, propertyItem: false };
-    } else if (normalizedName.includes('group tower')) {
-      return { area: true, unit: true, structure: true, quantity: true, propertyItem: true };
-    } else if (normalizedName.includes('plot')) {
-      return { area: true, unit: true, structure: false, quantity: true, propertyItem: false };
-    } else if (normalizedName.includes('independent house')) {
-      return { area: true, unit: true, structure: true, quantity: true, propertyItem: false };
-    } else if (normalizedName.includes('multi tower')) {
+    // Multi Tower (Apartment Complex, Group Tower) - Show all fields including propertyItem
+    if (isMultiTower) {
       return { area: true, unit: true, structure: true, quantity: true, propertyItem: true };
     }
     
-    // Default for commercial or other types
-    if (propertyTypeData?.isCommercial) {
+    // Plot - Show area, unit, quantity only (no structure, no propertyItem)
+    if (isPlot) {
       return { area: true, unit: true, structure: false, quantity: true, propertyItem: false };
     }
     
-    return null;
+    // House/Villa or Independent House - Show all except propertyItem
+    if (isHouseVilla) {
+      return { area: true, unit: true, structure: true, quantity: true, propertyItem: false };
+    }
+    
+    // Commercial Unit (Shop, Booth) - Show area, unit, quantity (no structure, no propertyItem)
+    if (isCommercialUnit) {
+      return { area: true, unit: true, structure: false, quantity: true, propertyItem: false };
+    }
+    
+    // Default for other residential types
+    if (isResidential) {
+      return { area: true, unit: true, structure: true, quantity: true, propertyItem: false };
+    }
+    
+    // Default for other commercial types
+    if (isCommercial) {
+      return { area: true, unit: true, structure: false, quantity: true, propertyItem: false };
+    }
+    
+    // Fallback - show basic fields
+    return { area: true, unit: true, structure: false, quantity: true, propertyItem: false };
   };
 
   const fieldsToShow = getFieldsToShow();

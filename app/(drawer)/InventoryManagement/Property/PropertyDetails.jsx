@@ -8,6 +8,7 @@ import {
   StyleSheet,
   SafeAreaView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -16,6 +17,7 @@ import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 import { API_BASE_URL } from "../../../../services/api";
 import useStructure from "../../../../hooks/useStructure";
+import AddPropertyUnits from "../../../../components/AddPropertyUnits";
 
 const COLORS = {
   primary: "#004d40", 
@@ -254,34 +256,250 @@ const FloorStructureForm = ({
   const { structures, loading: loadingStructures } = useStructure();
   const [saving, setSaving] = useState(false);
 
-  const handleSaveTower = async () => {
-    try {
-      // Validation
-      if (!towerName || !totalFloors || !selectedFloorUnit || floorUnits.length === 0) {
-        alert("Please fill in all required fields and add at least one floor unit.");
-        return;
-      }
+  // State for floor structure builder (like website)
+  const [selectedUnit, setSelectedUnit] = useState(null);
+  const [selectedStructure, setSelectedStructure] = useState("");
+  const [selectedArea, setSelectedArea] = useState("");
+  const [selectedAreaObj, setSelectedAreaObj] = useState(null);
+  const [quantity, setQuantity] = useState("");
+  const [towerUnits, setTowerUnits] = useState([]);
+  const [structuresData, setStructuresData] = useState([]);
+  const [areas, setAreas] = useState([]);
+  const [totalLinkableUnit, setTotalLinkableUnit] = useState(0);
+  const [remainingLinkableUnits, setRemainingLinkableUnits] = useState(0);
+  const [floorStructures, setFloorStructures] = useState([]);
 
-      // Check if all floor units have required fields
-      const hasIncompleteUnits = floorUnits.some(unit => 
-        !unit.structure || !unit.area || !unit.linkable || (selectedFloorUnit.isFlat && !unit.quantity)
+  const selectedUnitId = selectedUnit?.id;
+
+  // Fetch Tower Units
+  useEffect(() => {
+    const fetchTowerUnits = async () => {
+      try {
+        const secretKey = await SecureStore.getItemAsync("auth_token");
+        const res = await axios.get(
+          `${API_BASE_URL}/tower-property-items/getAllTowerPropertyItems`,
+          { headers: { secret_key: secretKey } }
+        );
+        setTowerUnits(res.data?.data || res.data || []);
+      } catch (err) {
+        console.error("Fetch Tower Units Error:", err);
+      }
+    };
+    fetchTowerUnits();
+  }, []);
+
+  // Fetch Structures
+  useEffect(() => {
+    if (!projectId || !subPropertyTypeId || !selectedUnitId) {
+      setStructuresData([]);
+      return;
+    }
+    const fetchStructures = async () => {
+      try {
+        const secretKey = await SecureStore.getItemAsync("auth_token");
+        const res = await axios.get(
+          `${API_BASE_URL}/real-estate-properties/getStructureByProjectIdAndSubPropertyTypeIdOfLinkableProperty`,
+          {
+            headers: { secret_key: secretKey },
+            params: { projectId, subPropertyTypeId, floorUnitId: selectedUnitId },
+          }
+        );
+        setStructuresData(res.data?.data || res.data || []);
+      } catch (err) {
+        console.error("Fetch Structures Error:", err);
+      }
+    };
+    fetchStructures();
+  }, [projectId, subPropertyTypeId, selectedUnitId]);
+
+  // Fetch Areas
+  useEffect(() => {
+    if (!projectId || !subPropertyTypeId || !selectedUnitId || !selectedStructure) {
+      setAreas([]);
+      return;
+    }
+    const fetchAreas = async () => {
+      try {
+        const secretKey = await SecureStore.getItemAsync("auth_token");
+        const res = await axios.get(
+          `${API_BASE_URL}/real-estate-properties/getPropertyAreasBySubPropertyTypeIdAndStructureIdAndFloorUnit`,
+          {
+            headers: { secret_key: secretKey },
+            params: {
+              projectId,
+              subPropertyTypeId,
+              floorUnitId: selectedUnitId,
+              structureId: selectedStructure,
+            },
+          }
+        );
+        setAreas(res.data?.data || res.data || []);
+      } catch (err) {
+        console.error("Fetch Areas Error:", err);
+      }
+    };
+    fetchAreas();
+  }, [projectId, subPropertyTypeId, selectedUnitId, selectedStructure]);
+
+  // Track Selected Area Object
+  useEffect(() => {
+    if (!selectedArea || areas.length === 0) {
+      setSelectedAreaObj(null);
+      return;
+    }
+    const foundArea = areas.find(
+      (a) => parseFloat(a.area) === parseFloat(selectedArea) && a.areaUnit?.id != null
+    );
+    setSelectedAreaObj(foundArea || null);
+  }, [selectedArea, areas]);
+
+  // Fetch Linkable Units
+  const fetchLinkableUnits = async () => {
+    if (!selectedAreaObj || !selectedStructure || !selectedUnitId || !projectId || !subPropertyTypeId) {
+      setTotalLinkableUnit(0);
+      setRemainingLinkableUnits(0);
+      return;
+    }
+
+    try {
+      const secretKey = await SecureStore.getItemAsync("auth_token");
+      const params = {
+        projectId: Number(projectId),
+        subPropertyTypeId: Number(subPropertyTypeId),
+        floorUnitId: Number(selectedUnitId),
+        structureId: Number(selectedStructure),
+        area: Number(selectedAreaObj.area),
+        areaUnitId: Number(selectedAreaObj.areaUnit.id),
+      };
+
+      const res = await axios.get(
+        `${API_BASE_URL}/real-estate-properties/getTotalLinkableUnit`,
+        {
+          headers: { secret_key: secretKey },
+          params,
+        }
       );
 
-      if (hasIncompleteUnits) {
-        alert("Please complete all floor unit fields.");
+      const total = res.data?.data || res.data || 0;
+      setTotalLinkableUnit(total);
+      setRemainingLinkableUnits(total);
+    } catch (err) {
+      console.error("Fetch Linkable Units Error:", err);
+      setTotalLinkableUnit(0);
+      setRemainingLinkableUnits(0);
+    }
+  };
+
+  useEffect(() => {
+    fetchLinkableUnits();
+  }, [selectedAreaObj, selectedStructure, selectedUnitId, subPropertyTypeId, projectId]);
+
+  const handleUnitChange = (unitId) => {
+    const unit = towerUnits.find((u) => String(u.id) === String(unitId));
+    setSelectedUnit(unit || null);
+    setSelectedStructure("");
+    setSelectedArea("");
+    setSelectedAreaObj(null);
+    setFloorStructures([]);
+    setRemainingLinkableUnits(0);
+    setTotalLinkableUnit(0);
+  };
+
+  const handleStructureChange = (value) => {
+    setSelectedStructure(value);
+    setSelectedArea("");
+    setSelectedAreaObj(null);
+  };
+
+  const handleAreaChange = (value) => {
+    setSelectedArea(value);
+    setQuantity("");
+  };
+
+  const addFloorStructure = () => {
+    if (!selectedStructure || !selectedAreaObj || !quantity) {
+      Alert.alert("Error", "Please select Structure, Area, and enter Quantity.");
+      return;
+    }
+
+    const qty = parseInt(quantity);
+    const totalFloorsInt = parseInt(totalFloors) || 1;
+    const totalNeeded = unitsPerFloorSame === "yes" ? qty * totalFloorsInt : qty;
+
+    if (totalNeeded > remainingLinkableUnits && remainingLinkableUnits >= 0) {
+      Alert.alert("Error", `Cannot add ${totalNeeded} units. Only ${remainingLinkableUnits} units are available.`);
+      return;
+    }
+    if (totalNeeded <= 0) {
+      Alert.alert("Error", "Quantity must be a positive number.");
+      return;
+    }
+
+    const existingIndex = floorStructures.findIndex(
+      (fs) => fs.structureId === selectedStructure && fs.areaId === selectedAreaObj.id
+    );
+
+    let adjustedRemaining = remainingLinkableUnits;
+
+    if (existingIndex !== -1) {
+      const existing = floorStructures[existingIndex];
+      const prevTotal = unitsPerFloorSame === "yes" ? existing.quantity * totalFloorsInt : existing.quantity;
+      adjustedRemaining = adjustedRemaining + prevTotal - totalNeeded;
+
+      setFloorStructures((prev) => {
+        const updated = [...prev];
+        updated[existingIndex] = {
+          structureId: selectedStructure,
+          areaId: selectedAreaObj.id,
+          quantity: qty,
+          structureName: structuresData.find((s) => String(s.id) === String(selectedStructure))?.structureName || "Unknown",
+          areaUnitName: `${selectedAreaObj.area} ${selectedAreaObj.areaUnit?.unitName}`,
+          areaObj: selectedAreaObj,
+        };
+        return updated;
+      });
+    } else {
+      adjustedRemaining = adjustedRemaining - totalNeeded;
+      setFloorStructures((prev) => [
+        ...prev,
+        {
+          structureId: selectedStructure,
+          areaId: selectedAreaObj.id,
+          quantity: qty,
+          structureName: structuresData.find((s) => String(s.id) === String(selectedStructure))?.structureName || "Unknown",
+          areaUnitName: `${selectedAreaObj.area} ${selectedAreaObj.areaUnit?.unitName}`,
+          areaObj: selectedAreaObj,
+        },
+      ]);
+    }
+
+    setRemainingLinkableUnits(adjustedRemaining);
+    Alert.alert("Success", `Structure added! Remaining Units: ${adjustedRemaining}`);
+
+    setSelectedStructure("");
+    setSelectedArea("");
+    setSelectedAreaObj(null);
+    setQuantity("");
+  };
+
+  const removeFloorStructure = (indexToRemove) => {
+    const removed = floorStructures[indexToRemove];
+    if (!removed) return;
+    const totalFloorsInt = parseInt(totalFloors) || 1;
+    const totalUnitsToRefund = unitsPerFloorSame === "yes" ? removed.quantity * totalFloorsInt : removed.quantity;
+    setFloorStructures((prev) => prev.filter((_, i) => i !== indexToRemove));
+    setRemainingLinkableUnits((prev) => prev + totalUnitsToRefund);
+  };
+
+  const handleSaveTower = async () => {
+    try {
+      if (!towerName || !totalFloors || !selectedUnit || floorStructures.length === 0) {
+        Alert.alert("Error", "Please complete Tower Details and add at least one floor structure.");
         return;
       }
 
       setSaving(true);
       const secretKey = await SecureStore.getItemAsync("auth_token");
-
-      // Build metaDatas array from floorUnits
-      const metaDatas = floorUnits.map(unit => ({
-        flatHouseStructureId: parseInt(unit.structure),
-        area: parseFloat(unit.area),
-        noOfItems: selectedFloorUnit.isFlat ? parseInt(unit.quantity) : 1,
-        areaUnitId: 362417 // You may need to make this dynamic based on your requirements
-      }));
 
       const payload = {
         projectId: parseInt(projectId),
@@ -289,35 +507,39 @@ const FloorStructureForm = ({
         towerName: towerName,
         noOfFloors: parseInt(totalFloors),
         isFlatPerFloorSame: unitsPerFloorSame === "yes",
-        floorUnitId: selectedFloorUnit.id,
-        metaDatas: metaDatas
+        floorUnitId: selectedUnit.id,
+        metaDatas: floorStructures.map((fs) => ({
+          flatHouseStructureId: parseInt(fs.structureId),
+          area: parseFloat(fs.areaObj.area),
+          noOfItems: parseInt(fs.quantity),
+          areaUnitId: parseInt(fs.areaObj.areaUnit?.id),
+        })),
       };
 
-      console.log("==================== TOWER SAVE PAYLOAD ====================");
-      console.log(JSON.stringify(payload, null, 2));
-      console.log("============================================================");
+      console.log("Tower Save Payload:", JSON.stringify(payload, null, 2));
 
       const response = await axios.post(
-        `${API_BASE_URL}/real-estate-properties/saveTower`,
+        `${API_BASE_URL}/real-estate-properties/createTowerStructureForApi`,
         payload,
         {
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
-            secret_key: secretKey 
+            secret_key: secretKey,
           },
         }
       );
 
       console.log("Tower Save Response:", JSON.stringify(response.data, null, 2));
-      alert("Tower created successfully!");
-      
-      // Optionally reset the form or navigate back
-      // router.back();
+      Alert.alert("Success", "Tower created successfully!");
 
+      // Reset form
+      setFloorStructures([]);
+      setSelectedUnit(null);
+      setRemainingLinkableUnits(0);
+      setTotalLinkableUnit(0);
     } catch (error) {
       console.error("Error saving tower:", error.message);
-      console.error("Error details:", error.response?.data);
-      alert(`Failed to create tower: ${error.response?.data?.message || error.message}`);
+      Alert.alert("Error", `Failed to create tower: ${error.response?.data?.message || error.message}`);
     } finally {
       setSaving(false);
     }
@@ -325,116 +547,121 @@ const FloorStructureForm = ({
 
   return (
     <View style={styles.formSection}>
-      <Text style={styles.label}>Floor Common Structure</Text>
-      <Text style={styles.instructionText}>Select the type of units for this tower</Text>
-      
-      {loadingTowerUnits ? (
-        <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: 10 }} />
-      ) : (
-        <View style={styles.toggleRow}>
-          {towerPropertyUnits.map((unit) => (
-            <TouchableOpacity
-              key={unit.id}
-              onPress={() => setSelectedFloorUnit(unit)}
-              style={[
-                styles.toggleButton,
-                selectedFloorUnit?.id === unit.id && styles.toggleButtonActive,
-              ]}
-            >
-              <MaterialCommunityIcons
-                name={
-                  unit.isFlat
-                    ? "home-city"
-                    : unit.isHouseVilla
-                    ? "home-variant"
-                    : "office-building"
-                }
-                size={18}
-                color={selectedFloorUnit?.id === unit.id ? COLORS.card : COLORS.text}
-              />
-              <Text
-                style={[
-                  styles.toggleLabel,
-                  selectedFloorUnit?.id === unit.id && styles.optionTextActive,
-                ]}
-              >
-                {unit.name}
-              </Text>
-            </TouchableOpacity>
+      {/* Tower Unit Selection */}
+      <Text style={styles.label}>Floor Unit Type *</Text>
+      <View style={styles.inputBox}>
+        <Picker
+          selectedValue={selectedUnit?.id || ""}
+          onValueChange={handleUnitChange}
+          style={{ color: COLORS.text }}
+        >
+          <Picker.Item label="Select Unit" value="" />
+          {towerUnits.map((unit) => (
+            <Picker.Item key={unit.id} label={unit.name} value={unit.id} />
           ))}
-        </View>
-      )}
+        </Picker>
+      </View>
 
-      {selectedFloorUnit && (
+      {selectedUnit && selectedUnit.isFlat && (
         <>
-          <Text style={[styles.subLabel, { color: COLORS.secondary, marginTop: 15 }]}>
-            Unit Type: {selectedFloorUnit.name}
-          </Text>
-          <Text style={styles.instructionText}>
-            {selectedFloorUnit.isFlat && "Configure flat units for this tower. Structure will be selected from dropdown."}
-            {selectedFloorUnit.isHouseVilla && "Configure villa/penthouse units for this tower."}
-          </Text>
-          
-          <Text style={[styles.subLabel, { color: COLORS.secondary, marginTop: 15 }]}>
-            {selectedFloorUnit.isFlat ? "Floor Units Definition (4 fields)" : "Floor Units Definition (3 fields)"}
-          </Text>
-          
-          {floorUnits.map((unit, index) => (
-            <UnitDefinitionRow
-              key={`floor-${index}`}
-              unit={unit}
-              index={index}
-              onChange={handleFloorUnitChange}
-              onRemove={removeFloorUnit}
-              isFlat={selectedFloorUnit.isFlat}
-              isPenthouse={false}
-              structureTypes={structures}
-              loadingStructures={loadingStructures}
-            />
-          ))}
-          
-          <TouchableOpacity onPress={addFloorUnit} style={[styles.secondaryButton, { borderColor: COLORS.secondary }]}>
-            <Ionicons name="add-circle-outline" size={18} color={COLORS.secondary} style={{ marginRight: 5 }}/>
-            <Text style={[styles.secondaryButtonText, { color: COLORS.secondary }]}>Add Unit Type</Text>
-          </TouchableOpacity>
+          <View style={styles.linkableUnitsInfo}>
+            <Text style={styles.linkableUnitsText}>
+              Total Linkable: <Text style={styles.linkableUnitsBold}>{totalLinkableUnit}</Text> | 
+              Remaining: <Text style={styles.linkableUnitsBold}>{remainingLinkableUnits}</Text>
+            </Text>
+          </View>
 
-          {selectedFloorUnit.isHouseVilla && (
-            <>
-              <Text style={[styles.subLabel, { color: COLORS.primaryLight, marginTop: 25 }]}>
-                Penthouse Units Definition (Top Floor - 3 fields)
-              </Text>
-              
-              {penthouseUnits.map((unit, index) => (
-                <UnitDefinitionRow
-                  key={`ph-${index}`}
-                  unit={unit}
-                  index={index}
-                  isPenthouse={true}
-                  onChange={handlePenthouseUnitChange}
-                  onRemove={removePenthouseUnit}
-                  isFlat={false}
-                  structureTypes={structures}
-                  loadingStructures={loadingStructures}
-                />
-              ))}
-              
-              <TouchableOpacity onPress={addPenthouseUnit} style={[styles.secondaryButton, { borderColor: COLORS.primaryLight }]}>
-                <Ionicons name="add-circle-outline" size={18} color={COLORS.primaryLight} style={{ marginRight: 5 }}/>
-                <Text style={[styles.secondaryButtonText, { color: COLORS.primaryLight }]}>Add Penthouse Type</Text>
-              </TouchableOpacity>
-            </>
-          )}
-          
+          {/* Floor Structure Builder */}
+          <View style={[styles.formSection, { borderColor: '#3b82f6', borderWidth: 2 }]}>
+            <Text style={styles.subLabel}>Define Floor Structures</Text>
+
+            {/* Structure Dropdown */}
+            <View style={styles.inputBox}>
+              <Text style={styles.inputLabel}>Structure *</Text>
+              <Picker
+                selectedValue={selectedStructure}
+                onValueChange={handleStructureChange}
+                style={{ color: COLORS.text }}
+              >
+                <Picker.Item label="Select Structure" value="" />
+                {structuresData.map((s) => (
+                  <Picker.Item 
+                    key={s.id} 
+                    label={`${s.structureName} ${s.flatHouseStructureType?.structureType || ''}`} 
+                    value={s.id} 
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            {/* Area Dropdown */}
+            <View style={styles.inputBox}>
+              <Text style={styles.inputLabel}>Area *</Text>
+              <Picker
+                selectedValue={selectedArea}
+                onValueChange={handleAreaChange}
+                style={{ color: COLORS.text }}
+              >
+                <Picker.Item label="Select Area" value="" />
+                {areas.map((a, idx) => (
+                  <Picker.Item 
+                    key={`area-${idx}`} 
+                    label={`${a.area} ${a.areaUnit?.unitName}`} 
+                    value={a.area} 
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            {/* Quantity Input */}
+            <TextInputBox
+              label="Quantity (Per Floor) *"
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="numeric"
+              placeholder="Enter quantity"
+            />
+
+            {/* Add Button */}
+            <TouchableOpacity 
+              style={[styles.secondaryButton, { backgroundColor: '#10b981', borderColor: '#10b981' }]}
+              onPress={addFloorStructure}
+            >
+              <Ionicons name="add-circle" size={18} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={[styles.secondaryButtonText, { color: '#fff' }]}>Add Structure</Text>
+            </TouchableOpacity>
+
+            {/* Floor Structures List */}
+            {floorStructures.length > 0 && (
+              <View style={styles.floorStructuresTable}>
+                <Text style={styles.subLabel}>Added Structures ({floorStructures.length})</Text>
+                {floorStructures.map((fs, idx) => (
+                  <View key={idx} style={styles.structureRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.structureName}>{fs.structureName}</Text>
+                      <Text style={styles.structureArea}>{fs.areaUnitName}</Text>
+                    </View>
+                    <Text style={styles.structureQty}>Qty: {fs.quantity}</Text>
+                    <TouchableOpacity onPress={() => removeFloorStructure(idx)}>
+                      <Ionicons name="trash" size={20} color={COLORS.error} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Save Tower Button */}
           <TouchableOpacity 
             style={[styles.primaryButton, saving && { opacity: 0.6 }]} 
             onPress={handleSaveTower}
-            disabled={saving}
+            disabled={saving || floorStructures.length === 0}
           >
             {saving ? (
               <ActivityIndicator size="small" color={COLORS.card} />
             ) : (
               <>
-                <Text style={styles.primaryButtonText}>Create New Tower</Text>
+                <Text style={styles.primaryButtonText}>Create Tower</Text>
                 <Ionicons name="save" size={18} color={COLORS.card} style={{ marginLeft: 8 }} />
               </>
             )}
@@ -448,78 +675,8 @@ const FloorStructureForm = ({
 /* -------------------- Apartment Complex Section -------------------- */
 const ApartmentComplexSection = ({ towerType, setTowerType, projectId, subPropertyTypeId }) => {
   const [unitsPerFloorSame, setUnitsPerFloorSame] = useState("yes");
-  const [floorUnits, setFloorUnits] = useState([]);
-  const [penthouseUnits, setPenthouseUnits] = useState([]);
-  const [towerPropertyUnits, setTowerPropertyUnits] = useState([]);
-  const [loadingTowerUnits, setLoadingTowerUnits] = useState(false);
-  const [selectedFloorUnit, setSelectedFloorUnit] = useState(null);
   const [towerName, setTowerName] = useState("");
   const [totalFloors, setTotalFloors] = useState("");
-
-  // Fetch tower property units
-  useEffect(() => {
-    const fetchTowerPropertyUnits = async () => {
-      try {
-        setLoadingTowerUnits(true);
-        const secretKey = await SecureStore.getItemAsync("auth_token");
-
-        const response = await axios.get(
-          `${API_BASE_URL}/real-estate-properties/getAllTowerPropertyUnit`,
-          {
-            headers: { secret_key: secretKey },
-          }
-        );
-
-        console.log("Tower Property Units Response:", JSON.stringify(response.data, null, 2));
-        
-        const data = response.data?.data || response.data || [];
-        setTowerPropertyUnits(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Error fetching tower property units:", error.message);
-        setTowerPropertyUnits([]);
-      } finally {
-        setLoadingTowerUnits(false);
-      }
-    };
-
-    // Only fetch when towerType is "new"
-    if (towerType === "new") {
-      fetchTowerPropertyUnits();
-    }
-  }, [towerType]);
-
-  // Generic remove function
-  const removeUnit = (units, setUnits, index) => {
-    const newUnits = units.filter((_, i) => i !== index);
-    setUnits(newUnits);
-  };
-  
-  // Floor Unit Handlers
-  const addFloorUnit = () =>
-    setFloorUnits([
-      ...floorUnits,
-      { structure: "", area: "", linkable: "", quantity: "" },
-    ]);
-  const removeFloorUnit = (index) => removeUnit(floorUnits, setFloorUnits, index);
-  const handleFloorUnitChange = (index, field, value) => {
-    const newUnits = [...floorUnits];
-    newUnits[index][field] = value;
-    setFloorUnits(newUnits);
-  };
-
-  // Penthouse Unit Handlers
-  const addPenthouseUnit = () =>
-    setPenthouseUnits([
-      ...penthouseUnits,
-      { structure: "", area: "", linkable: "" },
-    ]); // Removed quantity as it's implied 1 for the unit type
-  const removePenthouseUnit = (index) => removeUnit(penthouseUnits, setPenthouseUnits, index);
-  const handlePenthouseUnitChange = (index, field, value) => {
-    const newUnits = [...penthouseUnits];
-    newUnits[index][field] = value;
-    setPenthouseUnits(newUnits);
-  };
-
 
   return (
     <View style={styles.sectionContent}>
@@ -541,18 +698,6 @@ const ApartmentComplexSection = ({ towerType, setTowerType, projectId, subProper
       ) : (
         unitsPerFloorSame === "yes" && (
           <FloorStructureForm
-            floorUnits={floorUnits}
-            penthouseUnits={penthouseUnits}
-            addFloorUnit={addFloorUnit}
-            addPenthouseUnit={addPenthouseUnit}
-            handleFloorUnitChange={handleFloorUnitChange}
-            removeFloorUnit={removeFloorUnit}
-            handlePenthouseUnitChange={handlePenthouseUnitChange}
-            removePenthouseUnit={removePenthouseUnit}
-            towerPropertyUnits={towerPropertyUnits}
-            loadingTowerUnits={loadingTowerUnits}
-            selectedFloorUnit={selectedFloorUnit}
-            setSelectedFloorUnit={setSelectedFloorUnit}
             towerName={towerName}
             totalFloors={totalFloors}
             projectId={projectId}
@@ -567,53 +712,46 @@ const ApartmentComplexSection = ({ towerType, setTowerType, projectId, subProper
 
 
 /* -------------------- Independent House Section -------------------- */
-const IndependentHouseSection = () => (
+const IndependentHouseSection = ({ projectId, subPropertyTypeId }) => (
   <View style={styles.sectionContent}>
-    <TextInputBox label="Number of Floors *" placeholder="2" keyboardType="numeric" />
-    <TextInputBox label="Total Area (sq ft) *" placeholder="1500" keyboardType="numeric" />
-    <TextInputBox label="Number of Bedrooms *" placeholder="3" keyboardType="numeric" />
-    <TouchableOpacity style={styles.primaryButton}>
-      <Text style={styles.primaryButtonText}>Save House Details</Text>
-      <Ionicons name="save" size={18} color={COLORS.card} style={{ marginLeft: 8 }} />
-    </TouchableOpacity>
+    <Text style={styles.instructionText}>Assign Independent House units</Text>
+    <AddPropertyUnits
+      projectId={projectId}
+      subPropertyTypeId={subPropertyTypeId}
+    />
   </View>
 );
 
 /* ---------------------------- Plot Section --------------------------- */
-const PlotSection = () => (
+const PlotSection = ({ projectId, subPropertyTypeId }) => (
   <View style={styles.sectionContent}>
-    <TextInputBox label="Plot Area (sq ft) *" placeholder="2000" keyboardType="numeric" />
-    <TextInputBox label="Plot Dimensions (L x B) *" placeholder="40 x 50 ft" />
-    <TextInputBox label="Location Details *" placeholder="Sector 21, City" />
-    <TouchableOpacity style={styles.primaryButton}>
-      <Text style={styles.primaryButtonText}>Save Plot Details</Text>
-      <Ionicons name="save" size={18} color={COLORS.card} style={{ marginLeft: 8 }} />
-    </TouchableOpacity>
+    <Text style={styles.instructionText}>Assign Plot units</Text>
+    <AddPropertyUnits
+      projectId={projectId}
+      subPropertyTypeId={subPropertyTypeId}
+    />
   </View>
 );
 
 /* ------------------------- Commercial Shop Section ------------------------- */
-const CommercialShopSection = () => (
+const CommercialShopSection = ({ projectId, subPropertyTypeId }) => (
   <View style={styles.sectionContent}>
-    <TextInputBox label="Shop Number / Name *" placeholder="Shop 12" />
-    <TextInputBox label="Shop Area (sq ft) *" placeholder="500" keyboardType="numeric" />
-    <TextInputBox label="Floor Level *" placeholder="Ground, First, etc." />
-    <TouchableOpacity style={styles.primaryButton}>
-      <Text style={styles.primaryButtonText}>Save Shop Details</Text>
-      <Ionicons name="save" size={18} color={COLORS.card} style={{ marginLeft: 8 }} />
-    </TouchableOpacity>
+    <Text style={styles.instructionText}>Assign Commercial Shop units</Text>
+    <AddPropertyUnits
+      projectId={projectId}
+      subPropertyTypeId={subPropertyTypeId}
+    />
   </View>
 );
 
 /* ------------------------- Commercial Plot Section ------------------------- */
-const CommercialPlotSection = () => (
+const CommercialPlotSection = ({ projectId, subPropertyTypeId }) => (
   <View style={styles.sectionContent}>
-    <TextInputBox label="Plot Area (sq ft) *" placeholder="3000" keyboardType="numeric" />
-    <TextInputBox label="Plot Location / Address *" placeholder="Sector 10, Commercial Hub" />
-    <TouchableOpacity style={styles.primaryButton}>
-      <Text style={styles.primaryButtonText}>Save Plot Details</Text>
-      <Ionicons name="save" size={18} color={COLORS.card} style={{ marginLeft: 8 }} />
-    </TouchableOpacity>
+    <Text style={styles.instructionText}>Assign Commercial Plot units</Text>
+    <AddPropertyUnits
+      projectId={projectId}
+      subPropertyTypeId={subPropertyTypeId}
+    />
   </View>
 );
 
@@ -737,19 +875,34 @@ export default function PropertyDetails() {
       );
     }
 
-    // Scenario 2: If isPlot is true - Will implement later
+    // Scenario 2: If isPlot is true
     if (propertySubTypeData.isPlot === true) {
-      return <PlotSection />;
+      return (
+        <PlotSection 
+          projectId={projectId}
+          subPropertyTypeId={propertySubTypeData.id}
+        />
+      );
     }
 
     // Scenario 3: If isHouseVilla is true
     if (propertySubTypeData.isHouseVilla === true) {
-      return <IndependentHouseSection />;
+      return (
+        <IndependentHouseSection 
+          projectId={projectId}
+          subPropertyTypeId={propertySubTypeData.id}
+        />
+      );
     }
 
     // Scenario 4: If isCommercialUnit is true
     if (propertySubTypeData.isCommercialUnit === true) {
-      return <CommercialShopSection />;
+      return (
+        <CommercialShopSection 
+          projectId={projectId}
+          subPropertyTypeId={propertySubTypeData.id}
+        />
+      );
     }
 
     // Fallback for any unmatched combination
@@ -764,7 +917,8 @@ export default function PropertyDetails() {
         <Text style={[styles.italicText, { marginTop: 5, fontSize: 11 }]}>
           Flags: isMultiTower={String(propertySubTypeData.isMultiTower)}, 
           isPlot={String(propertySubTypeData.isPlot)}, 
-          isHouseVilla={String(propertySubTypeData.isHouseVilla)}
+          isHouseVilla={String(propertySubTypeData.isHouseVilla)},
+          isCommercialUnit={String(propertySubTypeData.isCommercialUnit)}
         </Text>
       </View>
     );
@@ -928,7 +1082,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 26,
-    fontWeight: "700",
+    fontFamily: "PlusSB",
     color: COLORS.primary,
   },
   backButton: {
@@ -939,16 +1093,15 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    // Slightly more prominent shadow for depth
     shadowColor: COLORS.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 5,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: "PlusSB",
     color: COLORS.primary,
     borderBottomWidth: 2,
     borderBottomColor: COLORS.border,
@@ -960,19 +1113,20 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: "PlusSB",
     marginBottom: 8,
     color: COLORS.text,
   },
   subLabel: {
     fontSize: 15,
-    fontWeight: "600",
+    fontFamily: "PlusSB",
     marginTop: 10,
     marginBottom: 10,
     color: COLORS.text,
   },
   instructionText: {
     fontSize: 13,
+    fontFamily: "PlusL",
     color: COLORS.placeholder,
     marginBottom: 15,
   },
@@ -983,11 +1137,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     borderRadius: 12,
     marginRight: 10,
-    // Subtle shadow for lift
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 1,
+    elevation: 2,
   },
   optionButtonActivePrimary: { backgroundColor: COLORS.primary },
   optionButtonActiveSecondary: { backgroundColor: COLORS.secondary },
@@ -996,10 +1150,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  optionText: { fontSize: 14, fontWeight: "500" },
-  optionTextActive: { color: COLORS.card, fontWeight: "700" },
-  optionTextInactive: { color: COLORS.text },
-  italicText: { fontStyle: "italic", color: COLORS.placeholder, textAlign: 'center', paddingVertical: 10 },
+  optionText: { fontSize: 14, fontFamily: "PlusM" },
+  optionTextActive: { color: COLORS.card, fontFamily: "PlusSB" },
+  optionTextInactive: { color: COLORS.text, fontFamily: "PlusL" },
+  italicText: { fontStyle: "italic", fontFamily: "PlusL", color: COLORS.placeholder, textAlign: 'center', paddingVertical: 10 },
   sectionContent: { marginTop: 5 },
   
   // Form Section (for separating form components)
@@ -1029,12 +1183,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  toggleLabel: { marginLeft: 8, fontWeight: '600', color: COLORS.text, fontSize: 14 },
+  toggleLabel: { marginLeft: 8, fontFamily: 'PlusSB', color: COLORS.text, fontSize: 14 },
 
   // Radio Buttons
   radioGroup: { flexDirection: "row", gap: 24, marginBottom: 12 },
   radioRow: { flexDirection: "row", alignItems: "center" },
-  radioLabel: { marginLeft: 8, color: COLORS.text },
+  radioLabel: { marginLeft: 8, fontFamily: "PlusM", color: COLORS.text },
 
   // Primary Button (Save/Action)
   primaryButton: {
@@ -1045,13 +1199,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     marginTop: 20,
-    elevation: 4, // Android shadow
+    elevation: 4,
     shadowColor: COLORS.secondary,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
-  primaryButtonText: { color: COLORS.card, fontSize: 16, fontWeight: "700", textAlign: "center" },
+  primaryButtonText: { color: COLORS.card, fontSize: 16, fontFamily: "PlusSB", textAlign: "center" },
 
   // Secondary Button (Add Unit)
   secondaryButton: {
@@ -1064,11 +1218,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
     borderWidth: 1.5,
   },
-  secondaryButtonText: { fontSize: 14, fontWeight: "600", textAlign: "center" },
+  secondaryButtonText: { fontSize: 14, fontFamily: "PlusSB", textAlign: "center" },
 
   // Inputs
   inputBox: { marginBottom: 15 },
-  inputLabel: { marginBottom: 4, fontWeight: "600", color: COLORS.text },
+  inputLabel: { marginBottom: 4, fontFamily: "PlusSB", color: COLORS.text },
   input: {
     backgroundColor: COLORS.input,
     padding: 12,
@@ -1077,6 +1231,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     color: COLORS.text,
     fontSize: 16,
+    fontFamily: "PlusL",
   },
   
   // Unit Box
@@ -1087,11 +1242,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.input,
     borderRadius: 12,
     borderLeftWidth: 4,
-    // borderLeftColor set dynamically
   },
   unitHeader: {
-    flexDirection: 'row', // Added
-    justifyContent: 'space-between', // Added
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
@@ -1099,7 +1253,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   unitHeaderText: {
-    fontWeight: '700',
+    fontFamily: 'PlusSB',
     color: COLORS.primary,
   },
   removeButton: {
@@ -1112,7 +1266,65 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderLeftWidth: 4,
     borderColor: COLORS.warning,
-    backgroundColor: '#fffbe6', 
-    fontWeight: '500'
+    backgroundColor: '#fffbe6',
+    fontFamily: 'PlusM',
+  },
+  
+  // Linkable Units Info
+  linkableUnitsInfo: {
+    backgroundColor: '#3b82f620',
+    padding: 12,
+    borderRadius: 10,
+    marginVertical: 15,
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+  },
+  linkableUnitsText: {
+    fontSize: 15,
+    fontFamily: "PlusM",
+    color: '#1e40af',
+    textAlign: 'center',
+  },
+  linkableUnitsBold: {
+    fontFamily: 'PlusSB',
+    fontSize: 16,
+  },
+  
+  // Floor Structures Table
+  floorStructuresTable: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  structureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    backgroundColor: COLORS.background,
+    borderRadius: 8,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  structureName: {
+    fontSize: 15,
+    fontFamily: 'PlusSB',
+    color: COLORS.text,
+  },
+  structureArea: {
+    fontSize: 13,
+    fontFamily: 'PlusM',
+    color: '#10b981',
+    marginTop: 2,
+  },
+  structureQty: {
+    fontSize: 14,
+    fontFamily: 'PlusSB',
+    color: COLORS.text,
+    marginRight: 15,
   },
 });

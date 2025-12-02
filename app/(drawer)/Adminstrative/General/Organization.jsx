@@ -13,9 +13,11 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+import useGeneral from '../../../../hooks/useGeneral';
 
 const Organization = () => {
   const navigation = useNavigation();
+  const { saveOrganization, loading, error, success } = useGeneral();
   const [formData, setFormData] = useState({
     name: '',
     gstNo: '',
@@ -56,16 +58,32 @@ const Organization = () => {
     }
   };
 
-  const handleSave = () => {
-    // Validate required fields if needed
+  const handleSave = async () => {
+    // Validate required fields
     if (!formData.name) {
       Alert.alert('Validation Error', 'Organization name is required!');
       return;
     }
 
-    // Save logic here
-    console.log('Form Data:', formData);
-    Alert.alert('Success', 'Organization details saved successfully!');
+    try {
+      // Convert logo to base64 string if needed
+      let logoString = '';
+      if (formData.logo) {
+        // You can implement base64 conversion here if needed
+        // For now, passing the URI
+        logoString = formData.logo;
+      }
+
+      const organizationData = {
+        ...formData,
+        logoString,
+      };
+
+      await saveOrganization(organizationData);
+      Alert.alert('Success', 'Organization details saved successfully!');
+    } catch (err) {
+      Alert.alert('Error', error || 'Failed to save organization details');
+    }
   };
 
   const handleReset = () => {
@@ -210,14 +228,24 @@ const Organization = () => {
 
             {/* Action Buttons */}
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+              <TouchableOpacity 
+                style={styles.resetButton} 
+                onPress={handleReset}
+                disabled={loading}
+              >
                 <Ionicons name="refresh-outline" size={20} color="#666" />
                 <Text style={styles.resetButtonText}>Reset</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+              <TouchableOpacity 
+                style={[styles.saveButton, loading && styles.disabledButton]} 
+                onPress={handleSave}
+                disabled={loading}
+              >
                 <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-                <Text style={styles.saveButtonText}>Save</Text>
+                <Text style={styles.saveButtonText}>
+                  {loading ? 'Saving...' : 'Save'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -366,6 +394,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'PlusSB',
     marginLeft: 6,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
 

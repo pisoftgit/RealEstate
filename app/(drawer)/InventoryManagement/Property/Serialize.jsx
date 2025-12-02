@@ -13,6 +13,7 @@ import * as SecureStore from 'expo-secure-store';
 import { useNavigation, useRouter } from "expo-router";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { ArrowDown01 } from "lucide-react-native";
+import { DrawerActions } from '@react-navigation/native';
 /* --------------------------------- THEME COLORS --------------------------------- */
 const COLORS = {
     primary: "#004d40",
@@ -158,10 +159,10 @@ const Serialize = () => {
                     <Text style={styles.projectText}>Builder: {item.builder}</Text>
                     <Text style={styles.projectText}>Status:
                         <Text style={{
-                            fontWeight: '600',
+                            fontFamily: 'PlusSB',
                             color: item.possessionStatus.includes('READY TO MOVE') ? COLORS.secondary : COLORS.warning
                         }}>
-                            {item.possessionStatus}
+                            {' '}{item.possessionStatus}
                         </Text>
                     </Text>
                     <Text style={styles.dateText}>Starts: {item.startDate} | Ends: {item.completionDate}</Text>
@@ -217,7 +218,7 @@ const Serialize = () => {
                             router.replace(router.pathname); 
                         }}
                     >
-                        <Text style={{ color: COLORS.card, fontWeight: 'bold' }}>Try Again</Text>
+                        <Text style={{ color: COLORS.card, fontFamily: "PlusSB" }}>Try Again</Text>
                     </TouchableOpacity>
                 </View>
             );
@@ -246,8 +247,8 @@ const Serialize = () => {
         <SafeAreaView style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={28} color={COLORS.primary} />
+                <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
+                    <Ionicons name="menu" size={28} color={COLORS.primary} />
                 </TouchableOpacity>
                 <Text style={styles.title}>Manage Projects</Text>
                 <TouchableOpacity style={styles.addButton} onPress={() => router.push('/path-to-add-new-project')}>
@@ -278,7 +279,7 @@ const styles = StyleSheet.create({
         flexDirection: "row", alignItems: "center", justifyContent: 'space-between', paddingHorizontal: 20,
         paddingVertical: 15, paddingTop: 40, backgroundColor: COLORS.card, borderBottomWidth: 1, borderBottomColor: COLORS.border, marginBottom: 5,
     },
-    title: { flex: 1, fontSize: 26, fontWeight: "800", marginLeft: 15, color: COLORS.primary },
+    title: { flex: 1, fontSize: 26, fontFamily: "PlusSB", marginLeft: 15, color: COLORS.primary },
     addButton: { backgroundColor: COLORS.secondary, padding: 8, borderRadius: 50, elevation: 3 },
     cardContainer: { paddingHorizontal: 20, paddingVertical: 8 },
     card: {
@@ -286,16 +287,16 @@ const styles = StyleSheet.create({
         borderRadius: 15, borderLeftWidth: 6, borderLeftColor: COLORS.secondary, elevation: 3, shadowColor: COLORS.primary,
         shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 3,
     },
-    projectName: { fontSize: 18, fontWeight: "700", color: COLORS.text, marginBottom: 5 },
-    projectText: { fontSize: 14, color: COLORS.text, marginTop: 2, opacity: 0.8 },
-    dateText: { fontSize: 12, color: COLORS.placeholder, marginTop: 5, fontStyle: 'italic' },
+    projectName: { fontSize: 18, fontFamily: "PlusSB", color: COLORS.text, marginBottom: 5 },
+    projectText: { fontSize: 14, fontFamily: "PlusM", color: COLORS.text, marginTop: 2, opacity: 0.8 },
+    dateText: { fontSize: 12, fontFamily: "PlusL", color: COLORS.placeholder, marginTop: 5, fontStyle: 'italic' },
     reraContainer: { flexDirection: "row", alignItems: "center", marginTop: 10, paddingTop: 5, borderTopWidth: 1, borderTopColor: COLORS.border },
-    reraText: { marginLeft: 8, fontSize: 14, fontWeight: '600' },
+    reraText: { marginLeft: 8, fontSize: 14, fontFamily: "PlusM" },
     actionButtons: { flexDirection: "column", marginLeft: 15, gap: 10 },
     editButton: { ...actionButtonBase, backgroundColor: "#fff3cd", borderWidth: 1, borderColor: COLORS.warning },
     deleteButton: { ...actionButtonBase, backgroundColor: "#fbe8e8", borderWidth: 1, borderColor: COLORS.error },
     stateContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20, gap: 10 },
-    emptyText: { fontSize: 18, color: COLORS.placeholder, fontWeight: '500' },
+    emptyText: { fontSize: 18, fontFamily: "PlusM", color: COLORS.placeholder },
 });
 
 export default Serialize;
