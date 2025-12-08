@@ -735,32 +735,28 @@ export const deleteFinancialYear = async (id) => {
   return response;
 };
 
-{/*get my movements*/}
+{/* Get User Profile */}
+export const getUserProfile = async (userId) => {
+  try {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
 
-// export const getMyMovements = async (employeeId) => {
-//   try {
-//     const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/user/myprofile/${userId}`, {
+      method: "GET",
+      headers: {
+        secret_key: secretKey,
+        Accept: "application/json",
+      },
+    });
 
-//     const response = await fetch(
-//       `${API_BASE_URL}/employee/my-movements/employeeId/${employeeId}`,
-//       {
-//         method: "GET",
-//         headers: {
-//           secret_key: secretKey,
-//           "Content-Type": "application/json",
-//         },
-//       }
-//     );
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Failed to fetch user profile");
+    }
 
-//     if (!response.ok) {
-//       const errorText = await response.text();
-//       throw new Error(errorText || "Failed to fetch movements");
-//     }
-
-//     const data = await response.json();
-//     return data;
-//   } catch (error) {
-//     console.error("Error fetching my movements:", error);
-//     return [];
-//   }
-// };
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    throw error;
+  }
+};

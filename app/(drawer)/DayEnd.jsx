@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,17 +8,47 @@ import {
   Platform,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import useDayEnd from '../../hooks/useDayEnd';
 
 export default function DayEnd() {
   const navigation = useNavigation();
-  const [currentDate] = useState(new Date());
+  const { currentDayData, loading, error, fetchCurrentDay, closeDay, openDay } = useDayEnd();
+  
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [openDate, setOpenDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [currentDayId, setCurrentDayId] = useState(null);
+
+  // Fetch current day data on mount
+  useEffect(() => {
+    const loadCurrentDay = async () => {
+      try {
+        const data = await fetchCurrentDay();
+        
+        if (data && data.date) {
+          // Parse the date from response
+          const [year, month, day] = data.date.split('-');
+          const fetchedDate = new Date(year, month - 1, day);
+          setCurrentDate(fetchedDate);
+        }
+        
+        if (data && data.currentDayId) {
+          setCurrentDayId(data.currentDayId);
+        }
+      } catch (err) {
+        console.error('Error fetching current day:', err);
+        Alert.alert('Error', 'Failed to fetch current day data');
+      }
+    };
+
+    loadCurrentDay();
+  }, []);
 
   const formatDate = (date) => {
     const day = date.getDate().toString().padStart(2, '0');
@@ -34,7 +64,12 @@ export default function DayEnd() {
     }
   };
 
-  const handleCloseDay = () => {
+  const handleCloseDay = async () => {
+    if (!currentDayId) {
+      Alert.alert('Error', 'Current day ID not available');
+      return;
+    }
+
     Alert.alert(
       'Close Day',
       `Are you sure you want to close the day for ${formatDate(currentDate)}?`,
@@ -46,16 +81,23 @@ export default function DayEnd() {
         {
           text: 'Close Day',
           style: 'destructive',
-          onPress: () => {
-            // Add your close day logic here
-            Alert.alert('Success', `Day closed for ${formatDate(currentDate)}`);
+          onPress: async () => {
+            try {
+              await closeDay(currentDayId);
+              Alert.alert('Success', `Day closed for ${formatDate(currentDate)}`);
+              
+              // Refresh current day data
+              await fetchCurrentDay();
+            } catch (err) {
+              Alert.alert('Error', error || 'Failed to close day');
+            }
           },
         },
       ]
     );
   };
 
-  const handleOpenDay = () => {
+  const handleOpenDay = async () => {
     Alert.alert(
       'Open Day',
       `Are you sure you want to open the day for ${formatDate(openDate)}?`,
@@ -66,9 +108,16 @@ export default function DayEnd() {
         },
         {
           text: 'Open Day',
-          onPress: () => {
-            // Add your open day logic here
-            Alert.alert('Success', `Day opened for ${formatDate(openDate)}`);
+          onPress: async () => {
+            try {
+              await openDay(openDate);
+              Alert.alert('Success', `Day opened for ${formatDate(openDate)}`);
+              
+              // Refresh current day data
+              await fetchCurrentDay();
+            } catch (err) {
+              Alert.alert('Error', error || 'Failed to open day');
+            }
           },
         },
       ]
@@ -98,6 +147,13 @@ export default function DayEnd() {
         />
       </View>
 
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#5aaf57" />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      )}
+
       <ScrollView 
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
@@ -121,9 +177,11 @@ export default function DayEnd() {
               This will close all operations for the current day. No further transactions can be made after closing.
             </Text>
 
-            <TouchableOpacity style={styles.closeDayButton} onPress={handleCloseDay}>
+            <TouchableOpacity style={styles.closeDayButton} onPress={handleCloseDay} disabled={loading}>
               <Ionicons name="lock-closed" size={20} color="#fff" />
-              <Text style={styles.buttonText}>Close Day</Text>
+              <Text style={styles.buttonText}>
+                {loading ? 'Processing...' : 'Close Day'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -159,9 +217,11 @@ export default function DayEnd() {
               This will open operations for the selected day. All transactions can be performed after opening.
             </Text>
 
-            <TouchableOpacity style={styles.openDayButton} onPress={handleOpenDay}>
+            <TouchableOpacity style={styles.openDayButton} onPress={handleOpenDay} disabled={loading}>
               <Ionicons name="lock-open" size={20} color="#fff" />
-              <Text style={styles.buttonText}>Open Day</Text>
+              <Text style={styles.buttonText}>
+                {loading ? 'Processing...' : 'Open Day'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -316,5 +376,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'PlusSB',
     color: '#fff',
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    fontFamily: 'PlusR',
+    color: '#666',
   },
 });

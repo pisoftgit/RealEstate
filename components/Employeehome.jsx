@@ -18,6 +18,7 @@ import AdminStatsSection from './AdminStatSection';
 import AdminAppointments from './AdminAppointments';
 import { useNavigation } from 'expo-router';
 import { useUser } from "../context/UserContext";
+import { useUserProfile } from "../hooks/useUserProfile";
 import AttendanceCard from './AttendenceCard';
 import  Userlogo from '../assets/svg/loguser.svg';
 import Felogo from '../assets/svg/Folder.svg';
@@ -33,12 +34,13 @@ const CARD_HEIGHT = height * 0.12;
 
 const AdminDashboard = () => {
   const navigation = useNavigation();
-   const {user,img}=useUser();
+  const { user, img } = useUser();
+  const { profile, loading, error } = useUserProfile();
 
-
-   const desi=user.designation
-   console.log("desi",desi)
-   console.log(user.gender)
+  const desi = user.designation;
+  console.log("desi", desi);
+  console.log(user.gender);
+  console.log("User Profile:", profile);
    
 
 
@@ -121,7 +123,9 @@ const AdminDashboard = () => {
      style={styles.ani2}
    />
   </Animated.View>
-     Welcome <Text style={{ color: '#5aaf57', fontFamily: 'PlusR' }}>{user.name.split(' ')[0]}</Text>
+     Welcome <Text style={{ color: '#5aaf57', fontFamily: 'PlusR' }}>
+       {profile?.name?.split(' ')[0] || user.name?.split(' ')[0] || 'User'}
+     </Text>
 
   </Animated.Text>
 </Animated.View>
@@ -178,18 +182,15 @@ const AdminDashboard = () => {
       
       />
     )
-    
-
     }
-  
-
-
         <View style={styles.cardContent}>
-          <Text style={styles.name}>{user.name? user.name.split(' ')[0] : 'User'}</Text>
-          <Text style={styles.designation}>
-            {user.designation?.name || 'No Designation'}
+          <Text style={styles.name}>
+            {profile?.name?.split(' ')[0] || user.name?.split(' ')[0] || 'User'}
           </Text>
-          {/* <Text style={styles.details}>ID: EMP12345</Text> */}
+         
+          {profile?.usercode && (
+            <Text style={styles.details}>{profile.usercode}</Text>
+          )}
         </View>
       </Animated.View>
 
@@ -340,6 +341,7 @@ transform:[{scale:4.5}],
   details: {
     fontSize: 13,
     color: '#196f3d',
+    fontFamily:"PlusR",
   },
   scrollContent: {
     paddingTop: HEADER_MAX_HEIGHT -160 ,

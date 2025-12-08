@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
@@ -17,15 +18,29 @@ import LottieView from 'lottie-react-native';
 import { defaultModules } from '../../../constants/modules';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import useAddUser from '../../../hooks/useAddUser';
+import useRoleAssignment from '../../../hooks/useRoleAssignment';
 
 export default function ManageUser() {
   const navigation = useNavigation();
+  const { getAllUsers, searchUsers, getUserById, updateUser, deleteUser, loading, users: apiUsers } = useAddUser();
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const { 
+    roles, 
+    userRoleIds, 
+    loading: rolesLoading, 
+    assignRoles,
+    flattenRoles,
+    hasRole 
+  } = useRoleAssignment(selectedUserId);
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedModules, setSelectedModules] = useState([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [localUsers, setLocalUsers] = useState([]);
   
   const [editFormData, setEditFormData] = useState({
     name: '',
@@ -40,100 +55,213 @@ export default function ManageUser() {
     isActive: true,
   });
 
-  // Sample user data - Replace with API data
-  const [users, setUsers] = useState([
-    {
-      id: 'EMP001',
-      name: 'John Doe',
-      category: 'Admin',
-      password: '********',
-      contact: '+91 9876543210',
-      email: 'john@example.com',
-      isActive: true,
-    },
-    {
-      id: 'EMP002',
-      name: 'Jane Smith',
-      category: 'Manager',
-      password: '********',
-      contact: '+91 9876543211',
-      email: 'jane@example.com',
-      isActive: true,
-    },
-    {
-      id: 'EMP003',
-      name: 'Mike Johnson',
-      category: 'Employee',
-      password: '********',
-      contact: '+91 9876543212',
-      email: 'mike@example.com',
-      isActive: false,
-    },
-  ]);
+  // Load all users on component mount
+  useEffect(() => {
+    loadAllUsers();
+  }, []);
+
+  const loadAllUsers = async () => {
+    try {
+      const fetchedUsers = await getAllUsers();
+      // Ensure fetchedUsers is an array
+      if (Array.isArray(fetchedUsers)) {
+        setLocalUsers(fetchedUsers);
+      } else if (fetchedUsers?.data && Array.isArray(fetchedUsers.data)) {
+        setLocalUsers(fetchedUsers.data);
+      } else {
+        console.warn('Invalid users data structure:', fetchedUsers);
+        setLocalUsers([]);
+      }
+    } catch (error) {
+      console.error('Failed to load users:', error);
+     
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      // If search is empty, load all users
+      loadAllUsers();
+      return;
+    }
+
+    try {
+      // Search by name or userCode
+      const searchResults = await searchUsers(searchQuery, searchQuery);
+      
+      // Ensure searchResults is an array
+      if (Array.isArray(searchResults)) {
+        setLocalUsers(searchResults);
+      } else if (searchResults?.data && Array.isArray(searchResults.data)) {
+        setLocalUsers(searchResults.data);
+      } else {
+        console.warn('Invalid search results structure:', searchResults);
+        setLocalUsers([]);
+      }
+    } catch (error) {
+      console.error('Failed to search users:', error);
+    }
+  };
 
   // Filter users based on search query
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = Array.isArray(localUsers) 
+    ? localUsers.filter(
+        (user) => {
+          const searchLower = searchQuery.toLowerCase();
+          const userName = user?.name?.toLowerCase() || '';
+          const userId = user?.id?.toString().toLowerCase() || '';
+          const userCode = user?.usercode?.toLowerCase() || '';
+          
+          return userName.includes(searchLower) || 
+                 userId.includes(searchLower) || 
+                 userCode.includes(searchLower);
+        }
+      )
+    : [];
 
   const handleAssign = (userId) => {
-    const user = users.find(u => u.id === userId);
+    const user = localUsers.find(u => u.id === userId);
     setSelectedUser(user);
-    setSelectedModules([]); // Reset selections
+    setSelectedUserId(userId); // This will trigger useRoleAssignment to fetch roles
+    // Don't reset selectedModules here - let useEffect handle it when userRoleIds loads
     setShowAssignModal(true);
   };
 
-  const toggleModule = (moduleName) => {
+  // Update selected modules when userRoleIds changes
+  useEffect(() => {
+    if (userRoleIds && userRoleIds.length > 0) {
+      console.log('Setting pre-selected roles:', userRoleIds);
+      setSelectedModules(userRoleIds);
+    } else if (userRoleIds && userRoleIds.length === 0) {
+      // Only reset if we explicitly got an empty array from API
+      setSelectedModules([]);
+    }
+  }, [userRoleIds]);
+
+  // Helper function to get all child role IDs recursively
+  const getAllChildRoleIds = (role) => {
+    let childIds = [role.id];
+    if (role.children && role.children.length > 0) {
+      role.children.forEach(child => {
+        childIds = [...childIds, ...getAllChildRoleIds(child)];
+      });
+    }
+    return childIds;
+  };
+
+  // Helper function to find a role by ID in the roles tree
+  const findRoleById = (rolesArray, roleId) => {
+    for (const role of rolesArray) {
+      if (role.id === roleId) {
+        return role;
+      }
+      if (role.children && role.children.length > 0) {
+        const found = findRoleById(role.children, roleId);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const toggleModule = (roleId) => {
+    // Find the role in the roles tree
+    const role = findRoleById(roles, roleId);
+    if (!role) return;
+
+    // Get all child role IDs (including the parent)
+    const allRoleIds = getAllChildRoleIds(role);
+
     setSelectedModules(prev => {
-      if (prev.includes(moduleName)) {
-        return prev.filter(m => m !== moduleName);
+      // Check if the parent is currently selected
+      const isSelected = prev.includes(roleId);
+
+      if (isSelected) {
+        // If selected, remove the parent and all children using Set for better performance
+        const idsToRemove = new Set(allRoleIds);
+        return prev.filter(m => !idsToRemove.has(m));
       } else {
-        return [...prev, moduleName];
+        // If not selected, add the parent and all children using Set to avoid duplicates
+        const existingIds = new Set(prev);
+        const newIds = allRoleIds.filter(id => !existingIds.has(id));
+        return [...prev, ...newIds];
       }
     });
   };
 
-  const handleSaveAssignment = () => {
+  const handleSaveAssignment = async () => {
     if (selectedModules.length === 0) {
-      Alert.alert('Warning', 'Please select at least one module to assign.');
+      Alert.alert('Warning', 'Please select at least one role to assign.');
       return;
     }
     
-    Alert.alert(
-      'Success', 
-      `Assigned ${selectedModules.length} module(s) to ${selectedUser.name}`,
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            setShowAssignModal(false);
-            setSelectedUser(null);
-            setSelectedModules([]);
+    try {
+      // Call API to assign roles
+      await assignRoles(selectedUser.id, selectedModules);
+      
+      Alert.alert(
+        'Success', 
+        `Assigned ${selectedModules.length} role(s) to ${selectedUser.name}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setShowAssignModal(false);
+              setSelectedUser(null);
+              setSelectedUserId(null);
+              setSelectedModules([]);
+            }
           }
-        }
-      ]
-    );
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to assign roles. Please try again.');
+      console.error('Failed to assign roles:', error);
+    }
   };
 
-  const handleEdit = (userId) => {
-    const user = users.find(u => u.id === userId);
-    setSelectedUser(user);
-    // Populate form with user data
-    setEditFormData({
-      name: user.name,
-      dob: new Date(), // You can parse from user data if available
-      fatherName: '',
-      motherName: '',
-      mobileNo: user.contact,
-      email: user.email,
-      password: user.password,
-      userName: user.id,
-      gender: '',
-      isActive: user.isActive,
-    });
-    setShowEditModal(true);
+  const handleEdit = async (userId) => {
+    try {
+      // Fetch user details from API
+      const user = await getUserById(userId);
+      
+      setSelectedUser(user);
+      
+      // Populate form with user data from API response
+      setEditFormData({
+        name: user.name || '',
+        dob: user.dob ? new Date(user.dob) : new Date(),
+        fatherName: user.fatherName || '',
+        motherName: user.motherName || '',
+        mobileNo: user.phone || user.contact || '',
+        email: user.email || '',
+        password: '', // Don't populate password for security
+        userName: user.usercode || user.id?.toString() || '',
+        gender: user.gender || '',
+        isActive: user.isActive !== false,
+      });
+      
+      setShowEditModal(true);
+    } catch (error) {
+      console.error('Failed to fetch user details:', error);
+      // Fallback to local data if API fails
+      const localUser = localUsers.find(u => u.id === userId);
+      if (localUser) {
+        setSelectedUser(localUser);
+        setEditFormData({
+          name: localUser.name || '',
+          dob: new Date(),
+          fatherName: localUser.fatherName || '',
+          motherName: localUser.motherName || '',
+          mobileNo: localUser.phone || localUser.contact || '',
+          email: localUser.email || '',
+          password: '',
+          userName: localUser.usercode || localUser.id?.toString() || '',
+          gender: localUser.gender || '',
+          isActive: localUser.isActive !== false,
+        });
+        setShowEditModal(true);
+      }
+    }
   };
 
   const handleEditInputChange = (field, value) => {
@@ -157,7 +285,7 @@ export default function ManageUser() {
     return `${day}/${month}/${year}`;
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     // Validation
     if (!editFormData.name.trim()) {
       Alert.alert('Validation Error', 'Name is required!');
@@ -176,28 +304,73 @@ export default function ManageUser() {
       return;
     }
 
-    // Update user in the list
-    setUsers(users.map(user => 
-      user.id === selectedUser.id 
-        ? { 
-            ...user, 
-            name: editFormData.name,
-            contact: editFormData.mobileNo,
-            email: editFormData.email,
-            isActive: editFormData.isActive,
-          }
-        : user
-    ));
+    try {
+      // Call API to update user
+      await updateUser(selectedUser.id, editFormData);
 
-    Alert.alert('Success', 'User updated successfully!', [
-      {
-        text: 'OK',
-        onPress: () => {
-          setShowEditModal(false);
-          setSelectedUser(null);
-        }
-      }
-    ]);
+      // Update local users list
+      setLocalUsers(localUsers.map(user => 
+        user.id === selectedUser.id 
+          ? { 
+              ...user, 
+              name: editFormData.name,
+              contact: editFormData.mobileNo,
+              email: editFormData.email,
+              isActive: editFormData.isActive,
+            }
+          : user
+      ));
+
+      // Success alert is handled by the hook
+      setShowEditModal(false);
+      setSelectedUser(null);
+      
+      // Reload users to get fresh data
+      loadAllUsers();
+    } catch (error) {
+      console.error('Failed to update user:', error);
+    }
+  };
+
+  // Recursive function to render roles tree
+  const renderRolesTree = (rolesArray, level = 0) => {
+    return rolesArray.map((role) => (
+      <View key={role.id}>
+        <TouchableOpacity
+          style={[
+            styles.moduleItem,
+            level === 1 && styles.subModuleItem,
+            level === 2 && styles.nestedModuleItem,
+          ]}
+          onPress={() => toggleModule(role.id)}
+        >
+          <View style={styles.checkboxContainer}>
+            <View style={[
+              styles.checkbox,
+              selectedModules.includes(role.id) && styles.checkboxChecked
+            ]}>
+              {selectedModules.includes(role.id) && (
+                <Ionicons name="checkmark" size={16} color="#fff" />
+              )}
+            </View>
+            <Text style={[
+              styles.moduleName,
+              level === 1 && styles.subModuleName,
+              level === 2 && styles.nestedModuleName,
+            ]}>
+              {role.name}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* Render children recursively */}
+        {role.children && role.children.length > 0 && (
+          <View>
+            {renderRolesTree(role.children, level + 1)}
+          </View>
+        )}
+      </View>
+    ));
   };
 
   const handleDelete = (userId) => {
@@ -212,9 +385,20 @@ export default function ManageUser() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setUsers(users.filter((user) => user.id !== userId));
-            Alert.alert('Success', 'User deleted successfully');
+          onPress: async () => {
+            try {
+              // Call API to delete user
+              await deleteUser(userId);
+              
+              // Update local users list
+              setLocalUsers(localUsers.filter((user) => user.id !== userId));
+              
+              // Success alert is handled by the hook
+              // Reload users to get fresh data
+              loadAllUsers();
+            } catch (error) {
+              console.error('Failed to delete user:', error);
+            }
           },
         },
       ]
@@ -230,13 +414,13 @@ export default function ManageUser() {
             <Ionicons name="person" size={24} color="#5aaf57" />
           </View>
           <View style={styles.userHeaderInfo}>
-            <Text style={styles.userName}>{user.name}</Text>
-            <Text style={styles.userId}>ID: {user.id}</Text>
+            <Text style={styles.userName}>{user.name || 'N/A'}</Text>
+            <Text style={styles.userId}>Code: {user.usercode || user.id}</Text>
           </View>
         </View>
-        <View style={[styles.statusBadge, user.isActive ? styles.activeBadge : styles.inactiveBadge]}>
-          <Text style={[styles.statusText, user.isActive ? styles.activeText : styles.inactiveText]}>
-            {user.isActive ? 'Active' : 'Inactive'}
+        <View style={[styles.statusBadge, user.isActive !== false ? styles.activeBadge : styles.inactiveBadge]}>
+          <Text style={[styles.statusText, user.isActive !== false ? styles.activeText : styles.inactiveText]}>
+            {user.isActive !== false ? 'Active' : 'Inactive'}
           </Text>
         </View>
       </View>
@@ -248,7 +432,7 @@ export default function ManageUser() {
             <Ionicons name="briefcase-outline" size={16} color="#666" />
             <Text style={styles.detailLabel}>Category:</Text>
           </View>
-          <Text style={styles.detailValue}>{user.category}</Text>
+          <Text style={styles.detailValue}>{user.userCategory1 || user.category || 'N/A'}</Text>
         </View>
 
         <View style={styles.detailRow}>
@@ -256,7 +440,7 @@ export default function ManageUser() {
             <Ionicons name="lock-closed-outline" size={16} color="#666" />
             <Text style={styles.detailLabel}>Password:</Text>
           </View>
-          <Text style={styles.detailValue}>{user.password}</Text>
+          <Text style={styles.detailValue}>{user.password ? '********' : 'N/A'}</Text>
         </View>
 
         <View style={styles.detailRow}>
@@ -264,7 +448,7 @@ export default function ManageUser() {
             <Ionicons name="call-outline" size={16} color="#666" />
             <Text style={styles.detailLabel}>Contact:</Text>
           </View>
-          <Text style={styles.detailValue}>{user.contact}</Text>
+          <Text style={styles.detailValue}>{user.phone || user.contact || 'N/A'}</Text>
         </View>
 
         <View style={styles.detailRow}>
@@ -272,7 +456,7 @@ export default function ManageUser() {
             <Ionicons name="mail-outline" size={16} color="#666" />
             <Text style={styles.detailLabel}>Email:</Text>
           </View>
-          <Text style={styles.detailValue} numberOfLines={1}>{user.email}</Text>
+          <Text style={styles.detailValue} numberOfLines={1}>{user.email || 'N/A'}</Text>
         </View>
       </View>
 
@@ -334,37 +518,57 @@ export default function ManageUser() {
           <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by Name or ID..."
+            placeholder="Search by Name or User Code..."
             placeholderTextColor="#999"
             value={searchQuery}
             onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <TouchableOpacity onPress={() => {
+              setSearchQuery('');
+              loadAllUsers();
+            }}>
               <Ionicons name="close-circle" size={20} color="#999" />
             </TouchableOpacity>
           )}
         </View>
+        
+        {/* Search/Refresh Button */}
+        <TouchableOpacity 
+          style={styles.searchButton}
+          onPress={searchQuery.trim() ? handleSearch : loadAllUsers}
+        >
+          <Ionicons name={searchQuery.trim() ? "search" : "reload"} size={20} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       {/* User Cards */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {filteredUsers.length > 0 ? (
-          filteredUsers.map((user) => renderUserCard(user))
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="people-outline" size={80} color="#ccc" />
-            <Text style={styles.emptyText}>No users found</Text>
-            <Text style={styles.emptySubText}>
-              {searchQuery ? 'Try a different search term' : 'Add users to get started'}
-            </Text>
-          </View>
-        )}
-      </ScrollView>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#5aaf57" />
+          <Text style={styles.loadingText}>Loading users...</Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {filteredUsers.length > 0 ? (
+            filteredUsers.map((user) => renderUserCard(user))
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="people-outline" size={80} color="#ccc" />
+              <Text style={styles.emptyText}>No users found</Text>
+              <Text style={styles.emptySubText}>
+                {searchQuery ? 'Try a different search term' : 'Add users to get started'}
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      )}
 
       {/* Assign Modules Modal */}
       <Modal
@@ -392,87 +596,41 @@ export default function ManageUser() {
 
             {/* Modules List */}
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              {defaultModules.map((module, index) => (
-                <View key={index}>
-                  {/* Main Module */}
-                  <TouchableOpacity
-                    style={styles.moduleItem}
-                    onPress={() => toggleModule(module.name)}
-                  >
-                    <View style={styles.checkboxContainer}>
-                      <View style={[
-                        styles.checkbox,
-                        selectedModules.includes(module.name) && styles.checkboxChecked
-                      ]}>
-                        {selectedModules.includes(module.name) && (
-                          <Ionicons name="checkmark" size={16} color="#fff" />
-                        )}
-                      </View>
-                      <Text style={styles.moduleName}>{module.title}</Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Sub Modules */}
-                  {module.children && module.children.map((subModule, subIndex) => (
-                    <View key={`${index}-${subIndex}`}>
-                      <TouchableOpacity
-                        style={styles.subModuleItem}
-                        onPress={() => toggleModule(subModule.name)}
-                      >
-                        <View style={styles.checkboxContainer}>
-                          <View style={[
-                            styles.checkbox,
-                            selectedModules.includes(subModule.name) && styles.checkboxChecked
-                          ]}>
-                            {selectedModules.includes(subModule.name) && (
-                              <Ionicons name="checkmark" size={16} color="#fff" />
-                            )}
-                          </View>
-                          <Text style={styles.subModuleName}>{subModule.title}</Text>
-                        </View>
-                      </TouchableOpacity>
-
-                      {/* Nested Sub Modules */}
-                      {subModule.children && subModule.children.map((nestedModule, nestedIndex) => (
-                        <TouchableOpacity
-                          key={`${index}-${subIndex}-${nestedIndex}`}
-                          style={styles.nestedModuleItem}
-                          onPress={() => toggleModule(nestedModule.name)}
-                        >
-                          <View style={styles.checkboxContainer}>
-                            <View style={[
-                              styles.checkbox,
-                              selectedModules.includes(nestedModule.name) && styles.checkboxChecked
-                            ]}>
-                              {selectedModules.includes(nestedModule.name) && (
-                                <Ionicons name="checkmark" size={16} color="#fff" />
-                              )}
-                            </View>
-                            <Text style={styles.nestedModuleName}>{nestedModule.title}</Text>
-                          </View>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  ))}
+              {rolesLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#5aaf57" />
+                  <Text style={styles.loadingText}>Loading roles...</Text>
                 </View>
-              ))}
+              ) : roles.length > 0 ? (
+                renderRolesTree(roles)
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No roles available</Text>
+                </View>
+              )}
             </ScrollView>
 
             {/* Modal Footer */}
             <View style={styles.modalFooter}>
               <Text style={styles.selectedCount}>
-                {selectedModules.length} module(s) selected
+                {selectedModules.length} role(s) selected
               </Text>
               <View style={styles.modalActions}>
                 <TouchableOpacity
                   style={styles.modalCancelButton}
-                  onPress={() => setShowAssignModal(false)}
+                  onPress={() => {
+                    setShowAssignModal(false);
+                    setSelectedUser(null);
+                    setSelectedUserId(null);
+                    setSelectedModules([]);
+                  }}
                 >
                   <Text style={styles.modalCancelText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.modalSaveButton}
                   onPress={handleSaveAssignment}
+                  disabled={rolesLoading}
                 >
                   <Ionicons name="checkmark-circle" size={20} color="#fff" />
                   <Text style={styles.modalSaveText}>Assign</Text>
@@ -759,11 +917,14 @@ const styles = StyleSheet.create({
     height: 120,
   },
   searchContainer: {
+    flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: 10,
     backgroundColor: '#fff',
+    gap: 10,
   },
   searchBar: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
@@ -773,6 +934,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
   },
+  searchButton: {
+    width: 50,
+    height: 50,
+    backgroundColor: '#5aaf57',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   searchIcon: {
     marginRight: 10,
   },
@@ -781,6 +950,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'PlusR',
     color: '#333',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'PlusR',
+    color: '#666',
+    marginTop: 12,
   },
   scrollView: {
     flex: 1,

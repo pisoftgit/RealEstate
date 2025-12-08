@@ -9,15 +9,19 @@ import {
   Alert,
   ScrollView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import LottieView from 'lottie-react-native';
+import useAddUser from '../../../hooks/useAddUser';
 
 export default function Adduser() {
   const navigation = useNavigation();
+  const { addUser, loading } = useAddUser();
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -55,7 +59,7 @@ export default function Adduser() {
     return `${day}/${month}/${year}`;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validation
     if (!formData.name.trim()) {
       Alert.alert('Validation Error', 'Name is required!');
@@ -82,28 +86,20 @@ export default function Adduser() {
       return;
     }
 
-    // Submit logic here
-    console.log('Form Data:', formData);
-    Alert.alert('Success', 'User added successfully!', [
-      {
-        text: 'OK',
-        onPress: () => {
-          // Reset form
-          setFormData({
-            name: '',
-            dob: new Date(),
-            fatherName: '',
-            motherName: '',
-            mobileNo: '',
-            email: '',
-            password: '',
-            userName: '',
-            gender: '',
-            isActive: true,
-          });
-        },
-      },
-    ]);
+    try {
+      setSubmitting(true);
+      // Call the API hook
+      await addUser(formData);
+      
+      // Success alert is handled by the hook
+      // Reset form after successful submission
+      handleReset();
+    } catch (err) {
+      // Error alert is handled by the hook
+      console.error("Submit error:", err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -330,14 +326,28 @@ export default function Adduser() {
 
             {/* Action Buttons */}
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+              <TouchableOpacity 
+                style={styles.resetButton} 
+                onPress={handleReset}
+                disabled={submitting}
+              >
                 <Ionicons name="refresh-outline" size={20} color="#666" />
                 <Text style={styles.resetButtonText}>Reset</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-                <Text style={styles.submitButtonText}>Submit</Text>
+              <TouchableOpacity 
+                style={[styles.submitButton, submitting && styles.submitButtonDisabled]} 
+                onPress={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+                    <Text style={styles.submitButtonText}>Submit</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -521,6 +531,10 @@ export default function Adduser() {
     borderRadius: 8,
     marginLeft: 8,
     elevation: 3,
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#a8d5a6',
+    elevation: 1,
   },
   submitButtonText: {
     color: '#fff',

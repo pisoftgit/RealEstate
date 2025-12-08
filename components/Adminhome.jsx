@@ -17,6 +17,7 @@ import LottieView from 'lottie-react-native';
 import AdminStatsSection from './AdminStatSection';
 import AdminAppointments from './AdminAppointments';
 import { useNavigation } from 'expo-router';
+import { useUserProfile } from '../hooks/useUserProfile';
 
 
 const { height, width } = Dimensions.get('window');
@@ -30,6 +31,9 @@ const CARD_HEIGHT = height * 0.12;
 
 const AdminDashboard = () => {
   const navigation = useNavigation();
+  const { profile, loading, error } = useUserProfile();
+
+  console.log("Admin Profile:", profile);
 
 
 
@@ -110,7 +114,9 @@ const AdminDashboard = () => {
               style={styles.ani2}
             />
             </Animated.View> */}
-          Welcome <Text style={{ color: '#5aaf57', fontFamily: 'PlusR', }}>Admin</Text>
+          Welcome <Text style={{ color: '#5aaf57', fontFamily: 'PlusR', }}>
+            {profile?.name?.split(' ')[0] || 'Admin'}
+          </Text>
         </Animated.Text>
       </Animated.View>
 
@@ -142,9 +148,13 @@ const AdminDashboard = () => {
           style={styles.avatar}
         />
         <View style={styles.cardContent}>
-          <Text style={styles.name}>John Doe</Text>
-          <Text style={styles.designation}>Senior Developer</Text>
-          {/* <Text style={styles.details}>ID: EMP12345</Text> */}
+          <Text style={styles.name}>
+            {profile?.name || 'John Doe'}
+          </Text>
+          
+          {profile?.usercode && (
+            <Text style={styles.details}>{profile.usercode}</Text>
+          )}
         </View>
       </Animated.View>
 
@@ -280,6 +290,7 @@ const styles = StyleSheet.create({
   details: {
     fontSize: 13,
     color: '#196f3d',
+    fontFamily: "PlusR",
   },
   scrollContent: {
     paddingTop: Platform.OS === 'ios' ? HEADER_MAX_HEIGHT - 160 : HEADER_MAX_HEIGHT - 120,

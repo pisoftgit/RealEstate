@@ -381,6 +381,20 @@ export const defaultModules = [
   },
 
   {
+    name: "RoleManagement",
+    path: "/(drawer)/RoleManagement",
+    title: "Role Management",
+    icon: Brief,
+    children: [
+      {
+        name: "Roles",
+        path: "/(drawer)/RoleManagement/Roles",
+        title: "Assign Roles",
+      },
+    ],
+  },
+
+  {
     name: "CRM",
     path: "/(drawer)/CRM",
     title: "CRM",
