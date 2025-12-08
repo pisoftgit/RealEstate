@@ -50,7 +50,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
   const { plots, loading, fetchPlots, savePlotDetails, updatePlotDetails, savePlotPlcDetails, fetchPlotDetailsForPlc, deletePlot, saving, saveError } = usePlotsByProject(propertyData?.projectId);
   
   // Use the custom hook to fetch ownership types
-  const { ownerships, loading: ownershipLoading } = useOwnership();
+  const { ownershipTypes: ownerships, loading: ownershipLoading } = useOwnership();
   
   // Use the custom hook to fetch amenities
   const { amenities, loading: amenitiesLoading } = useAmenityActions();
@@ -105,11 +105,20 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
   
   // Fill Details Form Options
   // Ownership options now come from the useOwnership hook
-  const ownershipOptions = (ownerships || []).map(ownership => ownership.name);
+  const ownershipOptions = (ownerships || []).map(ownership => ownership.type || ownership.name);
+  console.log("Ownerships data:", ownerships);
+  console.log("Ownership Options:", ownershipOptions);
+  
   // Amenities options now come from the useAmenityActions hook
   const amenitiesOptions = (amenities || []).map(amenity => amenity.name);
+  console.log("Amenities data:", amenities);
+  console.log("Amenities Options:", amenitiesOptions);
+  
   // Facilities options now come from the useFacilityActions hook
   const facilitiesOptions = (facilities || []).map(facility => facility.name);
+  console.log("Facilities data:", facilities);
+  console.log("Facilities Options:", facilitiesOptions);
+  
   // Khasra numbers - for now, this can be a manual input field rather than dropdown
   const KhasraOptions = []; // This will be empty, we'll use TextInput instead
   // Area unit options now come from the useMeasurements hook
@@ -117,11 +126,10 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
   
   // Location Modal Options - PLC options now come from the getAllPlc API
   const placeOptions = (plcData || []).map(plc => plc.plcName || plc.name || plc.place);
+  console.log("PLC data:", plcData);
+  console.log("Place Options:", placeOptions);
   
-  const rateUnitOptions = [
-    { label: "Amount", value: false },
-    { label: "Percentage", value: true }
-  ];
+  const rateUnitOptions = ["Amount", "Percentage"];
 
   // Fetch PLC data on component mount
   useEffect(() => {
@@ -144,7 +152,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
   // Update select all state based on selected plots
   useEffect(() => {
     if (filteredFlats.length > 0) {
-      const allSelected = filteredFlats.every(flat => selectedFlats.includes(flat.id));
+      const allSelected = filteredFlats.every(flat => selectedFlats.includes(flat.plotId));
       setSelectAll(allSelected);
     }
   }, [selectedFlats, filteredFlats]);
@@ -178,7 +186,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
       setSelectedFlats([]);
       setSelectAll(false);
     } else {
-      const allFlatIds = filteredFlats.map(flat => flat.id);
+      const allFlatIds = filteredFlats.map(flat => flat.plotId);
       setSelectedFlats(allFlatIds);
       setSelectAll(true);
     }
@@ -189,8 +197,32 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
     setActionsModalVisible(true);
   };
 
-  const handleViewPress = (flat) => {
-    setSelectedFlat(flat);
+  const handleViewPress = async (flat) => {
+    // Fetch detailed data from API before showing modal
+    if (flat?.plotId) {
+      try {
+        const response = await fetchPlotDetailsForPlc(flat.plotId);
+        
+        if (response.success && response.data) {
+          const detailedData = response.data;
+          console.log('Detailed plot data for view:', detailedData);
+          
+          // Set the detailed data for viewing
+          setSelectedFlat(detailedData);
+        } else {
+          // Fallback to basic data if API fails
+          console.warn('Failed to fetch detailed data, using basic data');
+          setSelectedFlat(flat);
+        }
+      } catch (error) {
+        console.error('Error fetching plot details for view:', error);
+        // Fallback to basic data if error occurs
+        setSelectedFlat(flat);
+      }
+    } else {
+      setSelectedFlat(flat);
+    }
+    
     setViewModalCurrentIndex(0); // Reset to first tab
     setViewModalVisible(true);
   };
@@ -202,36 +234,70 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
         setActionsModalVisible(false);
         
         // Use timeout to ensure action modal is closed before opening fill details
-        setTimeout(() => {
+        setTimeout(async () => {
           // Close all dropdowns first
           setStructureDropdownVisible(false);
           setAreaDropdownVisible(false);
           
           // Select the current flat and open Fill Details modal
-          setSelectedFlats([selectedFlat.id]);
-          // Pre-fill form with current flat's data
-          setFormData({
-            ownership: selectedFlat.ownership || "",
-            facing: selectedFlat.facing || "",
-            carpetArea: selectedFlat.area ? selectedFlat.area.replace(/[^\d]/g, '') : "",
-            carpetAreaUnit: "sq ft",
-            loadingPercentage: "",
-            superArea: "",
-            numberOfKitchens: "",
-            basicCost: selectedFlat.price ? selectedFlat.price.replace(/[^\d]/g, '') : "",
-            amenities: [],
-            facilities: [],
-            description: "",
-            images: [],
-            videos: [],
-            deleteExistingFiles: false,
-            // Reset all dropdown visibility states
-            ownershipDropdownVisible: false,
-            KhasraDropdownVisible: false,
-            unitDropdownVisible: false,
-            amenitiesDropdownVisible: false,
-            facilitiesDropdownVisible: false,
-          });
+          setSelectedFlats([selectedFlat.plotId]);
+          
+          // Fetch detailed data from API
+          if (selectedFlat?.plotId) {
+            try {
+              const response = await fetchPlotDetailsForPlc(selectedFlat.plotId);
+              
+              if (response.success && response.data) {
+                const detailedData = response.data;
+                console.log('Detailed plot data for edit:', detailedData);
+                
+                // Map API response to form fields
+                const ownershipName = detailedData.ownershipType || "";
+                const amenitiesNames = detailedData.amenities?.map(a => a.amenityName || a.name) || [];
+                const facilitiesNames = detailedData.facilities?.map(f => f.facilityName || f.name) || [];
+                
+                setFormData({
+                  ownership: ownershipName,
+                  Khasra: detailedData.khasraNumber || "",
+                  basicCost: detailedData.basicAmount ? String(detailedData.basicAmount).replace(/[^\d.]/g, '') : "",
+                  amenities: amenitiesNames,
+                  facilities: facilitiesNames,
+                  description: detailedData.description || "",
+                  images: detailedData.propertyMediaDTOs?.map(m => ({
+                    name: m.mediaLabel || 'Image',
+                    uri: m.filePath,
+                    label: m.mediaLabel || '',
+                    id: m.id
+                  })) || [],
+                  videos: [],
+                  deleteExistingFiles: false,
+                  ownershipDropdownVisible: false,
+                  amenitiesDropdownVisible: false,
+                  facilitiesDropdownVisible: false,
+                });
+              } else {
+                throw new Error(response.message || response.error || 'Failed to fetch details');
+              }
+            } catch (error) {
+              console.error('Error fetching plot details:', error);
+              Alert.alert('Error', 'Failed to load plot details. Using basic data.');
+              // Fallback to basic data
+              setFormData({
+                ownership: selectedFlat.ownership || "",
+                Khasra: selectedFlat.Khasra || "",
+                basicCost: selectedFlat.price ? String(selectedFlat.price).replace(/[^\d]/g, '') : "",
+                amenities: [],
+                facilities: [],
+                description: selectedFlat.description || "",
+                images: [],
+                videos: [],
+                deleteExistingFiles: false,
+                ownershipDropdownVisible: false,
+                amenitiesDropdownVisible: false,
+                facilitiesDropdownVisible: false,
+              });
+            }
+          }
           setFillDetailsModalVisible(true);
         }, 300);
         break;
@@ -240,9 +306,39 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
         setActionsModalVisible(false);
         break;
       case "Delete":
-        console.log("Delete Plot:", selectedFlat?.plotNumber);
-        // Add delete logic here
         setActionsModalVisible(false);
+        // Show confirmation dialog
+        Alert.alert(
+          'Delete Plot',
+          `Are you sure you want to delete plot ${selectedFlat?.plotNumber}? This action cannot be undone.`,
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel'
+            },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  console.log('Deleting plot:', selectedFlat?.plotNumber, 'ID:', selectedFlat?.plotId);
+                  const result = await deletePlot(selectedFlat?.plotId);
+                  
+                  if (result.success) {
+                    Alert.alert('Success', 'Plot deleted successfully!');
+                    // Refresh plots data
+                    await fetchPlots();
+                  } else {
+                    Alert.alert('Error', result.message || 'Failed to delete plot');
+                  }
+                } catch (error) {
+                  console.error('Error deleting plot:', error);
+                  Alert.alert('Error', error.message || 'Failed to delete plot. Please try again.');
+                }
+              }
+            }
+          ]
+        );
         break;
       case "Location":
         handleLocationPress(selectedFlat);
@@ -288,38 +384,55 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
         content: (
           <View style={styles.sectionContent}>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Ownership Type:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.type}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Plot No:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.plotNumber}</Text>
+              <Text style={styles.detailLabel}>Added Date:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.addedDate || "N/A"}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Added By:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.addedby}</Text>
+              <Text style={styles.detailValue}>{selectedFlat.addedBy || "N/A"}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Added Date:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.addeddate}</Text>
+              <Text style={styles.detailLabel}>Plot No:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.plotNumber || "N/A"}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Khasra Number:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.Khasra}</Text>
+              <Text style={styles.detailValue}>{selectedFlat.khasraNumber || "N/A"}</Text>
             </View>
-            
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Availability:</Text>
+              <Text style={styles.detailLabel}>Ownership Type:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.ownershipType || selectedFlat.ownership || "N/A"}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Length:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.length || "N/A"}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Width:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.width || "N/A"}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Measurement Unit:</Text>
+              <Text style={styles.detailValue}>{selectedFlat.measurementUnit || "sq ft"}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Area:</Text>
+              <Text style={styles.detailValue}>
+                {selectedFlat.area ? `${selectedFlat.area} ${selectedFlat.measurementUnit || 'sq ft'}` : "N/A"}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Availability Status:</Text>
               <View style={styles.availabilityStatus}>
                 <View style={[
                   styles.statusDot,
-                  { backgroundColor: selectedFlat.isAvailable ? "#4CAF50" : "#FF5722" }
+                  { backgroundColor: selectedFlat.availabilityStatusEnum === "AVAILABLE" ? "#4CAF50" : "#FF5722" }
                 ]} />
                 <Text style={[
                   styles.detailValue,
-                  { color: selectedFlat.isAvailable ? "#4CAF50" : "#FF5722" }
+                  { color: selectedFlat.availabilityStatusEnum === "AVAILABLE" ? "#4CAF50" : "#FF5722" }
                 ]}>
-                  {selectedFlat.status}
+                  {selectedFlat.availabilityStatusEnum || "N/A"}
                 </Text>
               </View>
             </View>
@@ -331,26 +444,15 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
         icon: "document-text-outline",
         content: (
           <View style={styles.sectionContent}>
-           
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Length:</Text>
-              <Text style={styles.detailValue}>100</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Width:</Text>
-              <Text style={styles.detailValue}>200</Text>
-            </View>
-             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Measurement Unit:</Text>
-              <Text style={styles.detailValue}>ft</Text>
-            </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Basic Cost:</Text>
-              <Text style={styles.detailValue}>{selectedFlat.price}</Text>
+              <Text style={styles.detailValue}>
+                {selectedFlat.basicAmount ? `₹${selectedFlat.basicAmount.toLocaleString()}` : "N/A"}
+              </Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Description:</Text>
-              <Text style={styles.detailValue}>Dev</Text>
+              <Text style={styles.detailValue}>{selectedFlat.description || "No description available"}</Text>
             </View>
           </View>
         )
@@ -360,14 +462,20 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
         icon: "star-outline",
         content: (
           <View style={styles.sectionContent}>
-            <View style={styles.amenitiesGrid}>
-              {["Swimming Pool", "Gym", "Club House", "Children's Play Area", "Jogging Track", "Security", "Power Backup", "Lift"].map((amenity, index) => (
-                <View key={index} style={styles.amenityItem}>
-                  <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                  <Text style={styles.amenityText}>{amenity}</Text>
-                </View>
-              ))}
-            </View>
+            {selectedFlat.amenities && selectedFlat.amenities.length > 0 ? (
+              <View style={styles.amenitiesGrid}>
+                {selectedFlat.amenities.map((amenity, index) => (
+                  <View key={index} style={styles.amenityItem}>
+                    <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                    <Text style={styles.amenityText}>
+                      {amenity.amenityName || amenity.name || amenity}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noDataText}>No amenities available</Text>
+            )}
           </View>
         )
       },
@@ -376,14 +484,20 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
         icon: "location-outline",
         content: (
           <View style={styles.sectionContent}>
-            <View style={styles.amenitiesGrid}>
-              {["Hospital", "School", "Shopping Mall", "Bank", "ATM", "Restaurant", "Public Transport", "Metro Station"].map((facility, index) => (
-                <View key={index} style={styles.amenityItem}>
-                  <Ionicons name="location" size={16} color="#2196F3" />
-                  <Text style={styles.amenityText}>{facility}</Text>
-                </View>
-              ))}
-            </View>
+            {selectedFlat.facilities && selectedFlat.facilities.length > 0 ? (
+              <View style={styles.amenitiesGrid}>
+                {selectedFlat.facilities.map((facility, index) => (
+                  <View key={index} style={styles.amenityItem}>
+                    <Ionicons name="location" size={16} color="#2196F3" />
+                    <Text style={styles.amenityText}>
+                      {facility.facilityName || facility.name || facility}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noDataText}>No facilities available</Text>
+            )}
           </View>
         )
       },
@@ -393,17 +507,36 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
         content: (
           <View style={styles.sectionContent}>
             <View style={styles.mediaSection}>
-              <View style={styles.mediaRow}>
-                <Ionicons name="image-outline" size={24} color="#FF9800" />
-                <Text style={styles.mediaText}>Images: 5 files</Text>
-              </View>
-              <View style={styles.mediaRow}>
-                <Ionicons name="videocam-outline" size={24} color="#9C27B0" />
-                <Text style={styles.mediaText}>Videos: 2 files</Text>
-              </View>
-              <TouchableOpacity style={styles.viewMediaBtn}>
-                <Text style={styles.viewMediaText}>View All Media</Text>
-              </TouchableOpacity>
+              {selectedFlat.propertyMediaDTOs && selectedFlat.propertyMediaDTOs.length > 0 ? (
+                <>
+                  <View style={styles.mediaRow}>
+                    <Ionicons name="images-outline" size={24} color="#FF9800" />
+                    <Text style={styles.mediaText}>
+                      Total Images: {selectedFlat.propertyMediaDTOs.filter(m => m.filePath).length}
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.imageListContainer}>
+                    {selectedFlat.propertyMediaDTOs.map((media, index) => (
+                      media.filePath && (
+                        <View key={index} style={styles.imageItemRow}>
+                          <Ionicons name="image" size={20} color="#5aaf57" />
+                          <View style={styles.imageItemInfo}>
+                            <Text style={styles.imageItemLabel}>
+                              {media.mediaLabel || `Image ${index + 1}`}
+                            </Text>
+                            <Text style={styles.imageItemPath} numberOfLines={1}>
+                              {media.filePath}
+                            </Text>
+                          </View>
+                        </View>
+                      )
+                    ))}
+                  </View>
+                </>
+              ) : (
+                <Text style={styles.noDataText}>No media files available</Text>
+              )}
             </View>
           </View>
         )
@@ -494,13 +627,13 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
       {/* Checkbox Section */}
       <TouchableOpacity 
         style={styles.checkboxContainer}
-        onPress={() => handleSelectFlat(item.id)}
+        onPress={() => handleSelectFlat(item.plotId)}
       >
         <View style={[
           styles.checkbox, 
-          { backgroundColor: selectedFlats.includes(item.id) ? "#5aaf57" : "transparent" }
+          { backgroundColor: selectedFlats.includes(item.plotId) ? "#5aaf57" : "transparent" }
         ]}>
-          {selectedFlats.includes(item.id) && (
+          {selectedFlats.includes(item.plotId) && (
             <Feather name="check" size={14} color="#fff" />
           )}
         </View>
@@ -510,19 +643,19 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
         {/* Header Row - Tower Name and Status Badge */}
         <View style={styles.flatHeaderRow}>
           <Text style={styles.towerName} numberOfLines={1}>
-            {item.type}
+            {item.plotType}
           </Text>
           <View style={styles.badgeRow}>
             <View style={[
               styles.statusBadge, 
               { 
-                backgroundColor: item.isAvailable 
+                backgroundColor: item.availabilityStatusEnum === "AVAILABLE" 
                   ? "rgba(76, 175, 80, 0.3)" 
                   : "rgba(255, 87, 34, 0.3)" 
               }
             ]}>
               <Text style={styles.badgeText}>
-                {item.status}
+                {item.availabilityStatusEnum || "N/A"}
               </Text>
             </View>
           </View>
@@ -530,52 +663,96 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
 
         {/* Floor and Flat Number Row */}
         <View style={styles.floorFlatRow}>
-          <Text style={styles.floorText}>Added By: {item.addedby}</Text>
+          <Text style={styles.floorText}>Added By: {item.addedBy}</Text>
           <Text style={styles.flatNumber}>#{item.plotNumber}</Text>
         </View>
 
         {/* Structure and Area Row */}
         <View style={styles.structureAreaRow}>
-          <Text style={styles.structureText}>Khasra Number: {item.Khasra}</Text>
-          <Text style={styles.areaText}>{item.addeddate}</Text>
+          <Text style={styles.structureText}>Amenities: {item.amenities?.length || 0} | Facilities: {item.facilities?.length || 0}</Text>
+          <Text style={styles.areaText}>{item.addedDate}</Text>
         </View>
-
-        
 
         {/* Action Buttons */}
         <View style={styles.actionSection}>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => {
+            onPress={async () => {
               // Close all dropdowns first
               setStructureDropdownVisible(false);
               setAreaDropdownVisible(false);
               
-              // Select the current flat and open Fill Details modal
-              setSelectedFlats([item.id]);
-              // Pre-fill form with current flat's data
-              setFormData({
-                ownership: item.ownership || "",
-                Khasra: item.Khasra || "",
-                carpetArea: item.area ? item.area.replace(/[^\d]/g, '') : "",
-                carpetAreaUnit: "sq ft",
-                loadingPercentage: "",
-                superArea: "",
-                numberOfKitchens: "",
-                basicCost: item.price ? item.price.replace(/[^\d]/g, '') : "",
-                amenities: [],
-                facilities: [],
-                description: "",
-                images: [],
-                videos: [],
-                deleteExistingFiles: false,
-                // Reset all dropdown visibility states
-                ownershipDropdownVisible: false,
-                KhasraDropdownVisible: false,
-                unitDropdownVisible: false,
-                amenitiesDropdownVisible: false,
-                facilitiesDropdownVisible: false,
-              });
+              // Select the current flat
+              setSelectedFlats([item.plotId]);
+              
+              // Fetch detailed data from API before opening modal
+              if (item?.plotId) {
+                try {
+                  const response = await fetchPlotDetailsForPlc(item.plotId);
+                  
+                  if (response.success && response.data) {
+                    const detailedData = response.data;
+                    console.log('Detailed plot data for edit:', detailedData);
+                    
+                    // Find ownership type from the ownerships array
+                    const ownershipName = ownerships.find(o => o.id === detailedData.ownershipTypeId)?.type || detailedData.ownershipType || "";
+                    
+                    // Extract amenity IDs
+                    const amenityIds = (detailedData.amenities || []).map(a => a.amenityId).filter(Boolean);
+                    
+                    // Extract facility IDs
+                    const facilityIds = (detailedData.facilities || []).map(f => f.facilityId).filter(Boolean);
+                    
+                    // Extract existing images
+                    const existingImages = (detailedData.propertyMediaDTOs || [])
+                      .filter(media => media.filePath)
+                      .map(media => ({
+                        uri: media.filePath,
+                        name: media.mediaLabel || 'Image',
+                        type: 'image',
+                        base64: null,
+                        label: media.mediaLabel || ''
+                      }));
+                    
+                    // Pre-fill form with detailed data
+                    setFormData({
+                      ownership: ownershipName,
+                      Khasra: detailedData.khasraNumber || "",
+                      basicCost: detailedData.basicAmount ? String(detailedData.basicAmount) : "",
+                      amenities: amenityIds,
+                      facilities: facilityIds,
+                      description: detailedData.description || "",
+                      images: existingImages,
+                      videos: [],
+                      deleteExistingFiles: false,
+                      ownershipDropdownVisible: false,
+                      amenitiesDropdownVisible: false,
+                      facilitiesDropdownVisible: false,
+                    });
+                  } else {
+                    throw new Error(response.message || response.error || 'Failed to fetch details');
+                  }
+                } catch (error) {
+                  console.error('Error fetching plot details for edit:', error);
+                  Alert.alert('Error', 'Failed to load plot details. Using basic data.');
+                  // Fallback to basic data
+                  setFormData({
+                    ownership: item.ownership || "",
+                    Khasra: item.Khasra || "",
+                    basicCost: item.price ? String(item.price).replace(/[^\d]/g, '') : "",
+                    amenities: [],
+                    facilities: [],
+                    description: item.description || "",
+                    images: [],
+                    videos: [],
+                    deleteExistingFiles: false,
+                    ownershipDropdownVisible: false,
+                    amenitiesDropdownVisible: false,
+                    facilitiesDropdownVisible: false,
+                  });
+                }
+              }
+              
               setFillDetailsModalVisible(true);
             }}
           >
@@ -589,7 +766,39 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => console.log("Delete:", item.plotNumber)}
+            onPress={() => {
+              Alert.alert(
+                'Delete Plot',
+                `Are you sure you want to delete plot ${item.plotNumber}? This action cannot be undone.`,
+                [
+                  {
+                    text: 'Cancel',
+                    style: 'cancel'
+                  },
+                  {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        console.log('Deleting plot:', item.plotNumber, 'ID:', item.plotId);
+                        const result = await deletePlot(item.plotId);
+                        
+                        if (result.success) {
+                          Alert.alert('Success', 'Plot deleted successfully!');
+                          // Refresh plots data
+                          await fetchPlots();
+                        } else {
+                          Alert.alert('Error', result.message || 'Failed to delete plot');
+                        }
+                      } catch (error) {
+                        console.error('Error deleting plot:', error);
+                        Alert.alert('Error', error.message || 'Failed to delete plot. Please try again.');
+                      }
+                    }
+                  }
+                ]
+              );
+            }}
           >
             <Feather name="trash-2" size={16} color="#fff" />
           </TouchableOpacity>
@@ -614,7 +823,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
     // Filter by type (Residential/Commercial)
     const matchesStructure = !selectedStructure || 
       selectedStructure === "All Plot" || 
-      plot.type === selectedStructure;
+      plot.plotType === selectedStructure;
     
     // Filter by area
     let matchesArea = !selectedArea || selectedArea === "All Areas";
@@ -645,12 +854,36 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
   };
 
   const handleMultiSelect = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: prev[field].includes(value)
-        ? prev[field].filter(item => item !== value)
-        : [...prev[field], value]
-    }));
+    // For amenities and facilities, we need to work with IDs
+    if (field === 'amenities') {
+      const amenityId = amenities.find(a => a.name === value)?.id;
+      if (amenityId) {
+        setFormData(prev => ({
+          ...prev,
+          [field]: prev[field].includes(amenityId)
+            ? prev[field].filter(id => id !== amenityId)
+            : [...prev[field], amenityId]
+        }));
+      }
+    } else if (field === 'facilities') {
+      const facilityId = facilities.find(f => f.name === value)?.id;
+      if (facilityId) {
+        setFormData(prev => ({
+          ...prev,
+          [field]: prev[field].includes(facilityId)
+            ? prev[field].filter(id => id !== facilityId)
+            : [...prev[field], facilityId]
+        }));
+      }
+    } else {
+      // For other fields, use the value directly
+      setFormData(prev => ({
+        ...prev,
+        [field]: prev[field].includes(value)
+          ? prev[field].filter(item => item !== value)
+          : [...prev[field], value]
+      }));
+    }
   };
 
   const pickDocument = async (type) => {
@@ -662,12 +895,52 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
       });
       
       if (!result.canceled) {
+        // Add label and convert to base64 for each image
+        const imagesWithLabels = await Promise.all(
+          result.assets.map(async (asset) => {
+            // Read file as base64
+            let base64 = "";
+            try {
+              // For React Native/Expo, we'll store the URI and convert later if needed
+              // Or you can use FileReader or expo-file-system here
+              const response = await fetch(asset.uri);
+              const blob = await response.blob();
+              const reader = new FileReader();
+              
+              base64 = await new Promise((resolve, reject) => {
+                reader.onloadend = () => {
+                  const base64String = reader.result.split(',')[1]; // Remove data:image/xxx;base64, prefix
+                  resolve(base64String);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+            } catch (error) {
+              console.error("Error converting to base64:", error);
+              // If conversion fails, we'll send empty string
+              base64 = "";
+            }
+
+            return {
+              ...asset,
+              label: imageLabel || asset.name,
+              base64: base64,
+              contentType: asset.mimeType || 'image/jpeg'
+            };
+          })
+        );
+        
         setFormData(prev => ({
           ...prev,
-          [type]: [...prev[type], ...result.assets]
+          [type]: [...prev[type], ...imagesWithLabels]
         }));
+        
+        // Reset and close modal
+        setImageLabel("");
+        setImageUploadModalVisible(false);
       }
     } catch (error) {
+      console.error('Error picking document:', error);
       Alert.alert('Error', 'Failed to pick files');
     }
   };
@@ -679,36 +952,103 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
     }));
   };
 
-  const handleSaveDetails = () => {
-    // Here you would typically save the form data
-    console.log('Saving details for plots:', selectedFlats);
-    console.log('Form data:', formData);
-    Alert.alert('Success', 'Details saved successfully!');
-    setFillDetailsModalVisible(false);
-    
-    // Reset form
-    setFormData({
-      ownership: "",
-      Khasra: "",
-      carpetArea: "",
-      carpetAreaUnit: "",
-      loadingPercentage: "",
-      superArea: "",
-      numberOfKitchens: "",
-      basicCost: "",
-      amenities: [],
-      facilities: [],
-      description: "",
-      images: [],
-      videos: [],
-      deleteExistingFiles: false,
-      // Reset all dropdown visibility states
-      ownershipDropdownVisible: false,
-      KhasraDropdownVisible: false,
-      unitDropdownVisible: false,
-      amenitiesDropdownVisible: false,
-      facilitiesDropdownVisible: false,
-    });
+  const handleSaveDetails = async () => {
+    try {
+      // Validate required fields
+      if (!formData.ownership || !formData.basicCost) {
+        Alert.alert('Validation Error', 'Please fill in all required fields (Ownership, Basic Cost)');
+        return;
+      }
+
+      // Get the ownership ID from the name selected
+      const ownershipId = ownerships.find(o => o.type === formData.ownership)?.id;
+      
+      // formData.amenities and formData.facilities already contain IDs, not names
+      const amenitiesIds = formData.amenities;
+      const facilitiesIds = formData.facilities;
+
+      console.log('Selected ownership ID:', ownershipId);
+      console.log('Selected amenities IDs:', amenitiesIds);
+      console.log('Selected facilities IDs:', facilitiesIds);
+
+      // Prepare the data payload for each selected plot
+      const savePromises = selectedFlats.map(async (selectedPlotId) => {
+        // Find the plotId from the selected plot
+        const selectedPlotData = (plots || []).find(plot => plot.plotId === selectedPlotId);
+        const plotId = selectedPlotData?.plotId;
+        
+        if (!plotId) {
+          return { success: false, message: 'Plot ID not found' };
+        }
+        
+        // Prepare payload matching the update API structure
+        const payload = {
+          ownerShipTypeId: ownershipId,
+          khasraNumber: formData.Khasra,
+          basicAmount: parseFloat(formData.basicCost) || 0,
+          amenityIds: amenitiesIds,
+          facilityIds: facilitiesIds,
+          description: formData.description,
+          unitIds: [plotId],
+          propertyMediaDTOs: formData.images.map(img => ({
+            mediaLabel: img.label || "Image",
+            mediaBase64: img.base64 || "",
+            contentType: img.mimeType || img.contentType || "image/jpeg"
+          })),
+          shouldDeletePreviousMedia: formData.deleteExistingFiles
+        };
+
+        console.log('Saving plot details for plotId:', plotId);
+        console.log('Payload:', JSON.stringify(payload, null, 2));
+
+        // Use updatePlotDetails for editing existing records
+        return updatePlotDetails(plotId, payload);
+      });
+
+      const results = await Promise.all(savePromises);
+      
+      console.log('=== SAVE RESULTS ===');
+      console.log('All results:', JSON.stringify(results, null, 2));
+      
+      const allSuccess = results.every(r => r && r.success);
+      
+      if (allSuccess) {
+        Alert.alert('Success', 'Plot details saved successfully!');
+        setFillDetailsModalVisible(false);
+        
+        // Refresh plots data
+        await fetchPlots();
+        
+        // Reset form
+        setFormData({
+          ownership: "",
+          Khasra: "",
+          basicCost: "",
+          amenities: [],
+          facilities: [],
+          description: "",
+          images: [],
+          videos: [],
+          deleteExistingFiles: false,
+          ownershipDropdownVisible: false,
+          amenitiesDropdownVisible: false,
+          facilitiesDropdownVisible: false,
+        });
+        setSelectedFlats([]);
+        setSelectAll(false);
+      } else {
+        const failedResults = results.filter(r => !r || !r.success);
+        console.error('Failed results:', failedResults);
+        const errorMessages = failedResults.map(r => r?.message || r?.error || 'Unknown error').join(', ');
+        Alert.alert('Error', `Some plot details failed to save: ${errorMessages}`);
+      }
+    } catch (error) {
+      console.error('=== ERROR SAVING PLOT DETAILS ===');
+      console.error('Error object:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      Alert.alert('Error', error.message || 'Failed to save plot details. Please try again.');
+    }
   };
 
   // Location Modal Handlers
@@ -752,26 +1092,80 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
     }
   };
 
-  const handleSaveLocation = () => {
-    // Here you would typically save the location data
-    console.log('Saving location for plot:', selectedLocationFlat?.plotNumber);
-    console.log('Location data:', locationFormData);
-    Alert.alert('Success', 'Location details saved successfully!');
-    setLocationModalVisible(false);
-    
-    // Reset location form
-    setLocationFormData({
-      places: [
-        {
-          id: 1,
-          place: "",
-          rateValue: "",
-          rateUnit: "",
-          placeDropdownVisible: false,
-          rateUnitDropdownVisible: false,
+  const handleSaveLocation = async () => {
+    try {
+      // Validate required fields
+      const hasEmptyFields = locationFormData.places.some(
+        place => !place.place || !place.rateValue || !place.rateUnit
+      );
+
+      if (hasEmptyFields) {
+        Alert.alert('Validation Error', 'Please fill all PLC fields');
+        return;
+      }
+
+      if (!selectedLocationFlat?.plotId) {
+        Alert.alert('Error', 'No plot selected');
+        return;
+      }
+
+      // Find the selected PLC IDs and prepare the plcDetails array
+      const plcDetails = locationFormData.places.map(place => {
+        // Find the PLC ID from the selected place name
+        const selectedPlc = plcData.find(plc => 
+          (plc.plcName || plc.name || plc.place) === place.place
+        );
+
+        if (!selectedPlc) {
+          throw new Error(`PLC not found for: ${place.place}`);
         }
-      ],
-    });
+
+        // Determine if the rate unit is "Percentage" (true) or "Amount" (false)
+        const isPercentage = place.rateUnit === "Percentage";
+
+        return {
+          plcId: selectedPlc.id,
+          rate: parseFloat(place.rateValue),
+          isPercentage: isPercentage
+        };
+      });
+
+      // Prepare the API payload
+      const payload = {
+        id: selectedLocationFlat.plotId,
+        plcDetails: plcDetails
+      };
+
+      console.log('Saving PLC details for plot:', selectedLocationFlat.plotNumber);
+      console.log('Payload:', payload);
+
+      // Call the API
+      const result = await savePlotPlcDetails(payload);
+
+      if (result.success) {
+        Alert.alert('Success', 'PLC details saved successfully!');
+        setLocationModalVisible(false);
+        
+        // Reset location form
+        setLocationFormData({
+          places: [
+            {
+              id: 1,
+              place: "",
+              rateValue: "",
+              rateUnit: "",
+              placeDropdownVisible: false,
+              rateUnitDropdownVisible: false,
+            }
+          ],
+        });
+      } else {
+        Alert.alert('Error', result.message || 'Failed to save PLC details');
+      }
+    } catch (error) {
+      console.error('Error in handleSaveLocation:', error);
+      Alert.alert('Error', error.message || 'An unexpected error occurred while saving PLC details');
+    }
   };
 
   const renderDropdownModal = (visible, setVisible, options, selectedValue, onSelect, title) => (
@@ -818,7 +1212,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
     </Modal>
   );
 
-  const renderMultiSelectModal = (visible, setVisible, options, selectedValues, onToggle, title) => (
+  const renderMultiSelectModal = (visible, setVisible, options, selectedValues, onToggle, title, field) => (
     <Modal
       animationType="fade"
       transparent={true}
@@ -831,26 +1225,41 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
             <View style={styles.dropdownModal}>
               <Text style={styles.dropdownModalTitle}>{title}</Text>
               <ScrollView style={styles.dropdownList}>
-                {options.map((option, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.dropdownOption,
-                      selectedValues.includes(option) && styles.selectedOption
-                    ]}
-                    onPress={() => onToggle(option)}
-                  >
-                    <Text style={[
-                      styles.dropdownOptionText,
-                      selectedValues.includes(option) && styles.selectedOptionText
-                    ]}>
-                      {option}
-                    </Text>
-                    {selectedValues.includes(option) && (
-                      <Ionicons name="checkmark" size={20} color="#5aaf57" />
-                    )}
-                  </TouchableOpacity>
-                ))}
+                {options.map((option, index) => {
+                  // Check if this option is selected
+                  let isSelected = false;
+                  
+                  if (field === 'amenities') {
+                    const amenityId = amenities.find(a => a.name === option)?.id;
+                    isSelected = selectedValues.includes(amenityId);
+                  } else if (field === 'facilities') {
+                    const facilityId = facilities.find(f => f.name === option)?.id;
+                    isSelected = selectedValues.includes(facilityId);
+                  } else {
+                    isSelected = selectedValues.includes(option);
+                  }
+                  
+                  return (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.dropdownOption,
+                        isSelected && styles.selectedOption
+                      ]}
+                      onPress={() => onToggle(option)}
+                    >
+                      <Text style={[
+                        styles.dropdownOptionText,
+                        isSelected && styles.selectedOptionText
+                      ]}>
+                        {option}
+                      </Text>
+                      {isSelected && (
+                        <Ionicons name="checkmark" size={20} color="#5aaf57" />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
               </ScrollView>
             </View>
           </TouchableWithoutFeedback>
@@ -990,48 +1399,78 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
             }
           ]}
           disabled={selectedFlats.length === 0}
-          onPress={() => {
+          onPress={async () => {
             // Close all dropdowns first
             setStructureDropdownVisible(false);
             setAreaDropdownVisible(false);
             
             if (selectedFlats.length === 1) {
-              // Pre-fill form with single plot's data
-              const selectedFlatData = (plots || []).find(flat => flat.id === selectedFlats[0]);
-              if (selectedFlatData) {
-                setFormData({
-                  ownership: selectedFlatData.ownership || "",
-                  Khasra: selectedFlatData.Khasra || "",
-                  carpetArea: selectedFlatData.area ? selectedFlatData.area.replace(/[^\d]/g, '') : "",
-                  carpetAreaUnit: "sq ft",
-                  loadingPercentage: "",
-                  superArea: "",
-                  numberOfKitchens: "",
-                  basicCost: selectedFlatData.price ? selectedFlatData.price.replace(/[^\d]/g, '') : "",
-                  amenities: [],
-                  facilities: [],
-                  description: "",
-                  images: [],
-                  videos: [],
-                  deleteExistingFiles: false,
-                  // Reset all dropdown visibility states
-                  ownershipDropdownVisible: false,
-                  KhasraDropdownVisible: false,
-                  unitDropdownVisible: false,
-                  amenitiesDropdownVisible: false,
-                  facilitiesDropdownVisible: false,
-                });
+              // Pre-fill form with single plot's detailed data from API
+              const selectedPlotData = (plots || []).find(plot => plot.plotId === selectedFlats[0]);
+              if (selectedPlotData?.plotId) {
+                try {
+                  // Fetch detailed data from API
+                  const response = await fetchPlotDetailsForPlc(selectedPlotData.plotId);
+                  
+                  if (response.success && response.data) {
+                    const detailedData = response.data;
+                    console.log('Detailed plot data for edit:', detailedData);
+                    
+                    // Map API response to form fields
+                    const ownershipName = detailedData.ownership || "";
+                    const amenitiesNames = detailedData.amenities?.map(a => a.amenityName || a.name) || [];
+                    const facilitiesNames = detailedData.facilities?.map(f => f.facilityName || f.name) || [];
+                    
+                    setFormData({
+                      ownership: ownershipName,
+                      Khasra: detailedData.Khasra || "",
+                      basicCost: detailedData.price ? String(detailedData.price).replace(/[^\d]/g, '') : "",
+                      amenities: amenitiesNames,
+                      facilities: facilitiesNames,
+                      description: detailedData.description || "",
+                      images: detailedData.propertyMediaDTOs?.filter(m => m.mediaType === 'IMAGE').map(m => ({
+                        name: m.mediaName || 'Image',
+                        uri: m.mediaUrl,
+                        label: m.mediaLabel || ''
+                      })) || [],
+                      videos: detailedData.propertyMediaDTOs?.filter(m => m.mediaType === 'VIDEO').map(m => ({
+                        name: m.mediaName || 'Video',
+                        uri: m.mediaUrl,
+                        label: m.mediaLabel || ''
+                      })) || [],
+                      deleteExistingFiles: false,
+                      ownershipDropdownVisible: false,
+                      amenitiesDropdownVisible: false,
+                      facilitiesDropdownVisible: false,
+                    });
+                  } else {
+                    throw new Error(response.message || response.error || 'Failed to fetch details');
+                  }
+                } catch (error) {
+                  console.error('Error fetching plot details:', error);
+                  Alert.alert('Error', 'Failed to load plot details. Using basic data.');
+                  // Fallback to basic data
+                  setFormData({
+                    ownership: selectedPlotData.ownership || "",
+                    Khasra: selectedPlotData.Khasra || "",
+                    basicCost: selectedPlotData.price ? String(selectedPlotData.price).replace(/[^\d]/g, '') : "",
+                    amenities: [],
+                    facilities: [],
+                    description: selectedPlotData.description || "",
+                    images: [],
+                    videos: [],
+                    deleteExistingFiles: false,
+                    ownershipDropdownVisible: false,
+                    amenitiesDropdownVisible: false,
+                    facilitiesDropdownVisible: false,
+                  });
+                }
               }
             } else {
               // Multiple plots selected - empty form
               setFormData({
                 ownership: "",
                 Khasra: "",
-                carpetArea: "",
-                carpetAreaUnit: "",
-                loadingPercentage: "",
-                superArea: "",
-                numberOfKitchens: "",
                 basicCost: "",
                 amenities: [],
                 facilities: [],
@@ -1041,8 +1480,6 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                 deleteExistingFiles: false,
                 // Reset all dropdown visibility states
                 ownershipDropdownVisible: false,
-                KhasraDropdownVisible: false,
-                unitDropdownVisible: false,
                 amenitiesDropdownVisible: false,
                 facilitiesDropdownVisible: false,
               });
@@ -1057,7 +1494,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
       
       <FlatList
         data={filteredFlats}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.plotId?.toString()}
         contentContainerStyle={styles.list}
         renderItem={renderFlatItem}
         showsVerticalScrollIndicator={false}
@@ -1100,7 +1537,7 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                 <View style={styles.fillDetailsHeader}>
                   <Text style={styles.fillDetailsTitle}>
                     {selectedFlats.length === 1 
-                      ? `Edit Plot Details (${(plots || []).find(f => f.id === selectedFlats[0])?.plotNumber || 'Unknown'})`
+                      ? `Edit Plot Details (${(plots || []).find(f => f.plotId === selectedFlats[0])?.plotNumber || 'Unknown'})`
                       : `Fill Details (${selectedFlats.length} Plots selected)`
                     }
                   </Text>
@@ -1200,56 +1637,8 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                     {/* File Uploads */}
                     <Text style={styles.subsectionTitle}>Media</Text>
                     
-                    <View style={styles.formRow}>
-                      <Text style={styles.formLabel}>Images</Text>
-                      <TouchableOpacity
-                        style={styles.uploadButton}
-                        onPress={() => pickDocument('images')}
-                      >
-                        <Ionicons name="image-outline" size={20} color="#5aaf57" />
-                        <Text style={styles.uploadButtonText}>Upload Images</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    {formData.images.length > 0 && (
-                      <View style={styles.filesList}>
-                        {formData.images.map((file, index) => (
-                          <View key={index} style={styles.fileItem}>
-                            <Text style={styles.fileName} numberOfLines={1}>{file.name}</Text>
-                            <TouchableOpacity onPress={() => removeFile('images', index)}>
-                              <Ionicons name="close-circle" size={20} color="#ff4444" />
-                            </TouchableOpacity>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-
-                    <View style={styles.formRow}>
-                      <Text style={styles.formLabel}>Videos</Text>
-                      <TouchableOpacity
-                        style={styles.uploadButton}
-                        onPress={() => pickDocument('videos')}
-                      >
-                        <Ionicons name="videocam-outline" size={20} color="#5aaf57" />
-                        <Text style={styles.uploadButtonText}>Upload Videos</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    {formData.videos.length > 0 && (
-                      <View style={styles.filesList}>
-                        {formData.videos.map((file, index) => (
-                          <View key={index} style={styles.fileItem}>
-                            <Text style={styles.fileName} numberOfLines={1}>{file.name}</Text>
-                            <TouchableOpacity onPress={() => removeFile('videos', index)}>
-                              <Ionicons name="close-circle" size={20} color="#ff4444" />
-                            </TouchableOpacity>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-
                     {/* Delete Existing Files Toggle */}
-                    <View style={styles.formRow}>
+                    <View style={styles.formRowInline}>
                       <Text style={styles.formLabel}>Delete Existing Files</Text>
                       <Switch
                         value={formData.deleteExistingFiles}
@@ -1258,13 +1647,55 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                         thumbColor={formData.deleteExistingFiles ? "#fff" : "#f4f3f4"}
                       />
                     </View>
+                    
+                    <View style={styles.formRow}>
+                      <Text style={styles.formLabel}>Images</Text>
+                      <TouchableOpacity
+                        style={styles.uploadButton}
+                        onPress={() => setImageUploadModalVisible(true)}
+                      >
+                        <Ionicons name="image-outline" size={20} color="#5aaf57" />
+                        <Text style={styles.uploadButtonText}>Upload Images</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {formData.images.length > 0 && (
+                      <View style={styles.filesList}>
+                        <Text style={styles.filesListLabel}>Uploaded Images:</Text>
+                        {formData.images.map((file, index) => (
+                          <View key={index} style={styles.fileItem}>
+                            <View style={styles.fileInfo}>
+                              <Ionicons name="image" size={16} color="#5aaf57" />
+                              <View style={styles.fileNameContainer}>
+                                <Text style={styles.fileNameLabel}>Image Label:</Text>
+                                <Text style={styles.fileName} numberOfLines={1}>{file.label || file.name}</Text>
+                              </View>
+                            </View>
+                            <TouchableOpacity onPress={() => removeFile('images', index)}>
+                              <Ionicons name="close-circle" size={20} color="#ff4444" />
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    )}
                   </View>
                 </ScrollView>
 
                 {/* Save Button */}
                 <View style={styles.fillDetailsFooter}>
-                  <TouchableOpacity style={styles.saveButton} onPress={handleSaveDetails}>
-                    <Text style={styles.saveButtonText}>Save Details</Text>
+                  <TouchableOpacity 
+                    style={[styles.saveButton, saving && { opacity: 0.7 }]} 
+                    onPress={handleSaveDetails}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <>
+                        <ActivityIndicator size="small" color="#fff" />
+                        <Text style={[styles.saveButtonText, { marginLeft: 10 }]}>Saving...</Text>
+                      </>
+                    ) : (
+                      <Text style={styles.saveButtonText}>Save Details</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
 
@@ -1278,22 +1709,14 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                   "Select Ownership Type"
                 )}
 
-                {renderDropdownModal(
-                  formData.unitDropdownVisible,
-                  (visible) => handleFormDataChange('unitDropdownVisible', visible),
-                  areaUnitOptions,
-                  formData.carpetAreaUnit,
-                  (value) => handleFormDataChange('carpetAreaUnit', value),
-                  "Select Unit"
-                )}
-
                 {renderMultiSelectModal(
                   formData.amenitiesDropdownVisible,
                   (visible) => handleFormDataChange('amenitiesDropdownVisible', visible),
                   amenitiesOptions,
                   formData.amenities,
                   (value) => handleMultiSelect('amenities', value),
-                  "Select Amenities"
+                  "Select Amenities",
+                  'amenities'
                 )}
 
                 {renderMultiSelectModal(
@@ -1302,7 +1725,8 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                   facilitiesOptions,
                   formData.facilities,
                   (value) => handleMultiSelect('facilities', value),
-                  "Select Facilities"
+                  "Select Facilities",
+                  'facilities'
                 )}
               </View>
             </TouchableWithoutFeedback>
@@ -1439,6 +1863,67 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                     )}
                   </Fragment>
                 ))}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Image Upload Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={imageUploadModalVisible}
+        onRequestClose={() => {
+          setImageUploadModalVisible(false);
+          setImageLabel("");
+        }}
+      >
+        <TouchableWithoutFeedback onPress={() => {
+          setImageUploadModalVisible(false);
+          setImageLabel("");
+        }}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.imageUploadModal}>
+                <View style={styles.modalHandle} />
+                
+                {/* Modal Header */}
+                <View style={styles.imageUploadModalHeader}>
+                  <Text style={styles.imageUploadModalTitle}>Upload Image</Text>
+                  <TouchableOpacity onPress={() => {
+                    setImageUploadModalVisible(false);
+                    setImageLabel("");
+                  }}>
+                    <Ionicons name="close" size={24} color="#666" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Modal Content */}
+                <View style={styles.imageUploadModalContent}>
+                  <View style={styles.imageUploadFormRow}>
+                    <Text style={styles.imageUploadFormLabel}>Image Label</Text>
+                    <TextInput
+                      style={styles.imageUploadFormInput}
+                      value={imageLabel}
+                      onChangeText={setImageLabel}
+                      placeholder="Enter image label (optional)"
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.imageUploadButton}
+                    onPress={() => pickDocument('images')}
+                  >
+                    <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
+                    <Text style={styles.imageUploadButtonText}>Choose & Upload Images</Text>
+                  </TouchableOpacity>
+
+                  <Text style={styles.imageUploadNote}>
+                    Note: If no label is provided, the image filename will be used.
+                  </Text>
+                </View>
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -1986,6 +2471,13 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     flex: 1,
   },
+  noDataText: {
+    fontSize: 14,
+    fontFamily: "PlusR",
+    color: "#999",
+    textAlign: "center",
+    paddingVertical: 20,
+  },
   mediaSection: {
     alignItems: "center",
     paddingVertical: 20,
@@ -2193,6 +2685,12 @@ const styles = StyleSheet.create({
   filesList: {
     marginTop: 10,
   },
+  filesListLabel: {
+    fontSize: 12,
+    fontFamily: "PlusSB",
+    color: "#666",
+    marginBottom: 8,
+  },
   fileItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -2203,11 +2701,30 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginBottom: 6,
   },
-  fileName: {
+  fileInfo: {
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
-    fontSize: 12,
+    gap: 8,
+  },
+  fileNameContainer: {
+    flex: 1,
+  },
+  fileNameLabel: {
+    fontSize: 10,
     fontFamily: "PlusR",
-    color: "#666",
+    color: "#999",
+  },
+  fileName: {
+    fontSize: 12,
+    fontFamily: "PlusM",
+    color: "#333",
+  },
+  formRowInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 15,
   },
   fillDetailsFooter: {
     paddingHorizontal: 20,
@@ -2442,6 +2959,112 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "PlusSB",
     color: "#5aaf57",
+  },
+  // Image Upload Modal Styles
+  imageUploadModal: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    maxHeight: "40%",
+    width: "100%",
+    position: "absolute",
+    bottom: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  imageUploadModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  imageUploadModalTitle: {
+    fontSize: 18,
+    fontFamily: "PlusSB",
+    color: "#333",
+  },
+  imageUploadModalContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  imageUploadFormRow: {
+    marginBottom: 20,
+  },
+  imageUploadFormLabel: {
+    fontSize: 14,
+    fontFamily: "PlusSB",
+    color: "#333",
+    marginBottom: 8,
+  },
+  imageUploadFormInput: {
+    backgroundColor: "#f8f9fa",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    fontSize: 14,
+    fontFamily: "PlusR",
+    color: "#333",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  imageUploadButton: {
+    backgroundColor: "#5aaf57",
+    borderRadius: 12,
+    paddingVertical: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginBottom: 15,
+  },
+  imageUploadButtonText: {
+    fontSize: 16,
+    fontFamily: "PlusSB",
+    color: "#fff",
+  },
+  imageUploadNote: {
+    fontSize: 12,
+    fontFamily: "PlusR",
+    color: "#999",
+    textAlign: "center",
+    fontStyle: "italic",
+  },
+  // Image List Styles for View Modal
+  imageListContainer: {
+    width: "100%",
+    marginTop: 15,
+  },
+  imageItemRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 10,
+    marginBottom: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: "#5aaf57",
+  },
+  imageItemInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  imageItemLabel: {
+    fontSize: 14,
+    fontFamily: "PlusSB",
+    color: "#333",
+    marginBottom: 4,
+  },
+  imageItemPath: {
+    fontSize: 12,
+    fontFamily: "PlusR",
+    color: "#666",
   },
 });
 

@@ -33,6 +33,12 @@ const usePlotsByProject = (projectId) => {
 
   const savePlotDetailsAPI = async (plotId, plotDetailsData) => {
     const secretKey = await SecureStore.getItemAsync("auth_token");
+    
+    console.log('=== PLOT SAVE API REQUEST ===');
+    console.log('Plot ID:', plotId);
+    console.log('Payload:', JSON.stringify(plotDetailsData, null, 2));
+    console.log('API URL:', `${API_BASE_URL}/plots/savePlotDetails`);
+    
     const response = await fetch(
       `${API_BASE_URL}/plots/savePlotDetails`,
       {
@@ -41,19 +47,43 @@ const usePlotsByProject = (projectId) => {
           secret_key: secretKey,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          unitIds: [plotId],
-          ...plotDetailsData,
-        }),
+        body: JSON.stringify(plotDetailsData),
       }
     );
 
+    console.log('=== API RESPONSE ===');
+    console.log('Status:', response.status);
+    console.log('Status Text:', response.statusText);
+    console.log('Headers:', JSON.stringify([...response.headers.entries()]));
+    
+    // Get response text first
+    const responseText = await response.text();
+    console.log('Response Body:', responseText);
+    
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || "Failed to save plot details");
+      console.error('API request failed with status:', response.status);
+      throw new Error(responseText || `Failed to save plot details (Status: ${response.status})`);
     }
 
-    return await response.json();
+    // Try to parse as JSON
+    if (responseText.trim()) {
+      try {
+        const jsonData = JSON.parse(responseText);
+        console.log('Parsed JSON:', jsonData);
+        return jsonData;
+      } catch (error) {
+        console.warn('Response is not JSON, treating as success message');
+        // If response is plain text (like "Plot saved successfully"), treat as success
+        return { 
+          success: true, 
+          message: responseText,
+          data: responseText 
+        };
+      }
+    } else {
+      console.warn('Empty response body, treating as success');
+      return { success: true, message: 'Operation completed successfully' };
+    }
   };
 
   const deletePlotAPI = async (plotId) => {
@@ -77,8 +107,13 @@ const usePlotsByProject = (projectId) => {
     return { success: true };
   };
 
-  const savePlotPlcDetailsAPI = async (plotId, plcDetailsData) => {
+  const savePlotPlcDetailsAPI = async (payload) => {
     const secretKey = await SecureStore.getItemAsync("auth_token");
+    
+    console.log('=== SAVE PLC DETAILS REQUEST ===');
+    console.log('Payload:', JSON.stringify(payload, null, 2));
+    console.log('API URL:', `${API_BASE_URL}/plcDetails/savePlotPlcDetails`);
+    
     const response = await fetch(
       `${API_BASE_URL}/plcDetails/savePlotPlcDetails`,
       {
@@ -87,25 +122,40 @@ const usePlotsByProject = (projectId) => {
           secret_key: secretKey,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          id: plotId,
-          plcDetails: plcDetailsData,
-        }),
+        body: JSON.stringify(payload),
       }
     );
 
+    console.log('=== PLC API RESPONSE ===');
+    console.log('Status:', response.status);
+    console.log('Status Text:', response.statusText);
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('API Error response:', errorText);
       throw new Error(errorText || "Failed to save plot PLC details");
     }
 
-    return await response.json();
+    const responseText = await response.text();
+    console.log('Response Body:', responseText);
+    
+    try {
+      return JSON.parse(responseText);
+    } catch (error) {
+      console.warn('Response is not JSON, treating as success');
+      return { success: true, message: responseText };
+    }
   };
 
   const getPlotDetailsForPlcAPI = async (plotId) => {
     const secretKey = await SecureStore.getItemAsync("auth_token");
+    
+    console.log('=== FETCH PLOT DETAILS FOR PLC REQUEST ===');
+    console.log('Plot ID:', plotId);
+    console.log('API URL:', `${API_BASE_URL}/plcDetails/getPlotDetailsForPlc/plot/${plotId}`);
+    
     const response = await fetch(
-      `${API_BASE_URL}/plots/getPlotDetails/${plotId}`,
+      `${API_BASE_URL}/plcDetails/getPlotDetailsForPlc/plot/${plotId}`,
       {
         method: "GET",
         headers: {
@@ -115,12 +165,20 @@ const usePlotsByProject = (projectId) => {
       }
     );
 
+    console.log('=== API RESPONSE ===');
+    console.log('Status:', response.status);
+    console.log('Status Text:', response.statusText);
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('API Error response:', errorText);
       throw new Error(errorText || "Failed to fetch plot details");
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('Plot Details Response:', JSON.stringify(data, null, 2));
+    
+    return data;
   };
 
   // Fetch all plots for the project
@@ -216,18 +274,18 @@ const usePlotsByProject = (projectId) => {
   };
 
   // Save plot PLC details
-  const savePlotPlcDetailsData = async (plotId, plcDetailsData) => {
+  const savePlotPlcDetailsData = async (payload) => {
     setSaving(true);
     setSaveError(null);
     
     try {
-      const result = await savePlotPlcDetailsAPI(plotId, plcDetailsData);
+      const result = await savePlotPlcDetailsAPI(payload);
       
       return { success: true, data: result };
     } catch (error) {
       console.error('Error saving plot PLC details:', error);
       setSaveError(error.message || 'Failed to save plot PLC details');
-      return { success: false, error: error.message };
+      return { success: false, error: error.message, message: error.message };
     } finally {
       setSaving(false);
     }
