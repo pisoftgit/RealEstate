@@ -558,7 +558,12 @@ const ManageProjects = () => {
         setActionsModalVisible(false);
         break;
       case "View Property Summary":
-        console.log("View Property Summary for:", selectedProperty?.projectName);
+        router.push({
+          pathname: "./ViewPropertySummary",
+          params: { 
+            projectId: selectedProperty?.id?.toString() || ''
+          },
+        });
         setActionsModalVisible(false);
         break;
       default:

@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Alert,
+  Modal,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -253,6 +254,8 @@ const FloorStructureForm = ({
   projectId,
   subPropertyTypeId,
   unitsPerFloorSame,
+  setCreatedTowerData,
+  setShowSerializerModal,
 }) => {
   // Fetch structure types for dropdowns using the correct hook
   const { structures, loading: loadingStructures } = useStructure();
@@ -532,7 +535,15 @@ const FloorStructureForm = ({
       );
 
       console.log("Tower Save Response:", JSON.stringify(response.data, null, 2));
-      Alert.alert("Success", "Tower created successfully!");
+      
+      // Open TowerUnitSerializer modal with the created tower data
+      const towerData = response.data?.data || response.data;
+      if (towerData) {
+        setCreatedTowerData(towerData);
+        setShowSerializerModal(true);
+      }
+
+      Alert.alert("Success", "Tower created successfully! Please serialize the units.");
 
       // Reset form
       setFloorStructures([]);
@@ -675,7 +686,7 @@ const FloorStructureForm = ({
 };
 
 /* -------------------- Apartment Complex Section -------------------- */
-const ApartmentComplexSection = ({ towerType, setTowerType, projectId, subPropertyTypeId }) => {
+const ApartmentComplexSection = ({ towerType, setTowerType, projectId, subPropertyTypeId, setCreatedTowerData, setShowSerializerModal }) => {
   const [unitsPerFloorSame, setUnitsPerFloorSame] = useState("yes");
   const [towerName, setTowerName] = useState("");
   const [totalFloors, setTotalFloors] = useState("");
@@ -705,6 +716,8 @@ const ApartmentComplexSection = ({ towerType, setTowerType, projectId, subProper
             projectId={projectId}
             subPropertyTypeId={subPropertyTypeId}
             unitsPerFloorSame={unitsPerFloorSame}
+            setCreatedTowerData={setCreatedTowerData}
+            setShowSerializerModal={setShowSerializerModal}
           />
         )
       )}
@@ -774,6 +787,10 @@ export default function PropertyDetails() {
   const [loadingPropertyTypes, setLoadingPropertyTypes] = useState(false);
   const [subPropertyTypes, setSubPropertyTypes] = useState([]);
   const [loadingSubTypes, setLoadingSubTypes] = useState(false);
+
+  // State for TowerUnitSerializer Modal
+  const [showSerializerModal, setShowSerializerModal] = useState(false);
+  const [createdTowerData, setCreatedTowerData] = useState(null);
 
   // Fetch property types for the specific project
   useEffect(() => {
@@ -873,6 +890,8 @@ export default function PropertyDetails() {
           setTowerType={setTowerType}
           projectId={projectId}
           subPropertyTypeId={propertySubTypeData.id}
+          setCreatedTowerData={setCreatedTowerData}
+          setShowSerializerModal={setShowSerializerModal}
         />
       );
     }
@@ -1062,6 +1081,35 @@ export default function PropertyDetails() {
           </View>
         )}
       </ScrollView>
+
+      {/* TowerUnitSerializer Modal */}
+      <Modal
+        visible={showSerializerModal}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setShowSerializerModal(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowSerializerModal(false)} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Serialize Tower Units</Text>
+            <View style={{ width: 24 }} />
+          </View>
+          
+          {createdTowerData && (
+            <TowerUnitSerializer
+              towerData={createdTowerData}
+              onComplete={() => {
+                setShowSerializerModal(false);
+                setCreatedTowerData(null);
+                Alert.alert("Success", "Tower units serialized successfully!");
+              }}
+            />
+          )}
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1089,6 +1137,21 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 5,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+    backgroundColor: COLORS.card,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    shadowColor: COLORS.text,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   sectionContainer: {
     backgroundColor: COLORS.card,

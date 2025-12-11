@@ -55,7 +55,26 @@ const TowerUnitSerializer = ({ towerData, onComplete }) => {
     });
   };
 
-  // Handle bulk fill
+  // Handle auto-fill based on floor number
+  const handleAutoFillByFloor = () => {
+    setUnits((prev) =>
+      prev.map((floor) => ({
+        ...floor,
+        flats: floor.flats.map((flat, index) => {
+          // Format: FloorNumber + FlatIndex (e.g., Floor 2, Flat 1 → 201)
+          const flatNumber = `${floor.floorNumber}${String(index + 1).padStart(2, '0')}`;
+          return { ...flat, flatNumber };
+        }),
+      }))
+    );
+
+    Alert.alert(
+      "Success",
+      "Flat numbers assigned based on floor numbers!"
+    );
+  };
+
+  // Handle bulk fill (Sequential numbering, floor-independent)
   const handleBulkFill = () => {
     const start = Number(bulkFrom);
     const end = Number(bulkTo);
@@ -67,37 +86,39 @@ const TowerUnitSerializer = ({ towerData, onComplete }) => {
     if (isNaN(start) || isNaN(end) || start < 1 || start > end) {
       Alert.alert(
         "Invalid Range",
-        "'From' must be less than or equal to 'To' (and positive)."
+        "Please enter valid numbers. 'From' must be less than or equal to 'To'."
       );
       return;
     }
 
-    if (end - start + 1 < totalFlats) {
+    const availableNumbers = end - start + 1;
+    if (availableNumbers < totalFlats) {
       Alert.alert(
         "Warning",
-        `The range ${start}-${end} is smaller than the total number of flats (${totalFlats}). Not all flats will be numbered.`
+        `Range ${start}-${end} has only ${availableNumbers} numbers, but you have ${totalFlats} flats. Some flats will not be numbered.`
       );
     }
 
-    let current = start;
+    let currentNumber = start;
 
     setUnits((prev) =>
       prev.map((floor) => ({
         ...floor,
         flats: floor.flats.map((flat) => {
-          if (current <= end) {
-            const numbered = { ...flat, flatNumber: String(current) };
-            current++;
+          if (currentNumber <= end) {
+            const numbered = { ...flat, flatNumber: String(currentNumber) };
+            currentNumber++;
             return numbered;
           }
-          return flat;
+          return flat; // If range exhausted, leave empty
         }),
       }))
     );
 
+    const lastNumberUsed = currentNumber - 1;
     Alert.alert(
       "Success",
-      `Units filled from ${start} up to ${current - 1}.`
+      `Flats numbered from ${start} to ${lastNumberUsed}.\nTotal: ${lastNumberUsed - start + 1} flats numbered.`
     );
   };
 
@@ -160,6 +181,16 @@ const TowerUnitSerializer = ({ towerData, onComplete }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Assign Unit Numbers</Text>
+
+      {/* Auto-Fill by Floor Button */}
+      <TouchableOpacity
+        onPress={handleAutoFillByFloor}
+        style={styles.autoFillButton}
+      >
+        <Text style={styles.autoFillButtonText}>
+          🏢 Auto-Fill Based on Floor Numbers
+        </Text>
+      </TouchableOpacity>
 
       {/* Bulk Fill Section */}
       <View style={styles.bulkFillSection}>
@@ -303,6 +334,25 @@ const styles = StyleSheet.create({
     color: COLORS.background,
     fontFamily: "PlusSB",
     fontSize: 14,
+  },
+  autoFillButton: {
+    backgroundColor: COLORS.primaryLight,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 20,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  autoFillButtonText: {
+    color: COLORS.background,
+    fontSize: 16,
+    fontFamily: "PlusSB",
+    textAlign: "center",
   },
   disabledButton: {
     backgroundColor: "#ccc",
