@@ -106,7 +106,7 @@ const ManageProjects = () => {
     states,
     districts,
     loading: dropdownLoading
-  } = useDropdownData(null, countryValue, stateValue, null);
+  } = useDropdownData(editingProperty?.businessNatureId || null, countryValue, stateValue, null);
 
   // Fetch measurement units
   const { units: measurementUnits, loading: measurementUnitsLoading } = useMeasurementUnits();
@@ -137,37 +137,29 @@ const ManageProjects = () => {
     }
   }, [builderItems, editingProperty]);
 
-  // Re-match PLC when plcItems load
-  useEffect(() => {
-    if (editingProperty && plcItems.length > 0 && (!plcValue || plcValue.length === 0)) {
-      if (editingProperty.plcIds && Array.isArray(editingProperty.plcIds)) {
-        // Format: plcIds as array of IDs
-        setPlcValue(editingProperty.plcIds.map(id => id?.toString()));
-      } else if (editingProperty.plcs && Array.isArray(editingProperty.plcs)) {
-        // Format: plcs as array of objects with id and name
-        setPlcValue(editingProperty.plcs.map(plc => plc.id?.toString()));
-      } else if (editingProperty.plcNames && Array.isArray(editingProperty.plcNames)) {
-        // Format: plcNames as array - match by names
-        const matchedPlcs = editingProperty.plcNames.map(name => {
-          const matched = plcItems.find(p => p.label && p.label.toLowerCase() === name.toLowerCase());
-          return matched ? matched.value : null;
-        }).filter(id => id !== null);
-        if (matchedPlcs.length > 0) {
-          setPlcValue(matchedPlcs);
-        }
-      }
-    }
-  }, [plcItems, editingProperty]);
+
 
   // Re-match country when countries load
   useEffect(() => {
-    if (editingProperty && countries.length > 0 && !countryValue) {
+    if (editingProperty && countries.length > 0) {
+      console.log('Country Effect - editingProperty.countryId:', editingProperty.countryId);
+      console.log('Country Effect - countries:', countries);
+      console.log('Current countryValue:', countryValue);
+      
       if (editingProperty.countryId) {
-        setCountryValue(editingProperty.countryId.toString());
+        const countryIdStr = editingProperty.countryId.toString();
+        // Check if the country exists in the dropdown
+        const countryExists = countries.find(c => c.value === countryIdStr);
+        console.log('Country exists in dropdown:', countryExists);
+        if (countryExists) {
+          console.log('Setting Country ID:', countryIdStr);
+          setCountryValue(countryIdStr);
+        }
       } else if (editingProperty.country) {
         const matchedCountry = countries.find(c => 
           c.label && c.label.toLowerCase() === editingProperty.country.toLowerCase()
         );
+        console.log('Matched Country by name:', matchedCountry);
         if (matchedCountry) {
           setCountryValue(matchedCountry.value);
         }
@@ -177,35 +169,61 @@ const ManageProjects = () => {
 
   // Re-match state when states load
   useEffect(() => {
-    if (editingProperty && states.length > 0 && !stateValue) {
+    if (editingProperty && states.length > 0 && countryValue) {
+      console.log('State Effect - editingProperty.stateId:', editingProperty.stateId);
+      console.log('State Effect - states:', states);
+      console.log('State Effect - countryValue:', countryValue);
+      console.log('Current stateValue:', stateValue);
+      
       if (editingProperty.stateId) {
-        setStateValue(editingProperty.stateId.toString());
+        const stateIdStr = editingProperty.stateId.toString();
+        // Check if the state exists in the dropdown
+        const stateExists = states.find(s => s.value === stateIdStr);
+        console.log('State exists in dropdown:', stateExists);
+        if (stateExists) {
+          console.log('Setting State ID:', stateIdStr);
+          setStateValue(stateIdStr);
+        }
       } else if (editingProperty.state) {
         const matchedState = states.find(s => 
           s.label && s.label.toLowerCase() === editingProperty.state.toLowerCase()
         );
+        console.log('Matched State by name:', matchedState);
         if (matchedState) {
           setStateValue(matchedState.value);
         }
       }
     }
-  }, [states, editingProperty]);
+  }, [states, editingProperty, countryValue]);
 
   // Re-match district when districts load
   useEffect(() => {
-    if (editingProperty && districts.length > 0 && !districtValue) {
+    if (editingProperty && districts.length > 0 && stateValue) {
+      console.log('District Effect - editingProperty.districtId:', editingProperty.districtId);
+      console.log('District Effect - districts:', districts);
+      console.log('District Effect - stateValue:', stateValue);
+      console.log('Current districtValue:', districtValue);
+      
       if (editingProperty.districtId) {
-        setDistrictValue(editingProperty.districtId.toString());
+        const districtIdStr = editingProperty.districtId.toString();
+        // Check if the district exists in the dropdown
+        const districtExists = districts.find(d => d.value === districtIdStr);
+        console.log('District exists in dropdown:', districtExists);
+        if (districtExists) {
+          console.log('Setting District ID:', districtIdStr);
+          setDistrictValue(districtIdStr);
+        }
       } else if (editingProperty.district) {
         const matchedDistrict = districts.find(d => 
           d.label && d.label.toLowerCase() === editingProperty.district.toLowerCase()
         );
+        console.log('Matched District by name:', matchedDistrict);
         if (matchedDistrict) {
           setDistrictValue(matchedDistrict.value);
         }
       }
     }
-  }, [districts, editingProperty]);
+  }, [districts, editingProperty, stateValue]);
 
   // Re-match RERA when reras load
   useEffect(() => {
@@ -350,8 +368,7 @@ const ManageProjects = () => {
     try {
       const result = await updateProject(editingProperty.id, payload);
       if (result.success) {
-        setEditModalVisible(false);
-        setEditingProperty(null);
+        handleCloseEditModal();
         alert('Project updated successfully!');
       } else {
         alert(result.error || 'Failed to update project');
@@ -368,9 +385,23 @@ const ManageProjects = () => {
     setSearchQuery(text);
   };
 
+  const handleCloseEditModal = () => {
+    console.log('🚪 Closing edit modal and resetting states');
+    setEditModalVisible(false);
+    setEditingProperty(null);
+    // Reset all dropdown values
+    setPlcValue([]);
+    setBuilderValue(null);
+    setPossessionValue(null);
+    setCountryValue(null);
+    setStateValue(null);
+    setDistrictValue(null);
+    setMeasurementUnitValue(null);
+    setReraDropdownValue(null);
+  };
+
   const handleEditPress = (property) => {
     setEditingProperty(property);
-    setEditModalVisible(true);
     
     // Populate form with property data - using correct field names from API
     setEditForm({
@@ -389,25 +420,31 @@ const ManageProjects = () => {
     
     // Builder: Try ID first, then match by name
     if (property.builderId) {
+      console.log('Setting Builder ID:', property.builderId);
       setBuilderValue(property.builderId.toString());
     } else if (property.builderName && builderItems.length > 0) {
       const matchedBuilder = builderItems.find(b => 
         b.label && b.label.toLowerCase() === property.builderName.toLowerCase()
       );
+      console.log('Matched Builder by name:', matchedBuilder);
       setBuilderValue(matchedBuilder ? matchedBuilder.value : null);
     } else {
       setBuilderValue(null);
     }
     
+    // Possession Status
+    console.log('Setting Possession Status:', property.possessionStatusEnum);
     setPossessionValue(property.possessionStatusEnum || null);
     
     // Measurement Unit: Try ID first, then match by name
     if (property.areaUnitId) {
+      console.log('Setting Area Unit ID:', property.areaUnitId);
       setMeasurementUnitValue(property.areaUnitId.toString());
     } else if (property.areaUnitName && measurementUnits && measurementUnits.length > 0) {
       const matchedUnit = measurementUnits.find(u => 
         (u.name || u.unitName)?.toLowerCase() === property.areaUnitName.toLowerCase()
       );
+      console.log('Matched Unit by name:', matchedUnit);
       setMeasurementUnitValue(matchedUnit ? (matchedUnit.id || matchedUnit.unitId)?.toString() : null);
     } else {
       setMeasurementUnitValue(null);
@@ -415,11 +452,13 @@ const ManageProjects = () => {
     
     // Country: Try ID first, then match by name
     if (property.countryId) {
+      console.log('Setting Country ID:', property.countryId);
       setCountryValue(property.countryId.toString());
     } else if (property.country && countries.length > 0) {
       const matchedCountry = countries.find(c => 
         c.label && c.label.toLowerCase() === property.country.toLowerCase()
       );
+      console.log('Matched Country by name:', matchedCountry);
       setCountryValue(matchedCountry ? matchedCountry.value : null);
     } else {
       setCountryValue(null);
@@ -427,11 +466,13 @@ const ManageProjects = () => {
     
     // State: Try ID first, then match by name
     if (property.stateId) {
+      console.log('Setting State ID:', property.stateId);
       setStateValue(property.stateId.toString());
     } else if (property.state && states.length > 0) {
       const matchedState = states.find(s => 
         s.label && s.label.toLowerCase() === property.state.toLowerCase()
       );
+      console.log('Matched State by name:', matchedState);
       setStateValue(matchedState ? matchedState.value : null);
     } else {
       setStateValue(null);
@@ -439,53 +480,42 @@ const ManageProjects = () => {
     
     // District: Try ID first, then match by name
     if (property.districtId) {
+      console.log('Setting District ID:', property.districtId);
       setDistrictValue(property.districtId.toString());
     } else if (property.district && districts.length > 0) {
       const matchedDistrict = districts.find(d => 
         d.label && d.label.toLowerCase() === property.district.toLowerCase()
       );
+      console.log('Matched District by name:', matchedDistrict);
       setDistrictValue(matchedDistrict ? matchedDistrict.value : null);
     } else {
       setDistrictValue(null);
     }
     
-    // Set PLC values - handle different formats
-    if (property.plcIds && Array.isArray(property.plcIds)) {
-      // Format: plcIds as array of IDs
-      setPlcValue(property.plcIds.map(id => id?.toString()));
-    } else if (property.plcs && Array.isArray(property.plcs)) {
-      // Format: plcs as array of objects with id and name
-      setPlcValue(property.plcs.map(plc => plc.id?.toString()));
-    } else if (property.plcId) {
-      // Format: single plcId
-      setPlcValue([property.plcId?.toString()]);
-    } else if (property.plcNames && Array.isArray(property.plcNames) && plcItems.length > 0) {
-      // Format: plcNames as array - match by names
-      const matchedPlcs = property.plcNames.map(name => {
-        const matched = plcItems.find(p => p.label && p.label.toLowerCase() === name.toLowerCase());
-        return matched ? matched.value : null;
-      }).filter(id => id !== null);
-      setPlcValue(matchedPlcs);
-    } else {
-      setPlcValue([]);
-    }
+    // Reset PLC to empty
+    setPlcValue([]);
     
     setShowReraCard(property.isReraApproved || false);
     setReraDetails({ reraNo: property.reraNumber || property.reraNo || '' });
     
     // RERA: Try ID first, then match by name
     if (property.reraId) {
+      console.log('Setting RERA ID:', property.reraId);
       setReraDropdownValue(property.reraId.toString());
     } else if (property.reraName && reras.length > 0) {
       const matchedRera = reras.find(r => 
         r.name && r.name.toLowerCase() === property.reraName.toLowerCase()
       );
+      console.log('Matched RERA by name:', matchedRera);
       setReraDropdownValue(matchedRera ? matchedRera.id.toString() : null);
     } else {
       setReraDropdownValue(null);
     }
     
     setMediaFiles(property.mediaDTOs || []);
+    
+    // Open modal after all data is set
+    setEditModalVisible(true);
   };
 
   const handleActionsPress = (property) => {
@@ -581,13 +611,13 @@ const ManageProjects = () => {
         visible={editModalVisible}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setEditModalVisible(false)}
+        onRequestClose={handleCloseEditModal}
       >
         <View style={styles.editModalBackground}>
           <View style={styles.editModalContainer}>
             <View style={styles.editModalHeader}>
               <Text style={styles.editModalTitle}>Edit Project</Text>
-              <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+              <TouchableOpacity onPress={handleCloseEditModal}>
                 <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
@@ -732,6 +762,7 @@ const ManageProjects = () => {
               {/* PLC */}
               <Text style={styles.editLabel}>PLC</Text>
               <DropDownPicker
+                key={`plc-${editingProperty?.id}-${plcValue.length}`}
                 open={plcOpen}
                 value={plcValue}
                 items={plcItems}
@@ -796,23 +827,6 @@ const ManageProjects = () => {
                     placeholderTextColor="#999"
                   />
                   {errors.reraNo && <Text style={styles.errorText}>{errors.reraNo}</Text>}
-
-                  <Text style={styles.editLabel}>RERA</Text>
-                  <DropDownPicker
-                    open={reraDropdownOpen}
-                    value={reraDropdownValue}
-                    items={reras.map(r => ({ label: r.name, value: r.id.toString() }))}
-                    setOpen={setReraDropdownOpen}
-                    setValue={setReraDropdownValue}
-                    setItems={() => {}}
-                    placeholder="Select RERA"
-                    style={styles.editDropdown}
-                    dropDownContainerStyle={styles.editDropdownContainer}
-                    listMode="SCROLLVIEW"
-                    zIndex={2600}
-                    maxHeight={200}
-                    loading={reraLoading}
-                  />
                 </>
               )}
 
@@ -827,14 +841,16 @@ const ManageProjects = () => {
                 setOpen={setCountryOpen}
                 setValue={setCountryValue}
                 setItems={() => {}}
-                placeholder="Select Country"
+                placeholder={countryValue ? countries.find(c => c.value === countryValue)?.label || "Select Country" : "Select Country"}
                 style={styles.editDropdown}
                 dropDownContainerStyle={styles.editDropdownContainer}
                 listMode="SCROLLVIEW"
                 zIndex={2500}
                 maxHeight={200}
                 onChangeValue={(value) => {
-                  setCountryValue(value);
+                  console.log('Country changed to:', value);
+                  // Don't call setCountryValue here - setValue prop handles it
+                  // Only clear dependent dropdowns
                   setStateValue(null);
                   setDistrictValue(null);
                 }}
@@ -849,7 +865,7 @@ const ManageProjects = () => {
                 setOpen={setStateOpen}
                 setValue={setStateValue}
                 setItems={() => {}}
-                placeholder="Select State"
+                placeholder={stateValue ? states.find(s => s.value === stateValue)?.label || "Select State" : "Select State"}
                 style={styles.editDropdown}
                 dropDownContainerStyle={styles.editDropdownContainer}
                 listMode="SCROLLVIEW"
@@ -857,7 +873,9 @@ const ManageProjects = () => {
                 maxHeight={200}
                 disabled={!countryValue}
                 onChangeValue={(value) => {
-                  setStateValue(value);
+                  console.log('State changed to:', value);
+                  // Don't call setStateValue here - setValue prop handles it
+                  // Only clear dependent dropdown
                   setDistrictValue(null);
                 }}
                 loading={dropdownLoading}
@@ -871,13 +889,16 @@ const ManageProjects = () => {
                 setOpen={setDistrictOpen}
                 setValue={setDistrictValue}
                 setItems={() => {}}
-                placeholder="Select District"
+                placeholder={districtValue ? districts.find(d => d.value === districtValue)?.label || "Select District" : "Select District"}
                 style={styles.editDropdown}
                 dropDownContainerStyle={styles.editDropdownContainer}
                 listMode="SCROLLVIEW"
                 zIndex={2300}
                 maxHeight={200}
                 disabled={!stateValue}
+                onChangeValue={(value) => {
+                  console.log('District changed to:', value);
+                }}
                 loading={dropdownLoading}
               />
 
@@ -888,16 +909,6 @@ const ManageProjects = () => {
                 onChangeText={text => handleEditFormChange('city', text)}
                 style={styles.editInput}
                 placeholderTextColor="#999"
-              />
-
-              <Text style={styles.editLabel}>Pincode</Text>
-              <TextInput
-                placeholder="Enter pincode"
-                value={editForm.pincode}
-                onChangeText={text => handleEditFormChange('pincode', text)}
-                style={styles.editInput}
-                placeholderTextColor="#999"
-                keyboardType="numeric"
               />
 
               <Text style={styles.editLabel}>Address Line 1</Text>

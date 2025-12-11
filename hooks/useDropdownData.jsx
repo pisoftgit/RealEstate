@@ -83,7 +83,7 @@ export default function useDropdownData(selectedDepartmentId, countryId, stateId
       setCountries(
         (await fetchData("countries")).map((item) => ({
           label: item.country || item.name || "Unknown",
-          value: item.id,
+          value: item.id?.toString(),
         }))
       );
       setMaritalStatuses(await fetchData("getMaritalStatus"));
@@ -140,12 +140,12 @@ export default function useDropdownData(selectedDepartmentId, countryId, stateId
         const data = await fetchData(`getStatesByCountryId/${countryId}`);
         console.log("Mapped states:", data.map((item) => ({
           label: item.state || item.name || "Unknown",
-          value: item.id,
+          value: item.id?.toString(),
         })));
         setStates(
           data.map((item) => ({
             label: item.state || item.name || "Unknown",
-            value: item.id,
+            value: item.id?.toString(),
           }))
         );
         setDistricts([]);
@@ -164,12 +164,12 @@ export default function useDropdownData(selectedDepartmentId, countryId, stateId
         const data = await fetchData(`getDistrictByStateId/${stateId}`);
         console.log("Mapped districts:", data.map((item) => ({
           label: item.district || item.name || "Unknown",
-          value: item.id,
+          value: item.id?.toString(),
         })));
         setDistricts(
           data.map((item) => ({
             label: item.district || item.name || "Unknown",
-            value: item.id,
+            value: item.id?.toString(),
           }))
         );
         setLoading(false);
