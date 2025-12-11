@@ -12,7 +12,7 @@ import {
 import * as SecureStore from 'expo-secure-store';
 import { useNavigation, useRouter } from "expo-router";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import { ArrowDown01 } from "lucide-react-native";
+import { ArrowDown01, Eye } from "lucide-react-native";
 import { DrawerActions } from '@react-navigation/native';
 /* --------------------------------- THEME COLORS --------------------------------- */
 const COLORS = {
@@ -138,9 +138,21 @@ const Serialize = () => {
         );
     };
 
-    const handleProjectClick = (project) => {
+    // Navigate to Serialize Property Details (similar to web's SerializeLink functionality)
+    const handleSerializeProperty = (project) => {
         router.push({
             pathname: "/(drawer)/InventoryManagement/Property/PropertyDetails",
+            params: { 
+                projectId: project.id,  
+                project: JSON.stringify(project)
+            },
+        });
+    };
+
+    // Navigate to View Serialized Property (similar to web's ViewSerializedProperty functionality)
+    const handleViewSerialized = (project) => {
+        router.push({
+            pathname: "/(drawer)/InventoryManagement/Property/ViewSerializedProperty",
             params: { 
                 projectId: project.id,  
                 project: JSON.stringify(project)
@@ -152,7 +164,7 @@ const Serialize = () => {
         <View style={styles.cardContainer}>
             <TouchableOpacity
                 style={styles.card}
-                onPress={() => handleProjectClick(item)}
+                activeOpacity={0.7}
             >
                 <View style={{ flex: 1 }}>
                     <Text style={styles.projectName}>{item.projectName}</Text>
@@ -179,13 +191,24 @@ const Serialize = () => {
                     </View>
                 </View>
 
-                {/* Action Buttons */}
+                {/* Action Buttons - Matching Web Functionality */}
                 <View style={styles.actionButtons}>
-                    <TouchableOpacity style={styles.editButton} onPress={() => handleProjectClick(item)}>
-                        <ArrowDown01  size={18} color="#eab308" />
+                    {/* Serialize Property Button (Green) - Similar to web's ArrowDown01 button */}
+                    <TouchableOpacity 
+                        style={styles.serializeButton} 
+                        onPress={() => handleSerializeProperty(item)}
+                        activeOpacity={0.7}
+                    >
+                        <ArrowDown01 size={18} color={COLORS.success} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteProject(item.id)}>
-                        <Feather name="trash-2" size={18} color={COLORS.error} />
+
+                    {/* View Serialized Property Button (Blue) - Similar to web's TableOfContents button */}
+                    <TouchableOpacity 
+                        style={styles.viewButton} 
+                        onPress={() => handleViewSerialized(item)}
+                        activeOpacity={0.7}
+                    >
+                        <Eye size={18} color="#2563eb" />
                     </TouchableOpacity>
                 </View>
             </TouchableOpacity>
@@ -264,12 +287,16 @@ const Serialize = () => {
 
 const actionButtonBase = {
     padding: 10,
-    borderRadius: 10,
+    borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
     width: 40,
     height: 40,
-    elevation: 1,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
 };
 
 /* -------------------------- Stylesheet (Themed) --------------------------- */
@@ -293,8 +320,8 @@ const styles = StyleSheet.create({
     reraContainer: { flexDirection: "row", alignItems: "center", marginTop: 10, paddingTop: 5, borderTopWidth: 1, borderTopColor: COLORS.border },
     reraText: { marginLeft: 8, fontSize: 14, fontFamily: "PlusM" },
     actionButtons: { flexDirection: "column", marginLeft: 15, gap: 10 },
-    editButton: { ...actionButtonBase, backgroundColor: "#fff3cd", borderWidth: 1, borderColor: COLORS.warning },
-    deleteButton: { ...actionButtonBase, backgroundColor: "#fbe8e8", borderWidth: 1, borderColor: COLORS.error },
+    serializeButton: { ...actionButtonBase, backgroundColor: "#dcfce7", borderWidth: 1, borderColor: COLORS.success },
+    viewButton: { ...actionButtonBase, backgroundColor: "#dbeafe", borderWidth: 1, borderColor: "#2563eb" },
     stateContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20, gap: 10 },
     emptyText: { fontSize: 18, fontFamily: "PlusM", color: COLORS.placeholder },
 });
