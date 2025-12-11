@@ -26,7 +26,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import useProject from "../../../../hooks/useProject";
 import useDropdownData from "../../../../hooks/useDropdownData";
 import useReraActions from "../../../../hooks/useReraActions";
-import useSaveProject from "../../../../hooks/useSaveProject";
 import useMeasurementUnits from "../../../../hooks/useMeasurements";
 import { getAllPlc, getAllbuilderbyid } from "../../../../services/api";
 import * as ImagePicker from 'expo-image-picker';
@@ -45,7 +44,7 @@ const ManageProjects = () => {
   
   const navigation = useNavigation();
   const router = useRouter();
-  const { projects, loading, deleteProject, deleteLoading } = useProject();
+  const { projects, loading, deleteProject, deleteLoading, updateProject, updateLoading } = useProject();
 
   // Edit form states
   const [editLoading, setEditLoading] = useState(false);
@@ -247,8 +246,6 @@ const ManageProjects = () => {
     console.log('Measurement Units:', measurementUnits);
   }, [measurementUnits]);
 
-  const saveProject = useSaveProject();
-
   const handleEditFormChange = (field, value) => {
     setEditForm(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -325,7 +322,6 @@ const ManageProjects = () => {
     }));
     
     const payload = {
-      id: editingProperty.id,
       builderId: parseInt(builderValue),
       projectName: editForm.projectName,
       isGated: editForm.isGated,
@@ -352,10 +348,14 @@ const ManageProjects = () => {
     };
 
     try {
-      await saveProject(payload);
-      setEditModalVisible(false);
-      setEditingProperty(null);
-      alert('Project updated successfully!');
+      const result = await updateProject(editingProperty.id, payload);
+      if (result.success) {
+        setEditModalVisible(false);
+        setEditingProperty(null);
+        alert('Project updated successfully!');
+      } else {
+        alert(result.error || 'Failed to update project');
+      }
     } catch (error) {
       console.error('Error updating project:', error);
       alert('Failed to update project');

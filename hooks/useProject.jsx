@@ -80,15 +80,40 @@ const useProject = () => {
         body: JSON.stringify(projectData),
       });
 
-      const data = await res.json();
-      console.log("Update API Response:", data);
+      console.log("Update Response Status:", res.status);
+      console.log("Update Response OK:", res.ok);
 
+      // Check if response is successful
       if (res.ok) {
+        // Try to parse JSON, but handle if response is plain text
+        let data;
+        const contentType = res.headers.get('content-type');
+        
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            data = await res.json();
+          } else {
+            data = await res.text();
+          }
+          console.log("Update API Response:", data);
+        } catch (parseError) {
+          console.log("Could not parse response, but update was successful");
+          data = { message: 'Project updated successfully' };
+        }
+
         // Refresh the projects list after successful update
         await fetchProjects();
         return { success: true, data };
       } else {
-        return { success: false, error: data.message || 'Failed to update project' };
+        // Handle error response
+        let errorData;
+        try {
+          errorData = await res.json();
+        } catch {
+          errorData = { message: await res.text() || 'Failed to update project' };
+        }
+        console.log("Update Error Response:", errorData);
+        return { success: false, error: errorData.message || 'Failed to update project' };
       }
     } catch (error) {
       console.error('Error updating project:', error.message);
