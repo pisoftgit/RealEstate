@@ -123,6 +123,24 @@ export const defaultModules = [
           },
         ],
       },
+      {
+        name: "Hierarchy",
+        path: "/(drawer)/Adminstrative/HR/Hierarchy",
+        title: "Hierarchy",
+        icon: Brief,
+        children: [
+      
+      {
+        name: "Level",
+        path: "/(drawer)/Adminstrative/HR/Hierarchy/LevelConf",
+        title: "Level Configuration",
+      },
+    {
+        name: "DesignationLevel",
+        path: "/(drawer)/Adminstrative/HR/Hierarchy/Designationlevel",
+        title: "Designation Level",
+    }
+  ],}
     ],
   },
        {
