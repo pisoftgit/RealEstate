@@ -1,28 +1,43 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+import useHr from '../../../../../hooks/useHr';
+import { Picker } from '@react-native-picker/picker';
 
 export default function Designation() {
   const navigation = useNavigation();
+  const { 
+    getAllDepartments, 
+    getAllDesignations, 
+    addDesignation, 
+    updateDesignation, 
+    deleteDesignation, 
+    departments, 
+    designations, 
+    loading 
+  } = useHr();
 
-  const [department, setDepartment] = useState('');
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
   const [designationName, setDesignationName] = useState('');
   const [editing, setEditing] = useState(null);
-  
-  // Sample departments
-  const departments = ['Human Resources', 'Finance', 'Sales & Marketing', 'Operations', 'IT Department'];
 
-  const [designations, setDesignations] = useState([
-    { id: 1, department: 'Human Resources', name: 'HR Manager' },
-    { id: 2, department: 'Finance', name: 'Accountant' },
-    { id: 3, department: 'Sales & Marketing', name: 'Sales Executive' },
-    { id: 4, department: 'Operations', name: 'Operations Manager' },
-    { id: 5, department: 'IT Department', name: 'Software Developer' },
-  ]);
+  // Fetch departments and designations on component mount
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const handleSubmit = () => {
-    if (!department.trim()) {
+  const fetchData = async () => {
+    try {
+      await getAllDepartments();
+      await getAllDesignations();
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to fetch data');
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedDepartmentId) {
       Alert.alert('Validation Error', 'Please select department!');
       return;
     }
@@ -35,36 +50,26 @@ export default function Designation() {
     try {
       if (editing) {
         // Update existing designation
-        setDesignations(prev =>
-          prev.map(item =>
-            item.id === editing.id
-              ? { ...item, department: department, name: designationName }
-              : item
-          )
-        );
+        await updateDesignation(editing.id, selectedDepartmentId, designationName);
         Alert.alert('Success', 'Designation updated successfully!');
         setEditing(null);
       } else {
         // Add new designation
-        const newDesignation = {
-          id: designations.length > 0 ? Math.max(...designations.map(d => d.id)) + 1 : 1,
-          department: department,
-          name: designationName,
-        };
-        setDesignations(prev => [...prev, newDesignation]);
+        await addDesignation(selectedDepartmentId, designationName);
         Alert.alert('Success', 'Designation added successfully!');
       }
 
-      // Reset form
-      setDepartment('');
+      // Reset form and refresh list
+      setSelectedDepartmentId('');
       setDesignationName('');
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save designation');
+      await fetchData();
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to save designation');
     }
   };
 
   const handleEdit = (item) => {
-    setDepartment(item.department);
+    setSelectedDepartmentId(item.department.id);
     setDesignationName(item.name);
     setEditing(item);
   };
@@ -75,9 +80,14 @@ export default function Designation() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setDesignations(prev => prev.filter(item => item.id !== id));
-          Alert.alert('Success', 'Designation deleted successfully!');
+        onPress: async () => {
+          try {
+            await deleteDesignation(id);
+            Alert.alert('Success', 'Designation deleted successfully!');
+            await fetchData();
+          } catch (error) {
+            Alert.alert('Error', error.message || 'Failed to delete designation');
+          }
         },
       },
     ]);
@@ -85,7 +95,7 @@ export default function Designation() {
 
   const handleCancel = () => {
     setEditing(null);
-    setDepartment('');
+    setSelectedDepartmentId('');
     setDesignationName('');
   };
 
@@ -111,13 +121,17 @@ export default function Designation() {
               <Text style={styles.label}>
                 Department <Text style={styles.required}>*</Text>
               </Text>
-              <View style={styles.input}>
-                <TextInput
-                  style={styles.dropdownInput}
-                  value={department}
-                  onChangeText={setDepartment}
-                  placeholder="Select department"
-                />
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={selectedDepartmentId}
+                  onValueChange={(itemValue) => setSelectedDepartmentId(itemValue)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Select Department" value="" />
+                  {departments.map((dept) => (
+                    <Picker.Item key={dept.id} label={dept.department} value={dept.id} />
+                  ))}
+                </Picker>
               </View>
             </View>
 
@@ -135,8 +149,16 @@ export default function Designation() {
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+            <TouchableOpacity 
+              style={[styles.submitButton, loading && styles.disabledButton]} 
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+              )}
             </TouchableOpacity>
 
             {/* Cancel Button (shown only when editing) */}
@@ -160,11 +182,16 @@ export default function Designation() {
             </View>
 
             {/* Table Rows */}
-            {designations.length > 0 ? (
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#5aaf57" />
+                <Text style={styles.loadingText}>Loading designations...</Text>
+              </View>
+            ) : designations.length > 0 ? (
               designations.map((item, idx) => (
                 <View key={item.id} style={styles.tableRow}>
                   <Text style={[styles.tableCell, { flex: 0.5 }]}>{idx + 1}</Text>
-                  <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.department}</Text>
+                  <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.department.department}</Text>
                   <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.name}</Text>
                   <View style={[styles.actionCell, { flex: 1 }]}>
                     <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
@@ -306,6 +333,31 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     color: '#999',
+    fontFamily: 'PlusR',
+    fontSize: 14,
+  },
+  pickerContainer: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+  },
+  picker: {
+    color: '#333',
+    fontFamily: 'PlusR',
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
     fontFamily: 'PlusR',
     fontSize: 14,
   },

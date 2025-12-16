@@ -50,7 +50,17 @@ export default function AdminAppointments() {
           }
         );
         const data = await response.json();
-        setAppointments(data);
+        // Handle different API response structures
+        if (Array.isArray(data)) {
+          setAppointments(data);
+        } else if (data && Array.isArray(data.data)) {
+          setAppointments(data.data);
+        } else if (data && Array.isArray(data.appointments)) {
+          setAppointments(data.appointments);
+        } else {
+          console.warn('Unexpected API response format:', data);
+          setAppointments([]);
+        }
       } catch (error) {
         console.error('Error fetching appointments:', error);
         setAppointments([]);

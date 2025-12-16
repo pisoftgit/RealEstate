@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import useHr from '../../../../../hooks/useHr';
+import { useUser } from '../../../../../context/UserContext';
 
 export default function Branch() {
   const navigation = useNavigation();
+  const { createBranch, getAllBranches, updateBranch, branches: apiBranches, loading, error, success } = useHr();
+  const { user } = useUser();
 
   // View state: 'form' or 'list'
   const [activeView, setActiveView] = useState('form');
@@ -29,28 +33,27 @@ export default function Branch() {
   const [signatureImage, setSignatureImage] = useState(null);
   
   const [editing, setEditing] = useState(null);
-  const [branches, setBranches] = useState([
-    {
-      id: 1,
-      code: 'BR001',
-      organization: 'ABC Corp',
-      branchName: 'Main Branch',
-      country: 'India',
-      state: 'Maharashtra',
-      district: 'Mumbai',
-      address1: '123 Main Street',
-      address2: 'Near City Center',
-      city: 'Mumbai',
-      pincode: '400001',
-      gstApplied: 'Yes',
-      gstNumber: '27AABCU9603R1ZM',
-      authorizedPersonName: 'John Doe',
-      authorizedPersonContact: '9876543210',
-      authorizedPersonEmail: 'john@example.com',
-      authorizedPersonDesignation: 'Manager',
-      signatureImage: null,
-    },
-  ]);
+  const [branches, setBranches] = useState([]);
+
+  // Fetch branches on component mount
+  useEffect(() => {
+    fetchBranches();
+  }, []);
+
+  // Update local branches when API data changes
+  useEffect(() => {
+    if (apiBranches && apiBranches.length > 0) {
+      setBranches(apiBranches);
+    }
+  }, [apiBranches]);
+
+  const fetchBranches = async () => {
+    try {
+      await getAllBranches();
+    } catch (err) {
+      console.error('Error fetching branches:', err);
+    }
+  };
 
   // Dropdown data
   const organizations = ['ABC Corp', 'XYZ Ltd', 'PQR Industries'];
@@ -71,7 +74,7 @@ export default function Branch() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!organization.trim()) {
       Alert.alert('Validation Error', 'Please select organization!');
       return;
@@ -95,64 +98,71 @@ export default function Branch() {
 
     try {
       if (editing) {
-        // Update existing branch
-        setBranches(prev =>
-          prev.map(item =>
-            item.id === editing.id
-              ? {
-                  ...item,
-                  organization,
-                  branchName,
-                  country,
-                  state,
-                  district,
-                  address1,
-                  address2,
-                  city,
-                  pincode,
-                  gstApplied,
-                  gstNumber,
-                  authorizedPersonName,
-                  authorizedPersonContact,
-                  authorizedPersonEmail,
-                  authorizedPersonDesignation,
-                  signatureImage,
-                }
-              : item
-          )
-        );
+        // Update existing branch - Call API
+        const branchData = {
+          branch: branchName,
+          organizationId: user?.organizationId || editing.organizationId || 188,
+          gstApplicable: gstApplied === 'Yes',
+          gstNo: gstNumber || "",
+          organisatonAddressDetails: {
+            districtId: parseInt(district) || 62069,
+            address1: address1,
+            address2: address2,
+            city: city,
+            pincode: pincode,
+          },
+          authorizedPersonName: authorizedPersonName,
+          authorizedPersonContact: authorizedPersonContact,
+          authorizedPersonEmail: authorizedPersonEmail,
+          authorizedPersonDesignation: authorizedPersonDesignation,
+          bauthorizedSignatureLogoranchLogo: signatureImage || "",
+          authorizedSignatureLogoContentType: signatureImage ? "image/jpg" : "",
+        };
+
+        // Call the update API
+        await updateBranch(editing.id, branchData);
+        
+        // Refresh the branches list from API
+        await fetchBranches();
+        
         Alert.alert('Success', 'Branch updated successfully!');
         setEditing(null);
       } else {
-        // Add new branch
-        const newBranch = {
-          id: branches.length > 0 ? Math.max(...branches.map(b => b.id)) + 1 : 1,
-          code: `BR${String(branches.length + 1).padStart(3, '0')}`,
-          organization,
-          branchName,
-          country,
-          state,
-          district,
-          address1,
-          address2,
-          city,
-          pincode,
-          gstApplied,
-          gstNumber,
-          authorizedPersonName,
-          authorizedPersonContact,
-          authorizedPersonEmail,
-          authorizedPersonDesignation,
-          signatureImage,
+        // Add new branch - Call API
+        const branchData = {
+          branch: branchName,
+          organizationId: user?.organizationId || 188, // Use user's org ID or default
+          gstApplicable: gstApplied === 'Yes',
+          gstNo: gstNumber || "",
+          organisatonAddressDetails: {
+            districtId: parseInt(district) || 62069, // You'll need to map district name to ID
+            address1: address1,
+            address2: address2,
+            city: city,
+            pincode: pincode,
+          },
+          authorizedPersonName: authorizedPersonName,
+          authorizedPersonContact: authorizedPersonContact,
+          authorizedPersonEmail: authorizedPersonEmail,
+          authorizedPersonDesignation: authorizedPersonDesignation,
+          bauthorizedSignatureLogoranchLogo: signatureImage || "",
+          authorizedSignatureLogoContentType: signatureImage ? "image/jpg" : "",
         };
-        setBranches(prev => [...prev, newBranch]);
-        Alert.alert('Success', 'Branch added successfully!');
+
+        // Call the API
+        const result = await createBranch(branchData);
+        
+        // Refresh the branches list from API
+        await fetchBranches();
+        
+        Alert.alert('Success', 'Branch created successfully!');
       }
 
       // Reset form
       resetForm();
     } catch (e) {
-      Alert.alert('Error', 'Failed to save branch');
+      console.error('Error saving branch:', e);
+      Alert.alert('Error', e.message || 'Failed to save branch');
     }
   };
 
@@ -176,22 +186,30 @@ export default function Branch() {
   };
 
   const handleEdit = (item) => {
-    setOrganization(item.organization);
-    setBranchName(item.branchName);
-    setCountry(item.country);
-    setState(item.state);
-    setDistrict(item.district);
-    setAddress1(item.address1);
-    setAddress2(item.address2);
-    setCity(item.city);
-    setPincode(item.pincode);
-    setGstApplied(item.gstApplied);
-    setGstNumber(item.gstNumber);
-    setAuthorizedPersonName(item.authorizedPersonName);
-    setAuthorizedPersonContact(item.authorizedPersonContact);
-    setAuthorizedPersonEmail(item.authorizedPersonEmail);
-    setAuthorizedPersonDesignation(item.authorizedPersonDesignation);
-    setSignatureImage(item.signatureImage);
+    // Map API data to form fields
+    setOrganization(item.organization || '');
+    setBranchName(item.branch || '');
+    setCountry(item.country || '');
+    setState(item.state || '');
+    setDistrict(item.district || '');
+    setAddress1(item.address1 || '');
+    setAddress2(item.address2 || '');
+    setCity(item.city || '');
+    setPincode(item.pincode || '');
+    setGstApplied(item.gstApplicable ? 'Yes' : 'No');
+    setGstNumber(item.gstNo || '');
+    setAuthorizedPersonName(item.authorizedPersonName || '');
+    setAuthorizedPersonContact(item.authorizedPersonContact || '');
+    setAuthorizedPersonEmail(item.authorizedPersonEmail || '');
+    setAuthorizedPersonDesignation(item.authorizedPersonDesignation || '');
+    
+    // Handle branch logo/signature image
+    if (item.branchPic) {
+      setSignatureImage(`data:${item.branchLogoType};base64,${item.branchPic}`);
+    } else {
+      setSignatureImage(null);
+    }
+    
     setEditing(item);
     setActiveView('form');
   };
@@ -211,10 +229,18 @@ export default function Branch() {
   };
 
   const handleView = (item) => {
-    Alert.alert(
-      'Branch Details',
-      `Organization: ${item.organization}\nBranch: ${item.branchName}\nCity: ${item.city}\nAuthorized Person: ${item.authorizedPersonName}`
-    );
+    const details = `
+Branch Code: ${item.branchCode || 'N/A'}
+Branch Name: ${item.branch || 'N/A'}
+GST Applicable: ${item.gstApplicable ? 'Yes' : 'No'}
+GST Number: ${item.gstNo || 'N/A'}
+Authorized Person: ${item.authorizedPersonName || 'N/A'}
+Contact: ${item.authorizedPersonContact || 'N/A'}
+Email: ${item.authorizedPersonEmail || 'N/A'}
+Designation: ${item.authorizedPersonDesignation || 'N/A'}
+    `.trim();
+    
+    Alert.alert('Branch Details', details);
   };
 
   const handleCancel = () => {
@@ -477,8 +503,16 @@ export default function Branch() {
               </View>
 
               {/* Submit Button */}
-              <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+              <TouchableOpacity 
+                style={[styles.submitButton, loading && styles.submitButtonDisabled]} 
+                onPress={handleSubmit}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+                )}
               </TouchableOpacity>
 
               {/* Cancel Button (shown only when editing) */}
@@ -495,27 +529,42 @@ export default function Branch() {
 
               {/* Table Header */}
               <View style={styles.tableHeader}>
-                <Text style={[styles.tableHeaderText, { flex: 1 }]}>Signature</Text>
+                <Text style={[styles.tableHeaderText, { flex: 1 }]}>Logo</Text>
                 <Text style={[styles.tableHeaderText, { flex: 1 }]}>Code</Text>
                 <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>Name</Text>
+                <Text style={[styles.tableHeaderText, { flex: 1 }]}>GST</Text>
                 <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>Action</Text>
               </View>
 
+              {/* Loading State */}
+              {loading && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#5aaf57" />
+                  <Text style={styles.loadingText}>Loading branches...</Text>
+                </View>
+              )}
+
               {/* Table Rows */}
-              {branches.length > 0 ? (
+              {!loading && branches.length > 0 ? (
                 branches.map((item) => (
                   <View key={item.id} style={styles.tableRow}>
                     <View style={[styles.tableCell, { flex: 1 }]}>
-                      {item.signatureImage ? (
-                        <Image source={{ uri: item.signatureImage }} style={styles.thumbnailImage} />
+                      {item.branchPic ? (
+                        <Image 
+                          source={{ uri: `data:${item.branchLogoType};base64,${item.branchPic}` }} 
+                          style={styles.thumbnailImage} 
+                        />
                       ) : (
                         <View style={styles.noImagePlaceholder}>
                           <Ionicons name="image-outline" size={20} color="#999" />
                         </View>
                       )}
                     </View>
-                    <Text style={[styles.tableCell, { flex: 1 }]}>{item.code}</Text>
-                    <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.branchName}</Text>
+                    <Text style={[styles.tableCell, { flex: 1 }]}>{item.branchCode}</Text>
+                    <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.branch}</Text>
+                    <Text style={[styles.tableCell, { flex: 1 }]}>
+                      {item.gstApplicable ? 'Yes' : 'No'}
+                    </Text>
                     <View style={[styles.actionCell, { flex: 1.5 }]}>
                       <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
                         <Feather name="edit" size={18} color="#5aaf57" />
@@ -529,11 +578,11 @@ export default function Branch() {
                     </View>
                   </View>
                 ))
-              ) : (
+              ) : !loading ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyStateText}>No branches found</Text>
                 </View>
-              )}
+              ) : null}
             </View>
           )}
         </ScrollView>
@@ -680,6 +729,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
+  submitButtonDisabled: {
+    backgroundColor: '#a0d49d',
+    opacity: 0.7,
+  },
   submitButtonText: {
     color: '#fff',
     fontSize: 16,
@@ -700,7 +753,7 @@ const styles = StyleSheet.create({
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#5aaf57',
-    padding: 8,
+    padding: 12,
     borderRadius: 8,
     marginBottom: 4,
   },
@@ -708,34 +761,35 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
     fontFamily: 'PlusSB',
-    fontSize: 14,
+    fontSize: 15,
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 8,
+    padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
     backgroundColor: '#fff',
     alignItems: 'center',
+    minHeight: 70,
   },
   tableCell: {
     textAlign: 'center',
     color: '#333',
     fontFamily: 'PlusR',
-    fontSize: 13,
+    fontSize: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   thumbnailImage: {
-    width: 40,
-    height: 30,
-    borderRadius: 4,
+    width: 60,
+    height: 50,
+    borderRadius: 6,
     resizeMode: 'contain',
   },
   noImagePlaceholder: {
-    width: 40,
-    height: 30,
-    borderRadius: 4,
+    width: 60,
+    height: 50,
+    borderRadius: 6,
     backgroundColor: '#f0f0f0',
     alignItems: 'center',
     justifyContent: 'center',
@@ -744,10 +798,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
   },
   iconBtn: {
-    padding: 4,
+    padding: 6,
   },
   emptyState: {
     padding: 20,
@@ -755,6 +809,17 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     color: '#999',
+    fontFamily: 'PlusR',
+    fontSize: 14,
+  },
+  loadingContainer: {
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
     fontFamily: 'PlusR',
     fontSize: 14,
   },

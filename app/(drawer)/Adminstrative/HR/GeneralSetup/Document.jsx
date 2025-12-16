@@ -1,67 +1,69 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+import useHr from '../../../../../hooks/useHr';
 
 export default function Document() {
   const navigation = useNavigation();
+  const { 
+    getAllDocuments, 
+    getDocumentById, 
+    addDocument, 
+    updateDocument, 
+    deleteDocument, 
+    documents, 
+    loading 
+  } = useHr();
 
   const [documentName, setDocumentName] = useState('');
   const [description, setDescription] = useState('');
   const [editing, setEditing] = useState(null);
-  const [documents, setDocuments] = useState([
-    { id: 1, name: 'Aadhar Card', description: 'Government issued identity proof' },
-    { id: 2, name: 'PAN Card', description: 'Permanent Account Number card' },
-    { id: 3, name: 'Passport', description: 'International travel document' },
-    { id: 4, name: 'Driving License', description: 'Vehicle driving authorization' },
-    { id: 5, name: 'Voter ID', description: 'Election identity card' },
-  ]);
 
-  const handleSubmit = () => {
+  // Fetch documents on component mount
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+  const fetchDocuments = async () => {
+    try {
+      await getAllDocuments();
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to fetch documents');
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!documentName.trim()) {
       Alert.alert('Validation Error', 'Please enter document name!');
-      return;
-    }
-
-    if (!description.trim()) {
-      Alert.alert('Validation Error', 'Please enter description!');
       return;
     }
 
     try {
       if (editing) {
         // Update existing document
-        setDocuments(prev =>
-          prev.map(item =>
-            item.id === editing.id
-              ? { ...item, name: documentName, description: description }
-              : item
-          )
-        );
+        await updateDocument(editing.id, documentName, description);
         Alert.alert('Success', 'Document updated successfully!');
         setEditing(null);
       } else {
         // Add new document
-        const newDocument = {
-          id: documents.length > 0 ? Math.max(...documents.map(d => d.id)) + 1 : 1,
-          name: documentName,
-          description: description,
-        };
-        setDocuments(prev => [...prev, newDocument]);
+        await addDocument(documentName, description);
         Alert.alert('Success', 'Document added successfully!');
       }
 
-      // Reset form
+      // Reset form and refresh list
       setDocumentName('');
       setDescription('');
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save document');
+      await fetchDocuments();
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to save document');
     }
   };
 
   const handleEdit = (item) => {
-    setDocumentName(item.name);
-    setDescription(item.description);
+    // Use data from the list instead of fetching by ID to avoid Hibernate proxy issues
+    setDocumentName(item.documentName);
+    setDescription(item.description || '');
     setEditing(item);
   };
 
@@ -71,9 +73,14 @@ export default function Document() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setDocuments(prev => prev.filter(item => item.id !== id));
-          Alert.alert('Success', 'Document deleted successfully!');
+        onPress: async () => {
+          try {
+            await deleteDocument(id);
+            Alert.alert('Success', 'Document deleted successfully!');
+            await fetchDocuments();
+          } catch (error) {
+            Alert.alert('Error', error.message || 'Failed to delete document');
+          }
         },
       },
     ]);
@@ -118,21 +125,29 @@ export default function Document() {
             {/* Description */}
             <View style={styles.formRow}>
               <Text style={styles.label}>
-                Description <Text style={styles.required}>*</Text>
+                Description
               </Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Enter description"
+                placeholder="Enter description (optional)"
                 multiline
                 numberOfLines={3}
               />
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+            <TouchableOpacity 
+              style={[styles.submitButton, loading && styles.disabledButton]} 
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+              )}
             </TouchableOpacity>
 
             {/* Cancel Button (shown only when editing) */}
@@ -156,12 +171,17 @@ export default function Document() {
             </View>
 
             {/* Table Rows */}
-            {documents.length > 0 ? (
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#5aaf57" />
+                <Text style={styles.loadingText}>Loading documents...</Text>
+              </View>
+            ) : documents.length > 0 ? (
               documents.map((item, idx) => (
                 <View key={item.id} style={styles.tableRow}>
                   <Text style={[styles.tableCell, { flex: 0.5 }]}>{idx + 1}</Text>
-                  <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.name}</Text>
-                  <Text style={[styles.tableCell, { flex: 2 }]}>{item.description}</Text>
+                  <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.documentName}</Text>
+                  <Text style={[styles.tableCell, { flex: 2 }]}>{item.description || '-'}</Text>
                   <View style={[styles.actionCell, { flex: 1 }]}>
                     <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
                       <Feather name="edit" size={18} color="#5aaf57" />
@@ -302,6 +322,19 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     color: '#999',
+    fontFamily: 'PlusR',
+    fontSize: 14,
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
     fontFamily: 'PlusR',
     fontSize: 14,
   },

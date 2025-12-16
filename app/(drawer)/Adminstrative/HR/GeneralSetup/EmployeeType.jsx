@@ -1,23 +1,39 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+import useHr from '../../../../../hooks/useHr';
 
 export default function EmployeeType() {
   const navigation = useNavigation();
+  const { 
+    getAllEmployeeTypes, 
+    getEmployeeTypeById, 
+    addEmployeeType, 
+    updateEmployeeType, 
+    deleteEmployeeType, 
+    employeeTypes, 
+    loading 
+  } = useHr();
 
   const [employeeTypeName, setEmployeeTypeName] = useState('');
-  const [codeApplicable, setCodeApplicable] = useState('No');
+  const [codeApplicable, setCodeApplicable] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [employeeTypes, setEmployeeTypes] = useState([
-    { id: 1, name: 'Permanent', codeApplicable: 'Yes' },
-    { id: 2, name: 'Contract', codeApplicable: 'Yes' },
-    { id: 3, name: 'Temporary', codeApplicable: 'No' },
-    { id: 4, name: 'Intern', codeApplicable: 'No' },
-    { id: 5, name: 'Consultant', codeApplicable: 'Yes' },
-  ]);
 
-  const handleSubmit = () => {
+  // Fetch employee types on component mount
+  useEffect(() => {
+    fetchEmployeeTypes();
+  }, []);
+
+  const fetchEmployeeTypes = async () => {
+    try {
+      await getAllEmployeeTypes();
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to fetch employee types');
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!employeeTypeName.trim()) {
       Alert.alert('Validation Error', 'Please enter employee type name!');
       return;
@@ -26,37 +42,28 @@ export default function EmployeeType() {
     try {
       if (editing) {
         // Update existing employee type
-        setEmployeeTypes(prev =>
-          prev.map(item =>
-            item.id === editing.id
-              ? { ...item, name: employeeTypeName, codeApplicable: codeApplicable }
-              : item
-          )
-        );
+        await updateEmployeeType(editing.id, employeeTypeName, codeApplicable);
         Alert.alert('Success', 'Employee type updated successfully!');
         setEditing(null);
       } else {
         // Add new employee type
-        const newEmployeeType = {
-          id: employeeTypes.length > 0 ? Math.max(...employeeTypes.map(d => d.id)) + 1 : 1,
-          name: employeeTypeName,
-          codeApplicable: codeApplicable,
-        };
-        setEmployeeTypes(prev => [...prev, newEmployeeType]);
+        await addEmployeeType(employeeTypeName, codeApplicable);
         Alert.alert('Success', 'Employee type added successfully!');
       }
 
-      // Reset form
+      // Reset form and refresh list
       setEmployeeTypeName('');
-      setCodeApplicable('No');
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save employee type');
+      setCodeApplicable(false);
+      await fetchEmployeeTypes();
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to save employee type');
     }
   };
 
   const handleEdit = (item) => {
-    setEmployeeTypeName(item.name);
-    setCodeApplicable(item.codeApplicable);
+    // Use data from the list instead of fetching by ID to avoid Hibernate proxy issues
+    setEmployeeTypeName(item.employeeType);
+    setCodeApplicable(item.employeeCodeGenerate);
     setEditing(item);
   };
 
@@ -66,9 +73,14 @@ export default function EmployeeType() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setEmployeeTypes(prev => prev.filter(item => item.id !== id));
-          Alert.alert('Success', 'Employee type deleted successfully!');
+        onPress: async () => {
+          try {
+            await deleteEmployeeType(id);
+            Alert.alert('Success', 'Employee type deleted successfully!');
+            await fetchEmployeeTypes();
+          } catch (error) {
+            Alert.alert('Error', error.message || 'Failed to delete employee type');
+          }
         },
       },
     ]);
@@ -77,7 +89,7 @@ export default function EmployeeType() {
   const handleCancel = () => {
     setEditing(null);
     setEmployeeTypeName('');
-    setCodeApplicable('No');
+    setCodeApplicable(false);
   };
 
   return (
@@ -116,19 +128,19 @@ export default function EmployeeType() {
               <View style={styles.radioContainer}>
                 <TouchableOpacity
                   style={styles.radioOption}
-                  onPress={() => setCodeApplicable('Yes')}
+                  onPress={() => setCodeApplicable(true)}
                 >
                   <View style={styles.radioCircle}>
-                    {codeApplicable === 'Yes' && <View style={styles.radioSelected} />}
+                    {codeApplicable === true && <View style={styles.radioSelected} />}
                   </View>
                   <Text style={styles.radioText}>Yes</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.radioOption}
-                  onPress={() => setCodeApplicable('No')}
+                  onPress={() => setCodeApplicable(false)}
                 >
                   <View style={styles.radioCircle}>
-                    {codeApplicable === 'No' && <View style={styles.radioSelected} />}
+                    {codeApplicable === false && <View style={styles.radioSelected} />}
                   </View>
                   <Text style={styles.radioText}>No</Text>
                 </TouchableOpacity>
@@ -136,8 +148,16 @@ export default function EmployeeType() {
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+            <TouchableOpacity 
+              style={[styles.submitButton, loading && styles.disabledButton]} 
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+              )}
             </TouchableOpacity>
 
             {/* Cancel Button (shown only when editing) */}
@@ -161,12 +181,17 @@ export default function EmployeeType() {
             </View>
 
             {/* Table Rows */}
-            {employeeTypes.length > 0 ? (
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#5aaf57" />
+                <Text style={styles.loadingText}>Loading employee types...</Text>
+              </View>
+            ) : employeeTypes.length > 0 ? (
               employeeTypes.map((item, idx) => (
                 <View key={item.id} style={styles.tableRow}>
                   <Text style={[styles.tableCell, { flex: 0.5 }]}>{idx + 1}</Text>
-                  <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.name}</Text>
-                  <Text style={[styles.tableCell, { flex: 1 }]}>{item.codeApplicable}</Text>
+                  <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.employeeType}</Text>
+                  <Text style={[styles.tableCell, { flex: 1 }]}>{item.employeeCodeGenerate ? 'Yes' : 'No'}</Text>
                   <View style={[styles.actionCell, { flex: 1 }]}>
                     <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
                       <Feather name="edit" size={18} color="#5aaf57" />
@@ -332,6 +357,19 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     color: '#999',
+    fontFamily: 'PlusR',
+    fontSize: 14,
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
     fontFamily: 'PlusR',
     fontSize: 14,
   },

@@ -249,7 +249,9 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
             carpetArea: selectedFlat.carpetArea ? String(selectedFlat.carpetArea) : (selectedFlat.area ? String(selectedFlat.area).replace(/[^\d.]/g, '') : ""),
             carpetAreaUnit: selectedFlat.areaUnit || "sq ft",
             loadingPercentage: selectedFlat.loadingPercentage ? String(selectedFlat.loadingPercentage) : "",
-            superArea: "",
+            superArea: selectedFlat.carpetArea && selectedFlat.loadingPercentage 
+              ? String((selectedFlat.carpetArea * (1 + selectedFlat.loadingPercentage / 100)).toFixed(2))
+              : "",
             numberOfKitchens: selectedFlat.totalNoOfKitchen ? String(selectedFlat.totalNoOfKitchen) : "",
             numberOfFloors: selectedFlat.totalNoOfFloors ? String(selectedFlat.totalNoOfFloors) : "",
             basicCost: selectedFlat.basicAmount ? String(selectedFlat.basicAmount) : (selectedFlat.price ? String(selectedFlat.price).replace(/[^\d.]/g, '') : ""),
@@ -700,7 +702,9 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
                     carpetArea: item.carpetArea ? String(item.carpetArea) : "",
                     carpetAreaUnit: item.areaUnit || "Sq. ft.",
                     loadingPercentage: item.loadingPercentage ? String(item.loadingPercentage) : "",
-                    superArea: "",
+                    superArea: item.carpetArea && item.loadingPercentage 
+                      ? String((item.carpetArea * (1 + item.loadingPercentage / 100)).toFixed(2))
+                      : "",
                     numberOfKitchens: item.totalNoOfKitchen ? String(item.totalNoOfKitchen) : "",
                     numberOfFloors: item.totalNoOfFloors ? String(item.totalNoOfFloors) : "",
                     basicCost: "",
@@ -808,7 +812,25 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
 
   // Helper functions for Fill Details Modal
   const handleFormDataChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      
+      // Auto-calculate super area when carpet area or loading percentage changes
+      if (field === 'carpetArea' || field === 'loadingPercentage') {
+        const carpetArea = field === 'carpetArea' ? parseFloat(value) : parseFloat(prev.carpetArea);
+        const loadingPercentage = field === 'loadingPercentage' ? parseFloat(value) : parseFloat(prev.loadingPercentage);
+        
+        if (!isNaN(carpetArea) && !isNaN(loadingPercentage) && carpetArea > 0) {
+          newData.superArea = String((carpetArea * (1 + loadingPercentage / 100)).toFixed(2));
+        } else if (field === 'carpetArea' && (isNaN(loadingPercentage) || loadingPercentage === 0)) {
+          newData.superArea = '';
+        } else if (field === 'loadingPercentage' && isNaN(carpetArea)) {
+          newData.superArea = '';
+        }
+      }
+      
+      return newData;
+    });
   };
 
   const handleMultiSelect = (field, value) => {
@@ -1347,7 +1369,9 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
                     carpetArea: selectedFlatData.carpetArea ? String(selectedFlatData.carpetArea) : "",
                     carpetAreaUnit: selectedFlatData.areaUnit || "Sq. ft.",
                     loadingPercentage: selectedFlatData.loadingPercentage ? String(selectedFlatData.loadingPercentage) : "",
-                    superArea: "",
+                    superArea: selectedFlatData.carpetArea && selectedFlatData.loadingPercentage 
+                      ? String((selectedFlatData.carpetArea * (1 + selectedFlatData.loadingPercentage / 100)).toFixed(2))
+                      : "",
                     numberOfKitchens: selectedFlatData.totalNoOfKitchen ? String(selectedFlatData.totalNoOfKitchen) : "",
                     numberOfFloors: selectedFlatData.totalNoOfFloors ? String(selectedFlatData.totalNoOfFloors) : "",
                     basicCost: "",
@@ -1525,11 +1549,11 @@ const HouseVillaDetailsPage = ({ propertyData, onBack }) => {
                     <View style={styles.formRow}>
                       <Text style={styles.formLabel}>Super Area</Text>
                       <TextInput
-                        style={styles.formInput}
+                        style={[styles.formInput, { backgroundColor: '#f0f0f0' }]}
                         value={formData.superArea}
-                        onChangeText={(value) => handleFormDataChange('superArea', value)}
-                        placeholder="Enter super area"
+                        placeholder="Auto-calculated"
                         keyboardType="numeric"
+                        editable={false}
                       />
                     </View>
                   </View>

@@ -1,80 +1,68 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+import useCRM from '../../../../hooks/useCRM';
 
 export default function DocumentName() {
   const navigation = useNavigation();
+  const {
+    customerDocumentNames,
+    isLoadingCustomerDocuments,
+    customerDocumentsError,
+    handleAddCustomerDocumentName,
+    handleUpdateCustomerDocumentName,
+    handleDeleteCustomerDocumentName,
+  } = useCRM();
 
   const [documentName, setDocumentName] = useState('');
   const [description, setDescription] = useState('');
   const [editing, setEditing] = useState(null);
-  const [documents, setDocuments] = useState([
-    { id: 1, name: 'Aadhar Card', description: 'Government issued identity proof' },
-    { id: 2, name: 'PAN Card', description: 'Permanent Account Number' },
-    { id: 3, name: 'Passport', description: 'International travel document' },
-  ]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!documentName.trim()) {
       Alert.alert('Validation Error', 'Please enter document name!');
       return;
     }
 
-    if (!description.trim()) {
-      Alert.alert('Validation Error', 'Please enter description!');
-      return;
-    }
-
+    setIsSubmitting(true);
     try {
+      const documentData = {
+        documentName: documentName.trim(),
+        description: description.trim() || null,
+      };
+
       if (editing) {
         // Update existing document
-        setDocuments(prev =>
-          prev.map(item =>
-            item.id === editing.id
-              ? { ...item, name: documentName, description: description }
-              : item
-          )
-        );
-        Alert.alert('Success', 'Document updated successfully!');
-        setEditing(null);
+        documentData.id = editing.id;
+        await handleUpdateCustomerDocumentName(documentData, () => {
+          setEditing(null);
+          setDocumentName('');
+          setDescription('');
+        });
       } else {
         // Add new document
-        const newDocument = {
-          id: documents.length > 0 ? Math.max(...documents.map(d => d.id)) + 1 : 1,
-          name: documentName,
-          description: description,
-        };
-        setDocuments(prev => [...prev, newDocument]);
-        Alert.alert('Success', 'Document added successfully!');
+        await handleAddCustomerDocumentName(documentData, () => {
+          setDocumentName('');
+          setDescription('');
+        });
       }
-
-      // Reset form
-      setDocumentName('');
-      setDescription('');
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save document');
+    } catch (error) {
+      console.error('Error submitting document:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleEdit = (item) => {
-    setDocumentName(item.name);
-    setDescription(item.description);
+    setDocumentName(item.documentName);
+    setDescription(item.description || '');
     setEditing(item);
   };
 
-  const handleDelete = (id) => {
-    Alert.alert('Delete Document', 'Are you sure you want to delete this document?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          setDocuments(prev => prev.filter(item => item.id !== id));
-          Alert.alert('Success', 'Document deleted successfully!');
-        },
-      },
-    ]);
+  const handleDelete = (id, documentName) => {
+    handleDeleteCustomerDocumentName(id, documentName);
   };
 
   const handleCancel = () => {
@@ -115,22 +103,28 @@ export default function DocumentName() {
 
             {/* Description */}
             <View style={styles.formRow}>
-              <Text style={styles.label}>
-                Description <Text style={styles.required}>*</Text>
-              </Text>
+              <Text style={styles.label}>Description</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Enter description"
+                placeholder="Enter description (optional)"
                 multiline
                 numberOfLines={3}
               />
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+            <TouchableOpacity 
+              style={[styles.submitButton, (isSubmitting || isLoadingCustomerDocuments) && styles.disabledButton]} 
+              onPress={handleSubmit}
+              disabled={isSubmitting || isLoadingCustomerDocuments}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+              )}
             </TouchableOpacity>
 
             {/* Cancel Button (shown only when editing) */}
@@ -145,35 +139,48 @@ export default function DocumentName() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Existing Documents</Text>
             
-            {/* Table Header */}
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, { flex: 0.5 }]}>S. No</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>Document Name</Text>
-              <Text style={[styles.tableHeaderText, { flex: 2 }]}>Description</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
-            </View>
-
-            {/* Table Rows */}
-            {documents.length > 0 ? (
-              documents.map((item, idx) => (
-                <View key={item.id} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, { flex: 0.5 }]}>{idx + 1}</Text>
-                  <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.name}</Text>
-                  <Text style={[styles.tableCell, { flex: 2 }]}>{item.description}</Text>
-                  <View style={[styles.actionCell, { flex: 1 }]}>
-                    <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                      <Feather name="edit" size={18} color="#5aaf57" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                      <Ionicons name="trash" size={18} color="#d32f2f" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No documents found</Text>
+            {isLoadingCustomerDocuments ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#5aaf57" />
+                <Text style={styles.loadingText}>Loading documents...</Text>
               </View>
+            ) : customerDocumentsError ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{customerDocumentsError}</Text>
+              </View>
+            ) : (
+              <>
+                {/* Table Header */}
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableHeaderText, { flex: 0.5 }]}>S. No</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>Document Name</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 2 }]}>Description</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
+                </View>
+
+                {/* Table Rows */}
+                {customerDocumentNames.length > 0 ? (
+                  customerDocumentNames.map((item, idx) => (
+                    <View key={item.id} style={styles.tableRow}>
+                      <Text style={[styles.tableCell, { flex: 0.5 }]}>{idx + 1}</Text>
+                      <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.documentName}</Text>
+                      <Text style={[styles.tableCell, { flex: 2 }]}>{item.description || 'N/A'}</Text>
+                      <View style={[styles.actionCell, { flex: 1 }]}>
+                        <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
+                          <Feather name="edit" size={18} color="#5aaf57" />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id, item.documentName)}>
+                          <Ionicons name="trash" size={18} color="#d32f2f" />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateText}>No documents found</Text>
+                  </View>
+                )}
+              </>
             )}
           </View>
         </ScrollView>
@@ -302,5 +309,26 @@ const styles = StyleSheet.create({
     color: '#999',
     fontFamily: 'PlusR',
     fontSize: 14,
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
+    fontFamily: 'PlusR',
+  },
+  errorContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#d32f2f',
+    fontFamily: 'PlusR',
+    textAlign: 'center',
   },
 });
