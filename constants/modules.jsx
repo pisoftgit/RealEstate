@@ -85,83 +85,97 @@ export const defaultModules = [
         ],
       },
       {
-    name: "HRAdministrative",
-    path: "/(drawer)/Adminstrative/HR",
-    title: "HR",
-    icon: Brief,
-    children: [
-      {
-        name: "GeneralSetup",
-        path: "/(drawer)/Adminstrative/HR/GeneralSetup",
-        title: "General Setup",
+        name: "HRAdministrative",
+        path: "/(drawer)/Adminstrative/HR",
+        title: "HR",
         icon: Brief,
         children: [
           {
-            name: "Branch",
-            path: "/(drawer)/Adminstrative/HR/GeneralSetup/Branch",
-            title: "Branch",
-          },
-           {
-            name: "Department",
-            path: "/(drawer)/Adminstrative/HR/GeneralSetup/Department",
-            title: "Department",
+            name: "GeneralSetup",
+            path: "/(drawer)/Adminstrative/HR/GeneralSetup",
+            title: "General Setup",
+            icon: Brief,
+            children: [
+              {
+                name: "Branch",
+                path: "/(drawer)/Adminstrative/HR/GeneralSetup/Branch",
+                title: "Branch",
+              },
+              {
+                name: "Department",
+                path: "/(drawer)/Adminstrative/HR/GeneralSetup/Department",
+                title: "Department",
+              },
+              {
+                name: "Designation",
+                path: "/(drawer)/Adminstrative/HR/GeneralSetup/Designation",
+                title: "Designation",
+              },
+              {
+                name: "EmployeeType",
+                path: "/(drawer)/Adminstrative/HR/GeneralSetup/EmployeeType",
+                title: "Employee Type",
+              },
+              {
+                name: "Document",
+                path: "/(drawer)/Adminstrative/HR/GeneralSetup/Document",
+                title: "Document",
+              },
+            ],
           },
           {
-            name: "Designation",
-            path: "/(drawer)/Adminstrative/HR/GeneralSetup/Designation",
-            title: "Designation",
+            name: "Hierarchy",
+            path: "/(drawer)/Adminstrative/HR/Hierarchy",
+            title: "Hierarchy",
+            icon: Brief,
+            children: [
+
+              {
+                name: "Level",
+                path: "/(drawer)/Adminstrative/HR/Hierarchy/LevelConf",
+                title: "Level Configuration",
+              },
+              {
+                name: "DesignationLevel",
+                path: "/(drawer)/Adminstrative/HR/Hierarchy/Designationlevel",
+                title: "Designation Level",
+              }
+            ],
           },
           {
-            name: "EmployeeType",
-            path: "/(drawer)/Adminstrative/HR/GeneralSetup/EmployeeType",
-            title: "Employee Type",
-          },
-          {
-            name: "Document",
-            path: "/(drawer)/Adminstrative/HR/GeneralSetup/Document",
-            title: "Document",
-          },
+            name: "leaveManagement",
+            path: "/(drawer)/Adminstrative/HR/LeaveManagement",
+            title: "Leave Management",
+            icon: Brief,
+            children: [
+              {
+                name: "LeaveSetup",
+                path: "/(drawer)/Adminstrative/HR/LeaveManagement/LeaveSetup",
+                title: "Leave Setup",
+              }
+            ],
+          }
         ],
       },
       {
-        name: "Hierarchy",
-        path: "/(drawer)/Adminstrative/HR/Hierarchy",
-        title: "Hierarchy",
+        name: "CRMadministrative",
+        path: "/(drawer)/Adminstrative/CRM",
+        title: "CRM",
+
         icon: Brief,
         children: [
-      
-      {
-        name: "Level",
-        path: "/(drawer)/Adminstrative/HR/Hierarchy/LevelConf",
-        title: "Level Configuration",
+          {
+            name: "DocumentName",
+            path: "/(drawer)/Adminstrative/CRM/DocumentName",
+            title: "Document Name",
+          },
+          {
+            name: "LeadGeneration",
+            path: "/(drawer)/Adminstrative/CRM/LeadGeneration",
+            title: "Lead Generation",
+          },
+        ]
       },
-    {
-        name: "DesignationLevel",
-        path: "/(drawer)/Adminstrative/HR/Hierarchy/Designationlevel",
-        title: "Designation Level",
-    }
-  ],}
-    ],
-  },
-       {
-    name: "CRMadministrative",
-    path: "/(drawer)/Adminstrative/CRM",
-    title: "CRM",
-
-    icon: Brief,
-    children: [
-      {
-        name: "DocumentName",
-        path: "/(drawer)/Adminstrative/CRM/DocumentName",
-        title: "Document Name",
-      },
-      {
-        name: "LeadGeneration",
-        path: "/(drawer)/Adminstrative/CRM/LeadGeneration",
-        title: "Lead Generation",
-      },
-      ]
-    },
       {
         name: "Property",
         path: "/(drawer)/Administrative/Property",
@@ -224,47 +238,47 @@ export const defaultModules = [
             title: "Flat/House Structure Type",
           },
 
-        
-      
-      {
-        name: "Type",
-        path: "/(drawer)/Adminstrative/Type",
-        title: "Type",
-        icon: Brief,
-        children: [
+
+
           {
-            name: "Structure",
-            path: "/(drawer)/Adminstrative/Type/Structure",
-            title: "Flat/House Structure",
-          },
-          {
-            name: "RoomType",
-            path: "/(drawer)/Adminstrative/Type/RoomType",
-            title: "Room Type",
-          },
-          {
-            name: "ParkingType",
-            path: "/(drawer)/Adminstrative/Type/ParkingType",
-            title: "Parking Type",
-          },
-          {
-            name: "Ownershiptype",
-            path: "/(drawer)/Adminstrative/Type/Ownershiptype",
-            title: "Ownership Type",
-          },
-          {
-            name: "ShopShowroom",
-            path: "/(drawer)/Adminstrative/Type/Shopshowroom",
-            title: "Shop/Showroom Category",
-          },
-          {
-            name: "MeasurementUnit",
-            path: "/(drawer)/Adminstrative/Type/MeasurementUnit",
-            title: "Measurement Unit",
+            name: "Type",
+            path: "/(drawer)/Adminstrative/Type",
+            title: "Type",
+            icon: Brief,
+            children: [
+              {
+                name: "Structure",
+                path: "/(drawer)/Adminstrative/Type/Structure",
+                title: "Flat/House Structure",
+              },
+              {
+                name: "RoomType",
+                path: "/(drawer)/Adminstrative/Type/RoomType",
+                title: "Room Type",
+              },
+              {
+                name: "ParkingType",
+                path: "/(drawer)/Adminstrative/Type/ParkingType",
+                title: "Parking Type",
+              },
+              {
+                name: "Ownershiptype",
+                path: "/(drawer)/Adminstrative/Type/Ownershiptype",
+                title: "Ownership Type",
+              },
+              {
+                name: "ShopShowroom",
+                path: "/(drawer)/Adminstrative/Type/Shopshowroom",
+                title: "Shop/Showroom Category",
+              },
+              {
+                name: "MeasurementUnit",
+                path: "/(drawer)/Adminstrative/Type/MeasurementUnit",
+                title: "Measurement Unit",
+              }
+            ]
           }
         ]
-      }
-      ]
       },
     ]
   },
@@ -483,7 +497,7 @@ export const defaultModules = [
           },
         ],
       },
-      
+
       {
         name: "Realtor",
         path: "/(drawer)/InventoryManagement/Builder",
@@ -503,7 +517,7 @@ export const defaultModules = [
           },
         ],
       },
-     {
+      {
         name: "PropertyInventory",
         path: "/(drawer)/InventoryManagement/Property",
         title: "Property",
