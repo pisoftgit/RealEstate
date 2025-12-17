@@ -19,6 +19,9 @@ const useLeave = () => {
   const [success, setSuccess] = useState(false);
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [leaveRules, setLeaveRules] = useState([]);
+  const [earnedLeaves, setEarnedLeaves] = useState([]);
+  const [leaveStatuses, setLeaveStatuses] = useState([]);
+  const [leaveApprovalConfigs, setLeaveApprovalConfigs] = useState([]);
   const [userCategories, setUserCategories] = useState([]);
   const [designations, setDesignations] = useState([]);
   const [employeeTypes, setEmployeeTypes] = useState([]);
@@ -146,6 +149,210 @@ const useLeave = () => {
   };
 
   // ============================================
+  // Earned Leave API Helper Functions
+  // ============================================
+
+  const fetchAllEarnedLeavesAPI = async () => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/earnLeave/`, {
+      method: "GET",
+      headers: {
+        secret_key: secretKey,
+        Accept: "application/json",
+      },
+    });
+    return response;
+  };
+
+  const fetchEarnedLeaveByIdAPI = async (id) => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/earnLeave/${id}`, {
+      method: "GET",
+      headers: {
+        secret_key: secretKey,
+        Accept: "application/json",
+      },
+    });
+    return response;
+  };
+
+  const saveEarnedLeaveAPI = async (payload) => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/earnLeave/`, {
+      method: "POST",
+      headers: {
+        secret_key: secretKey,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    return response;
+  };
+
+  const updateEarnedLeaveAPI = async (id, payload) => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/earnLeave/${id}`, {
+      method: "PUT",
+      headers: {
+        secret_key: secretKey,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    return response;
+  };
+
+  const deleteEarnedLeaveAPI = async (id) => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/earnLeave/${id}`, {
+      method: "DELETE",
+      headers: {
+        secret_key: secretKey,
+        Accept: "application/json",
+      },
+    });
+    return response;
+  };
+
+  // ============================================
+  // Leave Status API Helper Functions
+  // ============================================
+
+  const fetchAllLeaveStatusesAPI = async () => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/leave-status/`, {
+      method: "GET",
+      headers: {
+        secret_key: secretKey,
+        Accept: "application/json",
+      },
+    });
+    return response;
+  };
+
+  const fetchLeaveStatusByIdAPI = async (id) => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/leave-status/${id}`, {
+      method: "GET",
+      headers: {
+        secret_key: secretKey,
+        Accept: "application/json",
+      },
+    });
+    return response;
+  };
+
+  const saveLeaveStatusAPI = async (payload) => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/leave-status/`, {
+      method: "POST",
+      headers: {
+        secret_key: secretKey,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    return response;
+  };
+
+  const updateLeaveStatusAPI = async (payload) => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/leave-status/`, {
+      method: "POST",
+      headers: {
+        secret_key: secretKey,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    return response;
+  };
+
+  const deleteLeaveStatusAPI = async (id) => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/leave-status/${id}`, {
+      method: "DELETE",
+      headers: {
+        secret_key: secretKey,
+        Accept: "application/json",
+      },
+    });
+    return response;
+  };
+
+  // ============================================
+  // Leave Approval Config API Helper Functions
+  // ============================================
+
+  const fetchAllLeaveApprovalConfigsAPI = async () => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/leave-approval-config/`, {
+      method: "GET",
+      headers: {
+        secret_key: secretKey,
+        Accept: "application/json",
+      },
+    });
+    return response;
+  };
+
+  const fetchLeaveApprovalConfigByIdAPI = async (id) => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/leave-approval-config/${id}`, {
+      method: "GET",
+      headers: {
+        secret_key: secretKey,
+        Accept: "application/json",
+      },
+    });
+    return response;
+  };
+
+  const saveLeaveApprovalConfigAPI = async (payload) => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/leave-approval-config/`, {
+      method: "POST",
+      headers: {
+        secret_key: secretKey,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    return response;
+  };
+
+  const updateLeaveApprovalConfigAPI = async (payload) => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/leave-approval-config/`, {
+      method: "POST",
+      headers: {
+        secret_key: secretKey,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    return response;
+  };
+
+  const deleteLeaveApprovalConfigAPI = async (id) => {
+    const secretKey = await SecureStore.getItemAsync("auth_token");
+    const response = await fetch(`${API_BASE_URL}/leave-approval-config/${id}`, {
+      method: "DELETE",
+      headers: {
+        secret_key: secretKey,
+        Accept: "application/json",
+      },
+    });
+    return response;
+  };
+
+  // ============================================
   // Leave Types Business Logic Functions
   // ============================================
 
@@ -229,7 +436,7 @@ const useLeave = () => {
   };
 
   /**
-   * Save a new leave type
+   * Save a new leave type or update existing one
    */
   const saveLeaveType = async (payload) => {
     setLoading(true);
@@ -239,6 +446,7 @@ const useLeave = () => {
     try {
       // Validate required fields
       if (!payload.leaveName || payload.leaveName.trim() === "") {
+        setLoading(false);
         throw new Error("Leave name is required");
       }
 
@@ -251,6 +459,12 @@ const useLeave = () => {
         maxCarryForward: payload.maxCarryForward ? parseInt(payload.maxCarryForward) : null,
       };
 
+      // If id exists, add it to payload (API uses POST for both create and update)
+      if (payload.id) {
+        requestPayload.id = payload.id;
+      }
+
+      // Use POST for both create and update
       const response = await saveLeaveTypeAPI(requestPayload);
       
       const contentType = response.headers.get("content-type");
@@ -266,6 +480,7 @@ const useLeave = () => {
           errorMessage = parseErrorMessage(errorText) || errorMessage;
         }
         
+        setLoading(false);
         throw new Error(errorMessage);
       }
 
@@ -273,7 +488,10 @@ const useLeave = () => {
       try {
         result = await response.json();
       } catch (parseError) {
-        result = { success: true, message: "Leave type saved successfully" };
+        result = { 
+          success: true, 
+          message: payload.id ? "Leave type updated successfully" : "Leave type saved successfully" 
+        };
       }
       
       setSuccess(true);
@@ -288,62 +506,11 @@ const useLeave = () => {
   };
 
   /**
-   * Update an existing leave type
+   * Update an existing leave type (uses saveLeaveType with id)
    */
   const updateLeaveType = async (id, payload) => {
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
-
-    try {
-      // Validate required fields
-      if (!payload.leaveName || payload.leaveName.trim() === "") {
-        throw new Error("Leave name is required");
-      }
-
-      const requestPayload = {
-        leaveName: payload.leaveName.trim(),
-        usersCategory: payload.usersCategoryId ? { id: parseInt(payload.usersCategoryId) } : null,
-        leavesEncashment: payload.leavesEncashment || "No",
-        gender: payload.gender || "Any",
-        leaveCarriedForward: payload.leaveCarriedForward || "No",
-        maxCarryForward: payload.maxCarryForward ? parseInt(payload.maxCarryForward) : null,
-      };
-
-      const response = await updateLeaveTypeAPI(id, requestPayload);
-      
-      const contentType = response.headers.get("content-type");
-      
-      if (!response.ok) {
-        let errorMessage = `HTTP error! status: ${response.status}`;
-        
-        if (contentType && contentType.includes("application/json")) {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || errorMessage;
-        } else {
-          const errorText = await response.text();
-          errorMessage = parseErrorMessage(errorText) || errorMessage;
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      let result;
-      try {
-        result = await response.json();
-      } catch (parseError) {
-        result = { success: true, message: "Leave type updated successfully" };
-      }
-      
-      setSuccess(true);
-      setLoading(false);
-      return result;
-    } catch (err) {
-      console.error("Error updating leave type:", err);
-      setError(err.message || 'Failed to update leave type');
-      setLoading(false);
-      throw err;
-    }
+    // Add id to payload and use saveLeaveType
+    return saveLeaveType({ ...payload, id });
   };
 
   /**
@@ -370,6 +537,7 @@ const useLeave = () => {
           errorMessage = parseErrorMessage(errorText) || errorMessage;
         }
         
+        setLoading(false);
         throw new Error(errorMessage);
       }
 
@@ -485,12 +653,15 @@ const useLeave = () => {
     try {
       // Validate required fields
       if (!payload.leaveTypeId) {
+        setLoading(false);
         throw new Error("Leave type is required");
       }
       if (!payload.designationId) {
+        setLoading(false);
         throw new Error("Designation is required");
       }
       if (!payload.employeeTypeId) {
+        setLoading(false);
         throw new Error("Employee type is required");
       }
 
@@ -503,6 +674,11 @@ const useLeave = () => {
         maxLeavesPerYear: payload.maxLeavesPerYear ? parseInt(payload.maxLeavesPerYear) : null,
         leaveTypeCode: payload.leaveTypeCode ? parseInt(payload.leaveTypeCode) : null,
       };
+
+      // If id exists, add it to payload for update
+      if (payload.id) {
+        requestPayload.id = payload.id;
+      }
 
       const response = await saveLeaveRuleAPI(requestPayload);
       
@@ -519,6 +695,7 @@ const useLeave = () => {
           errorMessage = parseErrorMessage(errorText) || errorMessage;
         }
         
+        setLoading(false);
         throw new Error(errorMessage);
       }
 
@@ -526,7 +703,10 @@ const useLeave = () => {
       try {
         result = await response.json();
       } catch (parseError) {
-        result = { success: true, message: "Leave rule saved successfully" };
+        result = { 
+          success: true, 
+          message: payload.id ? "Leave rule updated successfully" : "Leave rule saved successfully" 
+        };
       }
       
       setSuccess(true);
@@ -564,6 +744,7 @@ const useLeave = () => {
           errorMessage = parseErrorMessage(errorText) || errorMessage;
         }
         
+        setLoading(false);
         throw new Error(errorMessage);
       }
 
@@ -586,8 +767,213 @@ const useLeave = () => {
   };
 
   // ============================================
-  // Dropdown Data Functions
+  // Earned Leave Business Logic Functions
   // ============================================
+
+  /**
+   * Get all earned leaves
+   */
+  const getAllEarnedLeaves = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetchAllEarnedLeavesAPI();
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        const contentType = response.headers.get("content-type");
+        
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } else {
+          const errorText = await response.text();
+          errorMessage = parseErrorMessage(errorText) || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      setEarnedLeaves(data || []);
+      setLoading(false);
+      return data;
+    } catch (err) {
+      console.error("Error fetching earned leaves:", err);
+      setError(err.message || 'Failed to fetch earned leaves');
+      setLoading(false);
+      setEarnedLeaves([]);
+      return [];
+    }
+  };
+
+  /**
+   * Get earned leave by ID
+   */
+  const getEarnedLeaveById = async (id) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetchEarnedLeaveByIdAPI(id);
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        const contentType = response.headers.get("content-type");
+        
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } else {
+          const errorText = await response.text();
+          errorMessage = parseErrorMessage(errorText) || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      setLoading(false);
+      return data;
+    } catch (err) {
+      console.error("Error fetching earned leave:", err);
+      setError(err.message || 'Failed to fetch earned leave');
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  /**
+   * Save or update an earned leave
+   */
+  const saveEarnedLeave = async (payload) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      // Validate required fields
+      if (!payload.designationId) {
+        setLoading(false);
+        throw new Error("Job Title is required");
+      }
+      if (!payload.employeeTypeId) {
+        setLoading(false);
+        throw new Error("Employment Status is required");
+      }
+      if (!payload.eligibilityAfterDays) {
+        setLoading(false);
+        throw new Error("Eligibility After Days is required");
+      }
+      if (!payload.workingDays) {
+        setLoading(false);
+        throw new Error("Working Days is required");
+      }
+      if (!payload.numberOfLeaves) {
+        setLoading(false);
+        throw new Error("Number of Leaves is required");
+      }
+
+      const requestPayload = {
+        designationId: parseInt(payload.designationId),
+        employeeTypeId: parseInt(payload.employeeTypeId),
+        eligibilityAfterDays: payload.eligibilityAfterDays.toString(),
+        workingDays: parseFloat(payload.workingDays),
+        numberOfLeaves: parseFloat(payload.numberOfLeaves),
+      };
+
+      // If ID exists, add it to payload (API uses POST for both create and update)
+      if (payload.id) {
+        requestPayload.id = payload.id;
+      }
+
+      // Use POST for both create and update
+      const response = await saveEarnedLeaveAPI(requestPayload);
+      
+      const contentType = response.headers.get("content-type");
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } else {
+          const errorText = await response.text();
+          errorMessage = parseErrorMessage(errorText) || errorMessage;
+        }
+        
+        setLoading(false);
+        throw new Error(errorMessage);
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        result = { 
+          success: true, 
+          message: payload.id ? "Earned leave updated successfully" : "Earned leave saved successfully" 
+        };
+      }
+      
+      setSuccess(true);
+      setLoading(false);
+      return result;
+    } catch (err) {
+      console.error("Error saving earned leave:", err);
+      setError(err.message || 'Failed to save earned leave');
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  /**
+   * Delete an earned leave by ID
+   */
+  const deleteEarnedLeave = async (id) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await deleteEarnedLeaveAPI(id);
+      
+      const contentType = response.headers.get("content-type");
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } else {
+          const errorText = await response.text();
+          errorMessage = parseErrorMessage(errorText) || errorMessage;
+        }
+        
+        setLoading(false);
+        throw new Error(errorMessage);
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        result = { success: true, message: "Earned leave deleted successfully" };
+      }
+      
+      setSuccess(true);
+      setLoading(false);
+      return result;
+    } catch (err) {
+      console.error("Error deleting earned leave:", err);
+      setError(err.message || 'Failed to delete earned leave');
+      setLoading(false);
+      throw err;
+    }
+  };
 
   /**
    * Fetch user categories for the Leave For dropdown
@@ -679,6 +1065,487 @@ const useLeave = () => {
     }
   };
 
+  // ============================================
+  // Leave Status Business Logic Functions
+  // ============================================
+
+  /**
+   * Get all leave statuses
+   */
+  const getAllLeaveStatuses = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await fetchAllLeaveStatusesAPI();
+      
+      const contentType = response.headers.get("content-type");
+      const responseText = await response.text();
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch (e) {
+            errorMessage = parseErrorMessage(responseText) || errorMessage;
+          }
+        } else {
+          errorMessage = parseErrorMessage(responseText) || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse leave statuses response:', e);
+        throw new Error('Invalid JSON response from server');
+      }
+      
+      setLeaveStatuses(data || []);
+      setSuccess(true);
+      setLoading(false);
+      return data;
+    } catch (err) {
+      console.error("Error fetching leave statuses:", err.message);
+      setError(err.message || 'Failed to fetch leave statuses');
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  /**
+   * Get leave status by ID
+   */
+  const getLeaveStatusById = async (id) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await fetchLeaveStatusByIdAPI(id);
+      
+      const contentType = response.headers.get("content-type");
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } else {
+          const errorText = await response.text();
+          errorMessage = parseErrorMessage(errorText) || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      setSuccess(true);
+      setLoading(false);
+      return data;
+    } catch (err) {
+      console.error("Error fetching leave status by ID:", err);
+      setError(err.message || 'Failed to fetch leave status');
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  /**
+   * Save a new leave status
+   */
+  const saveLeaveStatus = async (payload) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await saveLeaveStatusAPI(payload);
+      
+      const contentType = response.headers.get("content-type");
+      const responseText = await response.text();
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch (e) {
+            errorMessage = parseErrorMessage(responseText) || errorMessage;
+          }
+        } else {
+          errorMessage = parseErrorMessage(responseText) || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse leave status save response:', e);
+        throw new Error('Invalid JSON response from server');
+      }
+      
+      setSuccess(true);
+      setLoading(false);
+      return data;
+    } catch (err) {
+      console.error("Error saving leave status:", err.message);
+      setError(err.message || 'Failed to save leave status');
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  /**
+   * Update an existing leave status
+   */
+  const updateLeaveStatus = async (payload) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await updateLeaveStatusAPI(payload);
+      
+      const contentType = response.headers.get("content-type");
+      const responseText = await response.text();
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch (e) {
+            errorMessage = parseErrorMessage(responseText) || errorMessage;
+          }
+        } else {
+          errorMessage = parseErrorMessage(responseText) || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse leave status update response:', e);
+        throw new Error('Invalid JSON response from server');
+      }
+      
+      setSuccess(true);
+      setLoading(false);
+      return data;
+    } catch (err) {
+      console.error("Error updating leave status:", err.message);
+      setError(err.message || 'Failed to update leave status');
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  /**
+   * Delete a leave status
+   */
+  const deleteLeaveStatus = async (id) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await deleteLeaveStatusAPI(id);
+      
+      const contentType = response.headers.get("content-type");
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } else {
+          const errorText = await response.text();
+          errorMessage = parseErrorMessage(errorText) || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      setSuccess(true);
+      setLoading(false);
+      return true;
+    } catch (err) {
+      console.error("Error deleting leave status:", err);
+      setError(err.message || 'Failed to delete leave status');
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  // ============================================
+  // Leave Approval Config Business Logic Functions
+  // ============================================
+
+  /**
+   * Get all leave approval configs
+   */
+  const getAllLeaveApprovalConfigs = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await fetchAllLeaveApprovalConfigsAPI();
+      
+      const contentType = response.headers.get("content-type");
+      const responseText = await response.text();
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch (e) {
+            errorMessage = parseErrorMessage(responseText) || errorMessage;
+          }
+        } else {
+          errorMessage = parseErrorMessage(responseText) || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse response as JSON:', e);
+        throw new Error('Invalid JSON response from server');
+      }
+      
+      setLeaveApprovalConfigs(data || []);
+      setSuccess(true);
+      setLoading(false);
+      return data;
+    } catch (err) {
+      console.error("Error fetching leave approval configs:", err);
+      setError(err.message || 'Failed to fetch leave approval configs');
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  /**
+   * Get leave approval config by ID
+   */
+  const getLeaveApprovalConfigById = async (id) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await fetchLeaveApprovalConfigByIdAPI(id);
+      
+      const contentType = response.headers.get("content-type");
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } else {
+          const errorText = await response.text();
+          errorMessage = parseErrorMessage(errorText) || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      setSuccess(true);
+      setLoading(false);
+      return data;
+    } catch (err) {
+      console.error("Error fetching leave approval config by ID:", err);
+      setError(err.message || 'Failed to fetch leave approval config');
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  /**
+   * Save a new leave approval config
+   */
+  const saveLeaveApprovalConfig = async (payload) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await saveLeaveApprovalConfigAPI(payload);
+      
+      const contentType = response.headers.get("content-type");
+      const responseText = await response.text();
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch (e) {
+            errorMessage = parseErrorMessage(responseText) || errorMessage;
+          }
+        } else {
+          errorMessage = parseErrorMessage(responseText) || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Handle both JSON and plain text responses
+      let data;
+      if (responseText === 'saved' || responseText.toLowerCase().includes('success')) {
+        // Backend returned plain text success message
+        data = { success: true, message: 'Leave approval config saved successfully' };
+      } else {
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          // If parsing fails but response is ok, consider it successful
+          data = { success: true, message: 'Leave approval config saved successfully' };
+        }
+      }
+      
+      setSuccess(true);
+      setLoading(false);
+      return data;
+    } catch (err) {
+      console.error("Error saving leave approval config:", err.message);
+      setError(err.message || 'Failed to save leave approval config');
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  /**
+   * Update an existing leave approval config
+   */
+  const updateLeaveApprovalConfig = async (payload) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      // Validate that id exists for update
+      if (!payload.id) {
+        throw new Error('ID is required for updating leave approval config');
+      }
+      
+      const response = await updateLeaveApprovalConfigAPI(payload);
+      
+      const contentType = response.headers.get("content-type");
+      const responseText = await response.text();
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch (e) {
+            errorMessage = parseErrorMessage(responseText) || errorMessage;
+          }
+        } else {
+          errorMessage = parseErrorMessage(responseText) || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Handle both JSON and plain text responses
+      let data;
+      if (responseText === 'saved' || responseText.toLowerCase().includes('success') || responseText.toLowerCase().includes('updated')) {
+        // Backend returned plain text success message
+        data = { success: true, message: 'Leave approval config updated successfully' };
+      } else {
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          // If parsing fails but response is ok, consider it successful
+          data = { success: true, message: 'Leave approval config updated successfully' };
+        }
+      }
+      
+      setSuccess(true);
+      setLoading(false);
+      return data;
+    } catch (err) {
+      console.error("Error updating leave approval config:", err.message);
+      setError(err.message || 'Failed to update leave approval config');
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  /**
+   * Delete a leave approval config
+   */
+  const deleteLeaveApprovalConfig = async (id) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await deleteLeaveApprovalConfigAPI(id);
+      
+      const contentType = response.headers.get("content-type");
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } else {
+          const errorText = await response.text();
+          errorMessage = parseErrorMessage(errorText) || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      setSuccess(true);
+      setLoading(false);
+      return true;
+    } catch (err) {
+      console.error("Error deleting leave approval config:", err);
+      setError(err.message || 'Failed to delete leave approval config');
+      setLoading(false);
+      throw err;
+    }
+  };
+
   return {
     // Leave Types operations
     getAllLeaveTypes,
@@ -693,6 +1560,26 @@ const useLeave = () => {
     saveLeaveRule,
     deleteLeaveRule,
     
+    // Earned Leave operations
+    getAllEarnedLeaves,
+    getEarnedLeaveById,
+    saveEarnedLeave,
+    deleteEarnedLeave,
+    
+    // Leave Status operations
+    getAllLeaveStatuses,
+    getLeaveStatusById,
+    saveLeaveStatus,
+    updateLeaveStatus,
+    deleteLeaveStatus,
+    
+    // Leave Approval Config operations
+    getAllLeaveApprovalConfigs,
+    getLeaveApprovalConfigById,
+    saveLeaveApprovalConfig,
+    updateLeaveApprovalConfig,
+    deleteLeaveApprovalConfig,
+    
     // Dropdown data functions
     fetchUserCategories,
     fetchDesignations,
@@ -701,6 +1588,9 @@ const useLeave = () => {
     // State
     leaveTypes,
     leaveRules,
+    earnedLeaves,
+    leaveStatuses,
+    leaveApprovalConfigs,
     userCategories,
     designations,
     employeeTypes,

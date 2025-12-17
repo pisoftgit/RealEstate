@@ -37,6 +37,14 @@ export default function Branch() {
 
   // Fetch branches on component mount
   useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        await getAllBranches();
+      } catch (err) {
+        console.error('Error fetching branches:', err);
+      }
+    };
+
     fetchBranches();
   }, []);
 
@@ -46,14 +54,6 @@ export default function Branch() {
       setBranches(apiBranches);
     }
   }, [apiBranches]);
-
-  const fetchBranches = async () => {
-    try {
-      await getAllBranches();
-    } catch (err) {
-      console.error('Error fetching branches:', err);
-    }
-  };
 
   // Dropdown data
   const organizations = ['ABC Corp', 'XYZ Ltd', 'PQR Industries'];
@@ -123,7 +123,7 @@ export default function Branch() {
         await updateBranch(editing.id, branchData);
         
         // Refresh the branches list from API
-        await fetchBranches();
+        await getAllBranches();
         
         Alert.alert('Success', 'Branch updated successfully!');
         setEditing(null);
@@ -153,7 +153,7 @@ export default function Branch() {
         const result = await createBranch(branchData);
         
         // Refresh the branches list from API
-        await fetchBranches();
+        await getAllBranches();
         
         Alert.alert('Success', 'Branch created successfully!');
       }

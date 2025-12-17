@@ -13,6 +13,14 @@ export default function Department() {
 
   // Fetch departments on component mount
   useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        await getAllDepartments();
+      } catch (error) {
+        console.error('Error fetching departments:', error);
+      }
+    };
+    
     fetchDepartments();
   }, []);
 
@@ -20,7 +28,7 @@ export default function Department() {
     try {
       await getAllDepartments();
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to fetch departments');
+      console.error('Error fetching departments:', error);
     }
   };
 

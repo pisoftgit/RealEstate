@@ -22,6 +22,14 @@ export default function EmployeeType() {
 
   // Fetch employee types on component mount
   useEffect(() => {
+    const fetchEmployeeTypes = async () => {
+      try {
+        await getAllEmployeeTypes();
+      } catch (error) {
+        console.error('Error fetching employee types:', error);
+      }
+    };
+    
     fetchEmployeeTypes();
   }, []);
 
@@ -29,7 +37,7 @@ export default function EmployeeType() {
     try {
       await getAllEmployeeTypes();
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to fetch employee types');
+      console.error('Error fetching employee types:', error);
     }
   };
 

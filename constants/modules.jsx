@@ -152,6 +152,40 @@ export const defaultModules = [
                 name: "LeaveSetup",
                 path: "/(drawer)/Adminstrative/HR/LeaveManagement/LeaveSetup",
                 title: "Leave Setup",
+              },
+              {
+                name: "EarnedLeaves",
+                path: "/(drawer)/Adminstrative/HR/LeaveManagement/EarnedLeaves",
+                title: "Earned Leaves",
+              },
+              {
+                name: "LeaveStatus",
+                path: "/(drawer)/Adminstrative/HR/LeaveManagement/LeaveStatus",
+                title: "Leave Status",
+              },
+              {
+                name: "Levelapproval",
+                path: "/(drawer)/Adminstrative/HR/LeaveManagement/LevelapprovalConfig",
+                
+                title: "Level Approval Config",
+              }
+            ],
+          },
+          {
+            name: "HolidayManagement",
+            path: "/(drawer)/Adminstrative/HR/HolidayManagement",
+            title: "Holiday Management",
+            icon: Brief,
+            children: [
+              {
+                name: "HolidayType",
+                path: "/(drawer)/Adminstrative/HR/HolidayManagement/HolidayType",
+                title: "Holiday Type",
+              },
+              {
+                name: "HolidaySetup",
+                path: "/(drawer)/Adminstrative/HR/HolidayManagement/HolidaySetup",
+                title: "Holiday Setup",
               }
             ],
           }

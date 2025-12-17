@@ -14,6 +14,14 @@ export default function LevelConf() {
 
   // Fetch levels on component mount
   useEffect(() => {
+    const fetchLevels = async () => {
+      try {
+        await getAllLevels();
+      } catch (error) {
+        console.error('Error fetching levels:', error);
+      }
+    };
+    
     fetchLevels();
   }, []);
 
@@ -21,7 +29,7 @@ export default function LevelConf() {
     try {
       await getAllLevels();
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to fetch levels');
+      console.error('Error fetching levels:', error);
     }
   };
 

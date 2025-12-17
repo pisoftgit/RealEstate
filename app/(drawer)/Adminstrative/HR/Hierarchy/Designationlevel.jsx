@@ -32,6 +32,19 @@ export default function Designationlevel() {
 
   // Fetch data on component mount
   useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        await Promise.all([
+          getAllDesignationLevels(),
+          getAllLevels(),
+          getAllDesignations(),
+          getAllDepartments()
+        ]);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+    
     fetchAllData();
   }, []);
 
@@ -51,7 +64,7 @@ export default function Designationlevel() {
         getAllDepartments()
       ]);
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to fetch data');
+      console.error('Error fetching data:', error);
     }
   };
 

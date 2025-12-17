@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import { Picker } from '@react-native-picker/picker';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import { useLeave } from '../../../../../hooks/useLeave';
+import useHr from '../../../../../hooks/useHr';
+import useGeneral from '../../../../../hooks/useGeneral';
 
 const LeaveSetup = () => {
   const navigation = useNavigation();
@@ -45,36 +47,80 @@ const LeaveSetup = () => {
   const {
     leaveTypes,
     leaveRules,
-    userCategories,
-    designations,
-    employeeTypes,
-    loading,
-    error,
+    loading: leaveLoading,
+    error: leaveError,
     getAllLeaveTypes,
     getAllLeaveRules,
-    fetchUserCategories,
-    fetchDesignations,
-    fetchEmployeeTypes,
     saveLeaveType,
-    updateLeaveType,
     deleteLeaveType,
     saveLeaveRule,
     deleteLeaveRule,
   } = useLeave();
 
+  const {
+    designations,
+    employeeTypes,
+    loading: hrLoading,
+    getAllDesignations,
+    getAllEmployeeTypes,
+  } = useHr();
+
+  const {
+    usersCategories,
+    loading: generalLoading,
+    getAllUsersCategories,
+  } = useGeneral();
+
+  const loading = leaveLoading || hrLoading || generalLoading;
+  const error = leaveError;
+
+  // Memoized safe data arrays
+  const safeLeaveTypes = useMemo(() => {
+    return Array.isArray(leaveTypes) ? leaveTypes.filter(lt => lt && lt.id) : [];
+  }, [leaveTypes]);
+
+  const safeLeaveRules = useMemo(() => {
+    return Array.isArray(leaveRules) ? leaveRules.filter(lr => lr && lr.id) : [];
+  }, [leaveRules]);
+
+  const safeDesignations = useMemo(() => {
+    return Array.isArray(designations) ? designations.filter(d => d && d.id) : [];
+  }, [designations]);
+
+  const safeEmployeeTypes = useMemo(() => {
+    return Array.isArray(employeeTypes) ? employeeTypes.filter(et => et && et.id) : [];
+  }, [employeeTypes]);
+
+  const safeUsersCategories = useMemo(() => {
+    return Array.isArray(usersCategories) ? usersCategories.filter(uc => uc && uc.id) : [];
+  }, [usersCategories]);
+
   useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        console.log('LeaveSetup: Loading initial data...');
+        const results = await Promise.all([
+          getAllLeaveTypes(),
+          getAllLeaveRules(),
+          getAllUsersCategories(),
+          getAllDesignations(),
+          getAllEmployeeTypes(),
+        ]);
+        console.log('LeaveSetup: Data loaded successfully', {
+          leaveTypesCount: results[0]?.length || 0,
+          leaveRulesCount: results[1]?.length || 0,
+          usersCategoriesCount: results[2]?.length || 0,
+          designationsCount: results[3]?.length || 0,
+          employeeTypesCount: results[4]?.length || 0,
+        });
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+        Alert.alert('Error', 'Failed to load initial data. Please try again.');
+      }
+    };
+
     loadInitialData();
   }, []);
-
-  const loadInitialData = async () => {
-    await Promise.all([
-      getAllLeaveTypes(),
-      getAllLeaveRules(),
-      fetchUserCategories(),
-      fetchDesignations(),
-      fetchEmployeeTypes(),
-    ]);
-  };
 
   // Leave Type Functions
   const handleLeaveTypeSubmit = async () => {
@@ -110,12 +156,11 @@ const LeaveSetup = () => {
       };
 
       if (editingLeaveType) {
-        await updateLeaveType(editingLeaveType.id, payload);
-        Alert.alert('Success', 'Leave Type updated successfully');
-      } else {
-        await saveLeaveType(payload);
-        Alert.alert('Success', 'Leave Type created successfully');
+        payload.id = editingLeaveType.id;
       }
+
+      await saveLeaveType(payload);
+      Alert.alert('Success', editingLeaveType ? 'Leave Type updated successfully' : 'Leave Type created successfully');
 
       resetLeaveTypeForm();
       await getAllLeaveTypes();
@@ -180,15 +225,19 @@ const LeaveSetup = () => {
         return;
       }
       if (!leaveRulesForm.designationId) {
-        Alert.alert('Validation Error', 'Designation is required');
+        Alert.alert('Validation Error', 'Job Title is required');
         return;
       }
       if (!leaveRulesForm.employeeTypeId) {
-        Alert.alert('Validation Error', 'Employment Type is required');
+        Alert.alert('Validation Error', 'Employment Status is required');
         return;
       }
       if (!leaveRulesForm.maxLimitPerMonth) {
         Alert.alert('Validation Error', 'Max. Limit Per Month is required');
+        return;
+      }
+      if (leaveRulesForm.maxLimitPerMonth === 'Yes' && !leaveRulesForm.maxLeavesPerMonth?.trim()) {
+        Alert.alert('Validation Error', 'Max Leaves Per Month is required when Max Limit Per Month is Yes');
         return;
       }
 
@@ -197,7 +246,7 @@ const LeaveSetup = () => {
         designationId: leaveRulesForm.designationId,
         employeeTypeId: leaveRulesForm.employeeTypeId,
         maxLimitPerMonth: leaveRulesForm.maxLimitPerMonth,
-        maxLeavesPerMonth: leaveRulesForm.maxLeavesPerMonth || null,
+        maxLeavesPerMonth: leaveRulesForm.maxLimitPerMonth === 'Yes' ? leaveRulesForm.maxLeavesPerMonth : null,
         maxLeavesPerYear: leaveRulesForm.maxLeavesPerYear || null,
         leaveTypeCode: leaveRulesForm.leaveTypeCode || null,
       };
@@ -220,17 +269,28 @@ const LeaveSetup = () => {
   };
 
   const handleEditLeaveRule = (rule) => {
-    setEditingLeaveRule(rule);
-    setLeaveRulesForm({
-      leaveTypeId: rule.leaveTypeId?.toString() || '',
-      designationId: rule.designationId?.toString() || '',
-      employeeTypeId: rule.employeeTypeId?.toString() || '',
-      maxLimitPerMonth: rule.maxLimitPerMonth || '',
-      maxLeavesPerMonth: rule.maxLeavesPerMonth?.toString() || '',
-      maxLeavesPerYear: rule.maxLeavesPerYear?.toString() || '',
-      leaveTypeCode: rule.leaveTypeCode?.toString() || '',
-    });
-    setActiveTab('leaveRules');
+    try {
+      if (!rule || !rule.id) {
+        console.error('Invalid rule data:', rule);
+        Alert.alert('Error', 'Invalid leave rule data');
+        return;
+      }
+      
+      setEditingLeaveRule(rule);
+      setLeaveRulesForm({
+        leaveTypeId: rule.leaveTypeId?.toString() || '',
+        designationId: rule.designationId?.toString() || '',
+        employeeTypeId: rule.employeeTypeId?.toString() || '',
+        maxLimitPerMonth: rule.maxLimitPerMonth || '',
+        maxLeavesPerMonth: rule.maxLeavesPerMonth?.toString() || '',
+        maxLeavesPerYear: rule.maxLeavesPerYear?.toString() || '',
+        leaveTypeCode: rule.leaveTypeCode?.toString() || '',
+      });
+      setActiveTab('leaveRules');
+    } catch (error) {
+      console.error('Error in handleEditLeaveRule:', error);
+      Alert.alert('Error', 'Failed to edit leave rule');
+    }
   };
 
   const handleDeleteLeaveRule = (id) => {
@@ -269,17 +329,45 @@ const LeaveSetup = () => {
     setEditingLeaveRule(null);
   };
 
-  const getLeaveTypeName = (id) => {
-    const leaveType = leaveTypes?.find((lt) => lt.id === id);
-    return leaveType?.leaveName || 'N/A';
-  };
+  const getLeaveTypeName = useCallback((id) => {
+    try {
+      if (!id) return 'N/A';
+      const leaveType = safeLeaveTypes.find((lt) => lt.id === id);
+      return leaveType?.leaveName || 'N/A';
+    } catch (error) {
+      console.error('Error in getLeaveTypeName:', error);
+      return 'N/A';
+    }
+  }, [safeLeaveTypes]);
 
-  if (loading && !leaveTypes && !leaveRules) {
+  const getDesignationName = useCallback((id) => {
+    try {
+      if (!id) return 'N/A';
+      const designation = safeDesignations.find((d) => d.id === id);
+      return designation?.name || 'N/A';
+    } catch (error) {
+      console.error('Error in getDesignationName:', error);
+      return 'N/A';
+    }
+  }, [safeDesignations]);
+
+  const getEmployeeTypeName = useCallback((id) => {
+    try {
+      if (!id) return 'N/A';
+      const employeeType = safeEmployeeTypes.find((et) => et.id === id);
+      return employeeType?.employeeType || 'N/A';
+    } catch (error) {
+      console.error('Error in getEmployeeTypeName:', error);
+      return 'N/A';
+    }
+  }, [safeEmployeeTypes]);
+
+  if (loading && (safeLeaveTypes.length === 0 || safeLeaveRules.length === 0 || safeDesignations.length === 0 || safeEmployeeTypes.length === 0 || safeUsersCategories.length === 0)) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#5aaf57" />
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text style={styles.loadingText}>Loading Data...</Text>
         </View>
       </SafeAreaView>
     );
@@ -363,11 +451,11 @@ const LeaveSetup = () => {
                       style={styles.picker}
                     >
                       <Picker.Item label="---Select User Type---" value="" />
-                      {userCategories?.map((category) => (
+                      {safeUsersCategories.map((category) => (
                         <Picker.Item
-                          key={category.id}
-                          label={category.categoryName || 'Unknown'}
-                          value={category.id?.toString()}
+                          key={`user-category-${category.id}`}
+                          label={category.usersCategory || category.categoryName || 'Unknown'}
+                          value={category.id.toString()}
                         />
                       ))}
                     </Picker>
@@ -498,9 +586,9 @@ const LeaveSetup = () => {
                     </View>
 
                     {/* Table Body */}
-                    {leaveTypes && leaveTypes.length > 0 ? (
-                      leaveTypes.map((leaveType) => (
-                        <View key={leaveType.id} style={styles.tableRow}>
+                    {safeLeaveTypes.length > 0 ? (
+                      safeLeaveTypes.map((leaveType) => (
+                        <View key={`leave-type-row-${leaveType.id}`} style={styles.tableRow}>
                           <Text style={[styles.tableCell, { width: 150 }]}>
                             {leaveType.leaveName || 'N/A'}
                           </Text>
@@ -568,11 +656,11 @@ const LeaveSetup = () => {
                       style={styles.picker}
                     >
                       <Picker.Item label="---Select Leave Type---" value="" />
-                      {leaveTypes?.map((leaveType) => (
+                      {safeLeaveTypes.map((leaveType) => (
                         <Picker.Item
-                          key={leaveType.id}
+                          key={`leave-type-picker-${leaveType.id}`}
                           label={leaveType.leaveName || 'Unknown'}
-                          value={leaveType.id?.toString()}
+                          value={leaveType.id.toString()}
                         />
                       ))}
                     </Picker>
@@ -593,22 +681,22 @@ const LeaveSetup = () => {
                       enabled={!loading}
                       style={styles.picker}
                     >
-                      <Picker.Item label="---Select Designation---" value="" />
-                      {designations?.map((designation) => (
+                      <Picker.Item label="---Select Job Title---" value="" />
+                      {safeDesignations.map((designation) => (
                         <Picker.Item
-                          key={designation.id}
-                          label={designation.designation || 'Unknown'}
-                          value={designation.id?.toString()}
+                          key={`designation-picker-${designation.id}`}
+                          label={designation.name || 'Unknown'}
+                          value={designation.id.toString()}
                         />
                       ))}
                     </Picker>
                   </View>
                 </View>
 
-                {/* Employment Type */}
+                {/* Employment Status */}
                 <View style={styles.formGroup}>
                   <Text style={styles.label}>
-                    Employment Type<Text style={styles.required}>*</Text>
+                    Employment Status<Text style={styles.required}>*</Text>
                   </Text>
                   <View style={styles.pickerContainer}>
                     <Picker
@@ -619,12 +707,12 @@ const LeaveSetup = () => {
                       enabled={!loading}
                       style={styles.picker}
                     >
-                      <Picker.Item label="---Select Employee Type---" value="" />
-                      {employeeTypes?.map((employeeType) => (
+                      <Picker.Item label="---Select Employment Status---" value="" />
+                      {safeEmployeeTypes.map((employeeType) => (
                         <Picker.Item
-                          key={employeeType.id}
+                          key={`employee-type-picker-${employeeType.id}`}
                           label={employeeType.employeeType || 'Unknown'}
-                          value={employeeType.id?.toString()}
+                          value={employeeType.id.toString()}
                         />
                       ))}
                     </Picker>
@@ -652,20 +740,24 @@ const LeaveSetup = () => {
                   </View>
                 </View>
 
-                {/* Max Leaves Per Month */}
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>Max Leaves Per Month</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={leaveRulesForm.maxLeavesPerMonth}
-                    onChangeText={(text) =>
-                      setLeaveRulesForm({ ...leaveRulesForm, maxLeavesPerMonth: text })
-                    }
-                    placeholder="Enter Max Leaves Per Month"
-                    keyboardType="numeric"
-                    editable={!loading}
-                  />
-                </View>
+                {/* Max Leaves Per Month - Only show if Yes selected */}
+                {leaveRulesForm.maxLimitPerMonth === 'Yes' && (
+                  <View style={styles.formGroup}>
+                    <Text style={styles.label}>
+                      Max Leaves Per Month<Text style={styles.required}>*</Text>
+                    </Text>
+                    <TextInput
+                      style={styles.input}
+                      value={leaveRulesForm.maxLeavesPerMonth}
+                      onChangeText={(text) =>
+                        setLeaveRulesForm({ ...leaveRulesForm, maxLeavesPerMonth: text })
+                      }
+                      placeholder="Enter Max Leaves Per Month"
+                      keyboardType="numeric"
+                      editable={!loading}
+                    />
+                  </View>
+                )}
 
                 {/* Max Leaves Per Year */}
                 <View style={styles.formGroup}>
@@ -724,73 +816,80 @@ const LeaveSetup = () => {
 
               {/* Existing Leave Rules Card */}
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>Existing Leave Rule(s)</Text>
-                <ScrollView horizontal>
-                  <View>
-                    {/* Table Header */}
-                    <View style={styles.tableHeader}>
-                      <Text style={[styles.tableHeaderText, { width: 120 }]}>Leave Type</Text>
-                      <Text style={[styles.tableHeaderText, { width: 150 }]}>Designation</Text>
-                      <Text style={[styles.tableHeaderText, { width: 150 }]}>Employment Status</Text>
-                      <Text style={[styles.tableHeaderText, { width: 120 }]}>Max Per Period</Text>
-                      <Text style={[styles.tableHeaderText, { width: 120 }]}>Max Per Month</Text>
-                      <Text style={[styles.tableHeaderText, { width: 120 }]}>Max Per Year</Text>
-                      <Text style={[styles.tableHeaderText, { width: 120 }]}>Type Code</Text>
-                      <Text style={[styles.tableHeaderText, { width: 100 }]}>Manage</Text>
-                    </View>
+                <Text style={styles.cardTitle}>Previously Added Leave Rule(s)</Text>
+                {safeDesignations.length === 0 || safeEmployeeTypes.length === 0 || safeLeaveTypes.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <ActivityIndicator size="small" color="#5aaf57" />
+                    <Text style={styles.emptyStateText}>Loading reference data...</Text>
+                  </View>
+                ) : (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View>
+                      {/* Table Header */}
+                      <View style={styles.tableHeader}>
+                        <Text style={[styles.tableHeaderText, { width: 140 }]}>Leave Type</Text>
+                        <Text style={[styles.tableHeaderText, { width: 150 }]}>Job Title</Text>
+                        <Text style={[styles.tableHeaderText, { width: 150 }]}>Employment Status</Text>
+                        <Text style={[styles.tableHeaderText, { width: 140 }]}>Max Per Period</Text>
+                        <Text style={[styles.tableHeaderText, { width: 120 }]}>Max Per Month</Text>
+                        <Text style={[styles.tableHeaderText, { width: 120 }]}>Max Per Year</Text>
+                        <Text style={[styles.tableHeaderText, { width: 100 }]}>Type Code</Text>
+                        <Text style={[styles.tableHeaderText, { width: 100 }]}>Manage</Text>
+                      </View>
 
-                    {/* Table Body */}
-                    {leaveRules && leaveRules.length > 0 ? (
-                      leaveRules.map((rule) => (
-                        <View key={rule.id} style={styles.tableRow}>
-                          <Text style={[styles.tableCell, { width: 120 }]}>
-                            {getLeaveTypeName(rule.leaveTypeId)}
-                          </Text>
-                          <Text style={[styles.tableCell, { width: 150 }]}>
-                            {rule.designation || 'N/A'}
-                          </Text>
-                          <Text style={[styles.tableCell, { width: 150 }]}>
-                            {rule.employeeType || 'N/A'}
-                          </Text>
-                          <Text style={[styles.tableCell, { width: 120 }]}>
-                            {rule.maxLimitPerMonth || 'N/A'}
-                          </Text>
-                          <Text style={[styles.tableCell, { width: 120 }]}>
-                            {rule.maxLeavesPerMonth || '-'}
-                          </Text>
-                          <Text style={[styles.tableCell, { width: 120 }]}>
-                            {rule.maxLeavesPerYear || '-'}
-                          </Text>
-                          <Text style={[styles.tableCell, { width: 120 }]}>
-                            {rule.leaveTypeCode || '-'}
-                          </Text>
-                          <View style={[styles.actionCell, { width: 100 }]}>
-                            <View style={styles.actionButtons}>
-                              <TouchableOpacity
-                                style={styles.iconBtn}
-                                onPress={() => handleEditLeaveRule(rule)}
-                                disabled={loading}
-                              >
-                                <Feather name="edit" size={18} color="#5aaf57" />
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={styles.iconBtn}
-                                onPress={() => handleDeleteLeaveRule(rule.id)}
-                                disabled={loading}
-                              >
-                                <Ionicons name="trash" size={18} color="#d32f2f" />
-                              </TouchableOpacity>
+                      {/* Table Body */}
+                      {safeLeaveRules.length > 0 ? (
+                        safeLeaveRules.map((rule, index) => (
+                          <View key={`rule-row-${rule.id}-${index}`} style={styles.tableRow}>
+                            <Text style={[styles.tableCell, { width: 140 }]}>
+                              {getLeaveTypeName(rule.leaveTypeId)}
+                            </Text>
+                            <Text style={[styles.tableCell, { width: 150 }]}>
+                              {getDesignationName(rule.designationId)}
+                            </Text>
+                            <Text style={[styles.tableCell, { width: 150 }]}>
+                              {getEmployeeTypeName(rule.employeeTypeId)}
+                            </Text>
+                            <Text style={[styles.tableCell, { width: 140 }]}>
+                              {rule.maxLimitPerMonth || 'N/A'}
+                            </Text>
+                            <Text style={[styles.tableCell, { width: 120 }]}>
+                              {rule.maxLeavesPerMonth || '-'}
+                            </Text>
+                            <Text style={[styles.tableCell, { width: 120 }]}>
+                              {rule.maxLeavesPerYear || '-'}
+                            </Text>
+                            <Text style={[styles.tableCell, { width: 100 }]}>
+                              {rule.leaveTypeCode || '-'}
+                            </Text>
+                            <View style={[styles.actionCell, { width: 100 }]}>
+                              <View style={styles.actionButtons}>
+                                <TouchableOpacity
+                                  style={styles.iconBtn}
+                                  onPress={() => handleEditLeaveRule(rule)}
+                                  disabled={loading}
+                                >
+                                  <Feather name="edit" size={18} color="#5aaf57" />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={styles.iconBtn}
+                                  onPress={() => handleDeleteLeaveRule(rule.id)}
+                                  disabled={loading}
+                                >
+                                  <Ionicons name="trash" size={18} color="#d32f2f" />
+                                </TouchableOpacity>
+                              </View>
                             </View>
                           </View>
+                        ))
+                      ) : (
+                        <View style={styles.emptyState}>
+                          <Text style={styles.emptyStateText}>No Records Found !</Text>
                         </View>
-                      ))
-                    ) : (
-                      <View style={styles.emptyState}>
-                        <Text style={styles.emptyStateText}>No Leave Rules added yet</Text>
-                      </View>
-                    )}
-                  </View>
-                </ScrollView>
+                      )}
+                    </View>
+                  </ScrollView>
+                )}
               </View>
             </>
           )}

@@ -24,6 +24,15 @@ export default function Designation() {
 
   // Fetch departments and designations on component mount
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        await getAllDepartments();
+        await getAllDesignations();
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+    
     fetchData();
   }, []);
 
@@ -32,7 +41,7 @@ export default function Designation() {
       await getAllDepartments();
       await getAllDesignations();
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to fetch data');
+      console.error('Error fetching data:', error);
     }
   };
 

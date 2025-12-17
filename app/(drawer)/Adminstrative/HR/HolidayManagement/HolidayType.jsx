@@ -2,92 +2,79 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
-import useHr from '../../../../../hooks/useHr';
+import useHoliday from '../../../../../hooks/useHoliday';
 
-export default function Document() {
+export default function HolidayType() {
   const navigation = useNavigation();
-  const { 
-    getAllDocuments, 
-    getDocumentById, 
-    addDocument, 
-    updateDocument, 
-    deleteDocument, 
-    documents, 
-    loading 
-  } = useHr();
+  const { getAllHolidayTypes, saveHolidayType, updateHolidayType, deleteHolidayType, holidayTypes, loading } = useHoliday();
 
-  const [documentName, setDocumentName] = useState('');
-  const [description, setDescription] = useState('');
+  const [holidayName, setHolidayName] = useState('');
   const [editing, setEditing] = useState(null);
 
-  // Fetch documents on component mount
+  // Fetch holiday types on component mount
   useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        await getAllDocuments();
-      } catch (error) {
-        console.error('Error fetching documents:', error);
-      }
-    };
-    
-    fetchDocuments();
+    fetchHolidayTypes();
   }, []);
 
-  const fetchDocuments = async () => {
+  const fetchHolidayTypes = async () => {
     try {
-      await getAllDocuments();
+      await getAllHolidayTypes();
     } catch (error) {
-      console.error('Error fetching documents:', error);
+      console.error('Error fetching holiday types:', error);
     }
   };
 
   const handleSubmit = async () => {
-    if (!documentName.trim()) {
-      Alert.alert('Validation Error', 'Please enter document name!');
+    if (!holidayName.trim()) {
+      Alert.alert('Validation Error', 'Please enter holiday type!');
       return;
     }
 
     try {
       if (editing) {
-        // Update existing document
-        await updateDocument(editing.id, documentName, description);
-        Alert.alert('Success', 'Document updated successfully!');
+        // Update existing holiday type
+        const payload = {
+          id: editing.id,
+          holidayName: holidayName
+        };
+        await updateHolidayType(payload);
+        Alert.alert('Success', 'Holiday type updated successfully!');
         setEditing(null);
       } else {
-        // Add new document
-        await addDocument(documentName, description);
-        Alert.alert('Success', 'Document added successfully!');
+        // Add new holiday type
+        const payload = {
+          holidayName: holidayName
+        };
+        await saveHolidayType(payload);
+        Alert.alert('Success', 'Holiday type added successfully!');
       }
 
       // Reset form and refresh list
-      setDocumentName('');
-      setDescription('');
-      await fetchDocuments();
+      setHolidayName('');
+      await fetchHolidayTypes();
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to save document');
+      Alert.alert('Error', error.message || 'Failed to save holiday type');
     }
   };
 
   const handleEdit = (item) => {
-    // Use data from the list instead of fetching by ID to avoid Hibernate proxy issues
-    setDocumentName(item.documentName);
-    setDescription(item.description || '');
+    setHolidayName(item.holidayName);
     setEditing(item);
   };
 
   const handleDelete = (id) => {
-    Alert.alert('Delete Document', 'Are you sure you want to delete this document?', [
+    Alert.alert('Delete Holiday Type', 'Are you sure you want to delete this holiday type?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
           try {
-            await deleteDocument(id);
-            Alert.alert('Success', 'Document deleted successfully!');
-            await fetchDocuments();
+            await deleteHolidayType(id);
+            Alert.alert('Success', 'Holiday type deleted successfully!');
+            await fetchHolidayTypes();
           } catch (error) {
-            Alert.alert('Error', error.message || 'Failed to delete document');
+            Alert.alert('Error', error.message || 'Failed to delete holiday type');
           }
         },
       },
@@ -96,8 +83,7 @@ export default function Document() {
 
   const handleCancel = () => {
     setEditing(null);
-    setDocumentName('');
-    setDescription('');
+    setHolidayName('');
   };
 
   return (
@@ -107,41 +93,26 @@ export default function Document() {
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
             <Ionicons name="menu" size={28} color="BLACK" />
           </TouchableOpacity>
-          <Text style={styles.title}>Document</Text>
+          <Text style={styles.title}>Holiday Type</Text>
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Configure Document Card */}
+          {/* Configure Holiday Type Card */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>
-              {editing ? 'Edit Document' : 'Configure Document'}
+              {editing ? 'Edit Holiday Type' : 'Configure Holiday Type'}
             </Text>
 
-            {/* Document Name */}
+            {/* Holiday Name */}
             <View style={styles.formRow}>
               <Text style={styles.label}>
-                Document Name <Text style={styles.required}>*</Text>
+                Holiday Type <Text style={styles.required}>*</Text>
               </Text>
               <TextInput
                 style={styles.input}
-                value={documentName}
-                onChangeText={setDocumentName}
-                placeholder="Enter document name"
-              />
-            </View>
-
-            {/* Description */}
-            <View style={styles.formRow}>
-              <Text style={styles.label}>
-                Description
-              </Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Enter description (optional)"
-                multiline
-                numberOfLines={3}
+                value={holidayName}
+                onChangeText={setHolidayName}
+                placeholder="Enter holiday type"
               />
             </View>
 
@@ -166,45 +137,45 @@ export default function Document() {
             )}
           </View>
 
-          {/* Existing Documents Card */}
+          {/* Existing Holiday Types Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Existing Documents</Text>
+            <Text style={styles.cardTitle}>Existing Holiday Types</Text>
             
             {/* Table Header */}
             <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, { flex: 0.5 }]}>S. No</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>Document Name</Text>
-              <Text style={[styles.tableHeaderText, { flex: 2 }]}>Description</Text>
+              <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
+              <Text style={[styles.tableHeaderText, { flex: 2 }]}>Holiday Type</Text>
               <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
             </View>
 
             {/* Table Rows */}
-            {loading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#5aaf57" />
-                <Text style={styles.loadingText}>Loading documents...</Text>
-              </View>
-            ) : documents.length > 0 ? (
-              documents.map((item, idx) => (
-                <View key={item.id} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, { flex: 0.5 }]}>{idx + 1}</Text>
-                  <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.documentName}</Text>
-                  <Text style={[styles.tableCell, { flex: 2 }]}>{item.description || '-'}</Text>
-                  <View style={[styles.actionCell, { flex: 1 }]}>
-                    <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                      <Feather name="edit" size={18} color="#5aaf57" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                      <Ionicons name="trash" size={18} color="#d32f2f" />
-                    </TouchableOpacity>
-                  </View>
+            <ScrollView style={styles.tableBody}>
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#5aaf57" />
+                  <Text style={styles.loadingText}>Loading holiday types...</Text>
                 </View>
-              ))
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No documents found</Text>
-              </View>
-            )}
+              ) : holidayTypes && holidayTypes.length > 0 ? (
+                holidayTypes.map((item, index) => (
+                  <View key={item.id} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { flex: 0.7 }]}>{index + 1}</Text>
+                    <Text style={[styles.tableCell, { flex: 2 }]}>{item.holidayName}</Text>
+                    <View style={[styles.actionCell, { flex: 1 }]}>
+                      <TouchableOpacity onPress={() => handleEdit(item)} style={styles.actionButton}>
+                        <Feather name="edit" size={18} color="#5aaf57" />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.actionButton}>
+                        <Ionicons name="trash" size={18} color="#d32f2f" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No holiday types found</Text>
+                </View>
+              )}
+            </ScrollView>
           </View>
         </ScrollView>
       </View>
@@ -239,31 +210,24 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   formRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 12,
   },
   label: {
-    width: 120,
     color: '#333',
     fontFamily: 'PlusR',
+    marginBottom: 8,
   },
   required: {
     color: '#e74c3c',
   },
   input: {
-    flex: 1,
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 8,
-    padding: 8,
     backgroundColor: '#f5f5f5',
+    padding: 12,
+    fontSize: 14,
     color: '#333',
-    fontFamily: 'PlusR',
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
   },
   submitButton: {
     backgroundColor: '#5aaf57',
@@ -289,6 +253,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'PlusSB',
   },
+  disabledButton: {
+    opacity: 0.6,
+  },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#5aaf57',
@@ -300,7 +267,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
     fontFamily: 'PlusSB',
-    fontSize: 14,
+    fontSize: 13,
+  },
+  tableBody: {
+    maxHeight: 400,
   },
   tableRow: {
     flexDirection: 'row',
@@ -308,33 +278,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
     backgroundColor: '#fff',
+    alignItems: 'center',
   },
   tableCell: {
     textAlign: 'center',
     color: '#333',
     fontFamily: 'PlusR',
-    fontSize: 13,
+    fontSize: 12,
   },
   actionCell: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
-  iconBtn: {
+  actionButton: {
     padding: 4,
-  },
-  emptyState: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  emptyStateText: {
-    color: '#999',
-    fontFamily: 'PlusR',
-    fontSize: 14,
-  },
-  disabledButton: {
-    opacity: 0.6,
   },
   loadingContainer: {
     padding: 20,
@@ -343,6 +302,15 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     color: '#666',
+    fontFamily: 'PlusR',
+    fontSize: 14,
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#999',
     fontFamily: 'PlusR',
     fontSize: 14,
   },

@@ -2,92 +2,85 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
-import useHr from '../../../../../hooks/useHr';
+import { Picker } from '@react-native-picker/picker';
+import useLeave from '../../../../../hooks/useLeave';
 
-export default function Document() {
+export default function LeaveStatus() {
   const navigation = useNavigation();
-  const { 
-    getAllDocuments, 
-    getDocumentById, 
-    addDocument, 
-    updateDocument, 
-    deleteDocument, 
-    documents, 
-    loading 
-  } = useHr();
+  const { getAllLeaveStatuses, saveLeaveStatus, updateLeaveStatus, deleteLeaveStatus, leaveStatuses, loading } = useLeave();
 
-  const [documentName, setDocumentName] = useState('');
-  const [description, setDescription] = useState('');
+  const [leaveStatusName, setLeaveStatusName] = useState('');
+  const [initialStatus, setInitialStatus] = useState(true);
   const [editing, setEditing] = useState(null);
 
-  // Fetch documents on component mount
+  // Fetch leave statuses on component mount
   useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        await getAllDocuments();
-      } catch (error) {
-        console.error('Error fetching documents:', error);
-      }
-    };
-    
-    fetchDocuments();
+    fetchLeaveStatuses();
   }, []);
 
-  const fetchDocuments = async () => {
+  const fetchLeaveStatuses = async () => {
     try {
-      await getAllDocuments();
+      await getAllLeaveStatuses();
     } catch (error) {
-      console.error('Error fetching documents:', error);
+      console.error('Error fetching leave statuses:', error);
     }
   };
 
   const handleSubmit = async () => {
-    if (!documentName.trim()) {
-      Alert.alert('Validation Error', 'Please enter document name!');
+    if (!leaveStatusName.trim()) {
+      Alert.alert('Validation Error', 'Please enter leave status!');
       return;
     }
 
     try {
       if (editing) {
-        // Update existing document
-        await updateDocument(editing.id, documentName, description);
-        Alert.alert('Success', 'Document updated successfully!');
+        // Update existing leave status
+        const payload = {
+          id: editing.id,
+          name: leaveStatusName,
+          initialStatus: initialStatus
+        };
+        await updateLeaveStatus(payload);
+        Alert.alert('Success', 'Leave status updated successfully!');
         setEditing(null);
       } else {
-        // Add new document
-        await addDocument(documentName, description);
-        Alert.alert('Success', 'Document added successfully!');
+        // Add new leave status
+        const payload = {
+          name: leaveStatusName,
+          initialStatus: initialStatus
+        };
+        await saveLeaveStatus(payload);
+        Alert.alert('Success', 'Leave status added successfully!');
       }
 
       // Reset form and refresh list
-      setDocumentName('');
-      setDescription('');
-      await fetchDocuments();
+      setLeaveStatusName('');
+      setInitialStatus(true);
+      await fetchLeaveStatuses();
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to save document');
+      Alert.alert('Error', error.message || 'Failed to save leave status');
     }
   };
 
   const handleEdit = (item) => {
-    // Use data from the list instead of fetching by ID to avoid Hibernate proxy issues
-    setDocumentName(item.documentName);
-    setDescription(item.description || '');
+    setLeaveStatusName(item.name);
+    setInitialStatus(item.initialStatus);
     setEditing(item);
   };
 
   const handleDelete = (id) => {
-    Alert.alert('Delete Document', 'Are you sure you want to delete this document?', [
+    Alert.alert('Delete Leave Status', 'Are you sure you want to delete this leave status?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
           try {
-            await deleteDocument(id);
-            Alert.alert('Success', 'Document deleted successfully!');
-            await fetchDocuments();
+            await deleteLeaveStatus(id);
+            Alert.alert('Success', 'Leave status deleted successfully!');
+            await fetchLeaveStatuses();
           } catch (error) {
-            Alert.alert('Error', error.message || 'Failed to delete document');
+            Alert.alert('Error', error.message || 'Failed to delete leave status');
           }
         },
       },
@@ -96,8 +89,8 @@ export default function Document() {
 
   const handleCancel = () => {
     setEditing(null);
-    setDocumentName('');
-    setDescription('');
+    setLeaveStatusName('');
+    setInitialStatus(true);
   };
 
   return (
@@ -107,42 +100,44 @@ export default function Document() {
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
             <Ionicons name="menu" size={28} color="BLACK" />
           </TouchableOpacity>
-          <Text style={styles.title}>Document</Text>
+          <Text style={styles.title}>Leave Status</Text>
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Configure Document Card */}
+          {/* Configure Leave Status Card */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>
-              {editing ? 'Edit Document' : 'Configure Document'}
+              {editing ? 'Edit Leave Status' : 'Configure Leave Status'}
             </Text>
 
-            {/* Document Name */}
+            {/* Leave Status */}
             <View style={styles.formRow}>
               <Text style={styles.label}>
-                Document Name <Text style={styles.required}>*</Text>
+                Leave Status <Text style={styles.required}>*</Text>
               </Text>
               <TextInput
                 style={styles.input}
-                value={documentName}
-                onChangeText={setDocumentName}
-                placeholder="Enter document name"
+                value={leaveStatusName}
+                onChangeText={setLeaveStatusName}
+                placeholder="Enter leave status"
               />
             </View>
 
-            {/* Description */}
+            {/* Initial Status Dropdown */}
             <View style={styles.formRow}>
               <Text style={styles.label}>
-                Description
+                Initial Status <Text style={styles.required}>*</Text>
               </Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Enter description (optional)"
-                multiline
-                numberOfLines={3}
-              />
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={initialStatus}
+                  onValueChange={(itemValue) => setInitialStatus(itemValue)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Yes" value={true} />
+                  <Picker.Item label="No" value={false} />
+                </Picker>
+              </View>
             </View>
 
             {/* Submit Button */}
@@ -166,15 +161,15 @@ export default function Document() {
             )}
           </View>
 
-          {/* Existing Documents Card */}
+          {/* Existing Leave Statuses Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Existing Documents</Text>
+            <Text style={styles.cardTitle}>Existing Leave Statuses</Text>
             
             {/* Table Header */}
             <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, { flex: 0.5 }]}>S. No</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>Document Name</Text>
-              <Text style={[styles.tableHeaderText, { flex: 2 }]}>Description</Text>
+              <Text style={[styles.tableHeaderText, { flex: 0.7 }]}>S. No</Text>
+              <Text style={[styles.tableHeaderText, { flex: 2 }]}>Leave Status</Text>
+              <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>Initial Status</Text>
               <Text style={[styles.tableHeaderText, { flex: 1 }]}>Action</Text>
             </View>
 
@@ -182,14 +177,14 @@ export default function Document() {
             {loading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#5aaf57" />
-                <Text style={styles.loadingText}>Loading documents...</Text>
+                <Text style={styles.loadingText}>Loading leave statuses...</Text>
               </View>
-            ) : documents.length > 0 ? (
-              documents.map((item, idx) => (
+            ) : leaveStatuses && leaveStatuses.length > 0 ? (
+              leaveStatuses.map((item, idx) => (
                 <View key={item.id} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, { flex: 0.5 }]}>{idx + 1}</Text>
-                  <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.documentName}</Text>
-                  <Text style={[styles.tableCell, { flex: 2 }]}>{item.description || '-'}</Text>
+                  <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
+                  <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
+                  <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.initialStatus ? 'Yes' : 'No'}</Text>
                   <View style={[styles.actionCell, { flex: 1 }]}>
                     <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
                       <Feather name="edit" size={18} color="#5aaf57" />
@@ -202,7 +197,7 @@ export default function Document() {
               ))
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No documents found</Text>
+                <Text style={styles.emptyStateText}>No leave statuses found</Text>
               </View>
             )}
           </View>
@@ -261,9 +256,17 @@ const styles = StyleSheet.create({
     color: '#333',
     fontFamily: 'PlusR',
   },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
+  pickerContainer: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+    overflow: 'hidden',
+  },
+  picker: {
+    color: '#333',
+    fontFamily: 'PlusR',
   },
   submitButton: {
     backgroundColor: '#5aaf57',
