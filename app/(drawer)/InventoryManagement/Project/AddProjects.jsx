@@ -312,7 +312,7 @@ const AddProject = () => {
   ]);
 
   const [plcOpen, setPlcOpen] = useState(false);
-  const [plcValue, setPlcValue] = useState(null);
+  const [plcValue, setPlcValue] = useState([]);
   const [plcItems, setPlcItems] = useState([]);
 
   const [form, setForm] = useState({
@@ -327,7 +327,6 @@ const AddProject = () => {
     city: '',
     pincode: '',
     area: '',
-    addressType: 'COMMERCIAL',
   });
 
   const [errors, setErrors] = useState({});
@@ -337,12 +336,6 @@ const AddProject = () => {
   const [mediaFiles, setMediaFiles] = useState([]);
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showCompletionDatePicker, setShowCompletionDatePicker] = useState(false);
-  const [addressTypeOpen, setAddressTypeOpen] = useState(false);
-  const [addressTypeValue, setAddressTypeValue] = useState('COMMERCIAL');
-  const [addressTypeItems] = useState([
-    { label: 'Commercial', value: 'COMMERCIAL' },
-    { label: 'Residential', value: 'RESIDENTIAL' },
-  ]);
 
   // Dropdown data hook for country, state, district
   const {
@@ -474,8 +467,7 @@ const AddProject = () => {
     setStateValue(null);
     setDistrictValue(null);
     setMeasurementUnitValue(null);
-    setPlcValue(null);
-    setAddressTypeValue('COMMERCIAL');
+    setPlcValue([]);
     setForm({
       projectName: '',
       startDate: '',
@@ -488,7 +480,6 @@ const AddProject = () => {
       city: '',
       pincode: '',
       area: '',
-      addressType: 'COMMERCIAL',
     });
     setErrors({});
     setShowReraCard(false);
@@ -526,7 +517,6 @@ const AddProject = () => {
       totalArea: form.area ? parseFloat(form.area) : null,
       areaUnitId: measurementUnitValue,
       description: form.description,
-      addressType: addressTypeValue || 'COMMERCIAL',
       address1: form.addressLine1,
       address2: form.addressLine2,
       city: form.city,
@@ -696,11 +686,14 @@ const AddProject = () => {
               setOpen={setPlcOpen}
               setValue={setPlcValue}
               setItems={setPlcItems}
-              placeholder="Select PLC"
+              placeholder="Select PLC (Multiple)"
               style={STYLES.dropdown}
               dropDownContainerStyle={STYLES.dropdownContainer}
               listMode="SCROLLVIEW"
               zIndex={600}
+              multiple={true}
+              mode="BADGE"
+              badgeDotColors={["#2e7d32", "#58b26e", "#8bc34a", "#c8e6c9"]}
             />
 
             <RequiredLabel text="Description" isRequired={false} />
@@ -758,21 +751,6 @@ const AddProject = () => {
               <Ionicons name="location-outline" size={20} color={COLORS.primary} />
               <Text style={STYLES.cardTitle}>Address Details</Text>
             </View>
-
-            <RequiredLabel text="Address Type" isRequired={false} />
-            <DropDownPicker
-              open={addressTypeOpen}
-              value={addressTypeValue}
-              items={addressTypeItems}
-              setOpen={setAddressTypeOpen}
-              setValue={setAddressTypeValue}
-              setItems={() => {}}
-              placeholder="Select Address Type"
-              style={STYLES.dropdown}
-              dropDownContainerStyle={STYLES.dropdownContainer}
-              listMode="SCROLLVIEW"
-              zIndex={1100}
-            />
 
             <RequiredLabel text="Country" isRequired={true} />
             <DropDownPicker

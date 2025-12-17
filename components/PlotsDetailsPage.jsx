@@ -15,6 +15,7 @@ import {
   Switch,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import LottieView from "lottie-react-native";
 import { Feather, AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -25,7 +26,8 @@ import useOwnership from '../hooks/useOwnership';
 import useAmenityActions from '../hooks/useAmenityActions';
 import useFacilityActions from '../hooks/useFacilityActions';
 import useMeasurements from '../hooks/useMeasurements';
-import { getAllPlc } from '../services/api';
+import { getAllPlc, API_BASE_URL } from '../services/api';
+import * as SecureStore from "expo-secure-store";
 
 const screenHeight = Dimensions.get("window").height;
 
@@ -45,6 +47,9 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
   const [selectedLocationFlat, setSelectedLocationFlat] = useState(null);
   const [imageUploadModalVisible, setImageUploadModalVisible] = useState(false);
   const [imageLabel, setImageLabel] = useState("");
+  const [imageViewModalVisible, setImageViewModalVisible] = useState(false);
+  const [currentViewingImage, setCurrentViewingImage] = useState(null);
+  const [imageLoading, setImageLoading] = useState(false);
   
   // Use the custom hook to fetch plots
   const { plots, loading, fetchPlots, savePlotDetails, updatePlotDetails, savePlotPlcDetails, fetchPlotDetailsForPlc, deletePlot, saving, saveError } = usePlotsByProject(propertyData?.projectId);
@@ -225,6 +230,63 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
     
     setViewModalCurrentIndex(0); // Reset to first tab
     setViewModalVisible(true);
+  };
+
+  const handleViewMediaFile = async (filePath) => {
+    if (!filePath) {
+      Alert.alert("Error", "No file path available");
+      return;
+    }
+
+    try {
+      setImageLoading(true);
+      setImageViewModalVisible(true);
+      
+      const secretKey = await SecureStore.getItemAsync("auth_token");
+      if (!secretKey) {
+        Alert.alert("Error", "Authentication token not found. Please log in again.");
+        setImageViewModalVisible(false);
+        setImageLoading(false);
+        return;
+      }
+
+      const mediaUrl = `${API_BASE_URL}/property-media/by-path?path=${encodeURIComponent(filePath)}`;
+      console.log('Fetching media file from path:', mediaUrl);
+      
+      const response = await fetch(mediaUrl, {
+        method: 'GET',
+        headers: {
+          'secret_key': secretKey,
+          'Accept': '*/*',
+        },
+      });
+
+      if (!response.ok) {
+        console.error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Failed to load image. Status: ${response.status}`);
+      }
+
+      // Get the blob and convert to base64
+      const blob = await response.blob();
+      
+      // Convert blob to base64 using FileReader API
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      
+      setCurrentViewingImage(base64Data);
+      setImageLoading(false);
+      
+    } catch (err) {
+      console.error("Failed to load media file:", err);
+      Alert.alert("Error", `Failed to load the media file. ${err.message || 'Please try again.'}`);
+      setImageViewModalVisible(false);
+      setImageLoading(false);
+      setCurrentViewingImage(null);
+    }
   };
 
   const handleActionOptionPress = (option) => {
@@ -519,7 +581,12 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                   <View style={styles.imageListContainer}>
                     {selectedFlat.propertyMediaDTOs.map((media, index) => (
                       media.filePath && (
-                        <View key={index} style={styles.imageItemRow}>
+                        <TouchableOpacity 
+                          key={index} 
+                          style={styles.imageItemRow}
+                          onPress={() => handleViewMediaFile(media.filePath)}
+                          activeOpacity={0.7}
+                        >
                           <Ionicons name="image" size={20} color="#5aaf57" />
                           <View style={styles.imageItemInfo}>
                             <Text style={styles.imageItemLabel}>
@@ -529,7 +596,8 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
                               {media.filePath}
                             </Text>
                           </View>
-                        </View>
+                          <Ionicons name="eye-outline" size={18} color="#5aaf57" />
+                        </TouchableOpacity>
                       )
                     ))}
                   </View>
@@ -1929,6 +1997,40 @@ const PlotsDetailsPage = ({ propertyData, onBack }) => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* Image Viewer Modal */}
+      <Modal
+        visible={imageViewModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          setImageViewModalVisible(false);
+          setCurrentViewingImage(null);
+        }}
+      >
+        <View style={styles.imageViewModalBackground}>
+          <TouchableOpacity
+            style={styles.imageCloseButton}
+            onPress={() => {
+              setImageViewModalVisible(false);
+              setCurrentViewingImage(null);
+            }}
+          >
+            <Text style={styles.imageCloseButtonText}>×</Text>
+          </TouchableOpacity>
+          {imageLoading ? (
+            <ActivityIndicator size="large" color="#ffffff" />
+          ) : currentViewingImage ? (
+            <Image
+              source={{ uri: currentViewingImage }}
+              style={styles.fullscreenImage}
+              resizeMode="contain"
+            />
+          ) : (
+            <Text style={{ color: '#fff', fontSize: 16 }}>No image to display</Text>
+          )}
+        </View>
+      </Modal>
       </>
       )}
     </SafeAreaView>
@@ -3065,6 +3167,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "PlusR",
     color: "#666",
+  },
+  // Image Viewer Modal Styles
+  imageViewModalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullscreenImage: {
+    width: "90%",
+    height: "70%",
+    borderRadius: 10,
+  },
+  imageCloseButton: {
+    position: "absolute",
+    top: 40,
+    right: 20,
+    zIndex: 1,
+  },
+  imageCloseButtonText: {
+    fontSize: 40,
+    color: "#fff",
+    fontWeight: "bold",
   },
 });
 

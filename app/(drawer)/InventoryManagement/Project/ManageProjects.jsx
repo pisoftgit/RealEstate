@@ -27,8 +27,9 @@ import useProject from "../../../../hooks/useProject";
 import useDropdownData from "../../../../hooks/useDropdownData";
 import useReraActions from "../../../../hooks/useReraActions";
 import useMeasurementUnits from "../../../../hooks/useMeasurements";
-import { getAllPlc, getAllbuilderbyid } from "../../../../services/api";
+import { getAllPlc, getAllbuilderbyid, API_BASE_URL } from "../../../../services/api";
 import * as ImagePicker from 'expo-image-picker';
+import * as SecureStore from "expo-secure-store";
 
 const screenHeight = Dimensions.get("window").height;
 
@@ -39,6 +40,8 @@ const ManageProjects = () => {
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [viewProperty, setViewProperty] = useState(null);
   const [imageModalVisible, setImageModalVisible] = useState(false);
+  const [currentViewingImage, setCurrentViewingImage] = useState(null);
+  const [imageLoading, setImageLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingProperty, setEditingProperty] = useState(null);
   
@@ -259,6 +262,22 @@ const ManageProjects = () => {
     fetchPlcAndBuilders();
   }, []);
 
+  // Re-match PLC when plcItems load
+  useEffect(() => {
+    if (editingProperty && plcItems.length > 0 && (!plcValue || plcValue.length === 0)) {
+      // Try to set PLCs from various possible property fields
+      if (editingProperty.plcIds && Array.isArray(editingProperty.plcIds) && editingProperty.plcIds.length > 0) {
+        console.log('Re-matching PLC IDs:', editingProperty.plcIds);
+        setPlcValue(editingProperty.plcIds.map(id => id.toString()));
+      } else if (editingProperty.plcs && Array.isArray(editingProperty.plcs) && editingProperty.plcs.length > 0) {
+        console.log('Re-matching PLC from plcs array:', editingProperty.plcs);
+        const plcIds = editingProperty.plcs.map(plc => (plc.id || plc.plcId)?.toString()).filter(Boolean);
+        console.log('Re-extracted PLC IDs:', plcIds);
+        setPlcValue(plcIds);
+      }
+    }
+  }, [plcItems, editingProperty]);
+
   // Debug measurement units
   useEffect(() => {
     console.log('Measurement Units:', measurementUnits);
@@ -298,8 +317,126 @@ const ManageProjects = () => {
     }
   };
 
-  const removeMediaFile = (index) => {
-    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+  const removeMediaFile = async (index) => {
+    const file = mediaFiles[index];
+    
+    // If file has an id, it's from the server - delete via API
+    if (file.id) {
+      Alert.alert(
+        'Delete Media',
+        'Are you sure you want to delete this media file?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                const secretKey = await SecureStore.getItemAsync("auth_token");
+                if (!secretKey) {
+                  Alert.alert("Error", "Authentication token not found. Please log in again.");
+                  return;
+                }
+
+                console.log('Deleting media file with ID:', file.id);
+
+                const response = await fetch(`${API_BASE_URL}/property-media/deletePropertyMediaById/${file.id}`, {
+                  method: 'DELETE',
+                  headers: {
+                    'secret_key': secretKey,
+                    'Content-Type': 'application/json',
+                  },
+                });
+
+                console.log('Delete response status:', response.status);
+
+                if (response.ok) {
+                  // Remove from local state after successful API deletion
+                  setMediaFiles(prev => prev.filter((_, i) => i !== index));
+                  Alert.alert('Success', 'Media file deleted successfully!');
+                } else {
+                  const errorData = await response.text();
+                  console.error('Delete media error response:', errorData);
+                  Alert.alert('Error', `Failed to delete media file: ${errorData || 'Unknown error'}`);
+                }
+              } catch (error) {
+                console.error('Error deleting media file:', error);
+                Alert.alert('Error', `Failed to delete media file: ${error.message || 'Network error'}`);
+              }
+            },
+          },
+        ],
+        { cancelable: true }
+      );
+    } else {
+      // It's a newly uploaded file, just remove from state
+      setMediaFiles(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleViewMediaFile = async (file) => {
+    // If file has an id, it's from the server - fetch it with auth headers
+    if (file.id) {
+      try {
+        setImageLoading(true);
+        setImageModalVisible(true);
+        
+        const secretKey = await SecureStore.getItemAsync("auth_token");
+        if (!secretKey) {
+          Alert.alert("Error", "Authentication token not found. Please log in again.");
+          setImageModalVisible(false);
+          setImageLoading(false);
+          return;
+        }
+
+        const mediaUrl = `${API_BASE_URL}/property-media/by-id?id=${file.id}`;
+        console.log('Fetching media file:', mediaUrl);
+        
+        const response = await fetch(mediaUrl, {
+          method: 'GET',
+          headers: {
+            'secret_key': secretKey,
+            'Accept': '*/*',
+          },
+        });
+
+        if (!response.ok) {
+          console.error(`HTTP error! status: ${response.status}`);
+          throw new Error(`Failed to load image. Status: ${response.status}`);
+        }
+
+        // Get the blob and convert to base64 using the response directly
+        const blob = await response.blob();
+        
+        // Convert blob to base64 using FileReader API (available in React Native)
+        const base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        
+        setCurrentViewingImage(base64Data);
+        setImageLoading(false);
+        
+      } catch (err) {
+        console.error("Failed to load media file:", err);
+        Alert.alert("Error", `Failed to load the media file. ${err.message || 'Please try again.'}`);
+        setImageModalVisible(false);
+        setImageLoading(false);
+        setCurrentViewingImage(null);
+      }
+    } else if (file.uri) {
+      // If it's a newly uploaded file with uri, display it directly
+      setCurrentViewingImage(file.uri);
+      setImageModalVisible(true);
+      setImageLoading(false);
+    } else {
+      Alert.alert("Error", "Unable to open this file.");
+    }
   };
 
   const formatDate = (date) => {
@@ -492,8 +629,19 @@ const ManageProjects = () => {
       setDistrictValue(null);
     }
     
-    // Reset PLC to empty
-    setPlcValue([]);
+    // PLC: Set multiple values from property's PLCs
+    if (property.plcIds && Array.isArray(property.plcIds) && property.plcIds.length > 0) {
+      console.log('Setting PLC IDs:', property.plcIds);
+      setPlcValue(property.plcIds.map(id => id.toString()));
+    } else if (property.plcs && Array.isArray(property.plcs) && property.plcs.length > 0) {
+      // If plcs is an array of objects with id property
+      console.log('Setting PLC from plcs array:', property.plcs);
+      const plcIds = property.plcs.map(plc => (plc.id || plc.plcId)?.toString()).filter(Boolean);
+      console.log('Extracted PLC IDs:', plcIds);
+      setPlcValue(plcIds);
+    } else {
+      setPlcValue([]);
+    }
     
     setShowReraCard(property.isReraApproved || false);
     setReraDetails({ reraNo: property.reraNumber || property.reraNo || '' });
@@ -949,7 +1097,11 @@ const ManageProjects = () => {
                 <View style={styles.mediaFilesContainer}>
                   {mediaFiles.map((file, index) => (
                     <View key={index} style={styles.mediaFileItem}>
-                      <View style={styles.mediaFileInfo}>
+                      <TouchableOpacity 
+                        style={styles.mediaFileInfo}
+                        onPress={() => handleViewMediaFile(file)}
+                        activeOpacity={0.7}
+                      >
                         <Ionicons 
                           name={file.filePath || file.uri ? (file.type?.includes('pdf') ? 'document' : 'image') : 'close-circle'} 
                           size={20} 
@@ -958,7 +1110,12 @@ const ManageProjects = () => {
                         <Text style={styles.mediaFileName} numberOfLines={1}>
                           {file.mediaLabel || file.name || `Media ${index + 1}`}
                         </Text>
-                      </View>
+                        <Ionicons 
+                          name="eye-outline" 
+                          size={18} 
+                          color="#2e7d32" 
+                        />
+                      </TouchableOpacity>
                       <TouchableOpacity onPress={() => removeMediaFile(index)}>
                         <Ionicons name="trash-outline" size={20} color="#d32f2f" />
                       </TouchableOpacity>
@@ -1053,26 +1210,43 @@ const ManageProjects = () => {
   };
 
   const renderImageModal = () => {
-    if (!viewProperty) return null;
-
     return (
       <Modal
         visible={imageModalVisible}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setImageModalVisible(false)}
+        onRequestClose={() => {
+          setImageModalVisible(false);
+          setCurrentViewingImage(null);
+        }}
       >
         <View style={styles.imageModalBackground}>
           <TouchableOpacity
             style={styles.closeButton}
-            onPress={() => setImageModalVisible(false)}
+            onPress={() => {
+              setImageModalVisible(false);
+              setCurrentViewingImage(null);
+            }}
           >
             <Text style={styles.closeButtonText}>×</Text>
           </TouchableOpacity>
-          <Image
-            source={{ uri: viewProperty.pic }}
-            style={styles.fullscreenImage}
-          />
+          {imageLoading ? (
+            <ActivityIndicator size="large" color="#ffffff" />
+          ) : currentViewingImage ? (
+            <Image
+              source={{ uri: currentViewingImage }}
+              style={styles.fullscreenImage}
+              resizeMode="contain"
+            />
+          ) : viewProperty?.pic ? (
+            <Image
+              source={{ uri: viewProperty.pic }}
+              style={styles.fullscreenImage}
+              resizeMode="contain"
+            />
+          ) : (
+            <Text style={{ color: '#fff', fontSize: 16 }}>No image to display</Text>
+          )}
         </View>
       </Modal>
     );

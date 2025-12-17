@@ -50,7 +50,8 @@ const useProject = () => {
           districtId: item.districtId,
           stateId: item.stateId,
           countryId: item.countryId,
-          plcIds: item.plcIds,
+          plcs: item.plcs || [],
+          plcIds: item.plcs && Array.isArray(item.plcs) ? item.plcs.map(plc => plc.id) : [],
           mediaDTOs: item.mediaDTOs,
         }));
         setProjects(mappedList);
