@@ -24,6 +24,13 @@ const fetchData = async (endpoint) => {
       },
     });
 
+    // Check for non-200 responses before parsing
+    if (!response.ok) {
+      const text = await response.text();
+      console.error(`API Error for ${endpoint}:`, text);
+      return [];
+    }
+
     const rawText = await response.text();
     console.log(`Raw response from ${endpoint}:`, rawText);
     let data;

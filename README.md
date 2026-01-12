@@ -55,6 +55,19 @@ Join our community of developers creating universal apps.
 
 
 
+ onClick={() => {
+              const params = new URLSearchParams();
+              params.append("projectId", projectId);
+              params.append("propertyStructureNature", "GROUP_BLOCK");
+              selected.forEach(id => params.append("propIds", id));
+              navigate({
+                pathname: "/properties/fillDetails",
+                search: `?${params.toString()}`
+              });
+            }}
+
+
+
 
 
 

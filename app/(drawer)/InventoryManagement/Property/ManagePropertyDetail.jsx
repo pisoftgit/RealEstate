@@ -15,11 +15,9 @@ import {
 import LottieView from "lottie-react-native";
 import { Feather, AntDesign, Ionicons } from "@expo/vector-icons";
 import { useRouter, useNavigation } from "expo-router";
-import FlatDetailsPage from "../../../../components/FlatDetailsPage";
-import HouseVillaDetailsPage from "../../../../components/HouseVillaDetailsPage";
-import PlotsDetailsPage from "../../../../components/PlotsDetailsPage";
-import CommercialUnitDetailsPage from "../../../../components/CommercialUnitDetailsPage";
 import useProject from "../../../../hooks/useProject";
+import PropertyDetailPage from "../../../../components/propertydetailpage";
+import useRealEstateProperties from '../../../../hooks/useRealEstateProperties';
 
 const screenHeight = Dimensions.get("window").height;
 
@@ -27,15 +25,15 @@ const ManagePropertyDetail = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [actionsModalVisible, setActionsModalVisible] = useState(false);
-  const [showFlatDetails, setShowFlatDetails] = useState(false);
-  const [showHouseVillaDetails, setShowHouseVillaDetails] = useState(false);
-  const [showPlotsDetails, setShowPlotsDetails] = useState(false);
-  const [showCommercialUnitDetails, setShowCommercialUnitDetails] = useState(false);
+  const [showPropertyDetailPage, setShowPropertyDetailPage] = useState(false);
+  const [propertyDetailType, setPropertyDetailType] = useState("GROUP_BLOCK");
+  const [propertyParams, setPropertyParams] = useState(null);
   const navigation = useNavigation();
   const router = useRouter();
   
   // Fetch projects from API
   const { projects, loading, refetch } = useProject();
+  const { data: propertyData, loading: propertyLoading, error: propertyError } = useRealEstateProperties(propertyParams);
 
   const handleSearch = (text) => {
     setSearchQuery(text);
@@ -46,55 +44,35 @@ const ManagePropertyDetail = () => {
     setActionsModalVisible(true);
   };
 
-  const handleBackFromFlatDetails = () => {
-    setShowFlatDetails(false);
-    setSelectedProperty(null);
-  };
-
-  const handleBackFromHouseVillaDetails = () => {
-    setShowHouseVillaDetails(false);
-    setSelectedProperty(null);
-  };
-
-  const handleBackFromPlotsDetails = () => {
-    setShowPlotsDetails(false);
-    setSelectedProperty(null);
-  };
-
-  const handleBackFromCommercialUnitDetails = () => {
-    setShowCommercialUnitDetails(false);
-    setSelectedProperty(null);
-  };
-
   const handleActionOptionPress = (option) => {
-    switch (option) {
-       case "Flat":
-        setActionsModalVisible(false);
-        setShowFlatDetails(true);
-        break;
-      case "House/Villa":
-        setActionsModalVisible(false);
-        setShowHouseVillaDetails(true);
-        break;
-      case "Plots (Residential/Commercial)":
-        setActionsModalVisible(false);
-        setShowPlotsDetails(true);
-        break;
-      case "Commercial Unit":
-        setActionsModalVisible(false);
-        setShowCommercialUnitDetails(true);
-        break;
-      default:
-        console.log(`No action defined for option: ${option}`);
-        setActionsModalVisible(false);
-        return;
-    }
+    setActionsModalVisible(false);
+    if (!option || !option.item) return;
+    const typeKey = option.item;
+    const params = {
+      projectId: selectedProperty?.projectId || selectedProperty?.id,
+      propertyItem: typeKey,
+      pageSize: 10,
+      page: 0,
+    };
+    setPropertyDetailType(typeKey);
+    setShowPropertyDetailPage(true);
+    setPropertyParams(params);
   };
 
   const renderActionOptions = () => {
     if (!selectedProperty) return null;
 
-    const options = ["Flat", "House/Villa", "Plots (Residential/Commercial)", "Commercial Unit"];
+    // Show the 'name' and 'item' from each propertyItems object, remove duplicates by item
+    const options = (selectedProperty.propertyItems || [])
+      .filter((obj, i, arr) => obj && obj.item && arr.findIndex(o => o.item === obj.item) === i);
+
+    if (options.length === 0) {
+      return (
+        <View style={styles.actionOptionsContainer}>
+          <Text style={styles.modalTitle}>No property options available.</Text>
+        </View>
+      );
+    }
 
     return (
       <View style={styles.actionOptionsContainer}>
@@ -105,7 +83,7 @@ const ManagePropertyDetail = () => {
             style={styles.actionOptionBtn}
             onPress={() => handleActionOptionPress(option)}
           >
-            <Text style={styles.actionOptionText}>{option}</Text>
+            <Text style={styles.actionOptionText}>{option.name}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -177,108 +155,10 @@ const ManagePropertyDetail = () => {
     );
   });
 
-  // Show FlatDetailsPage if showFlatDetails is true
-  if (showFlatDetails && selectedProperty) {
-    return (
-      <FlatDetailsPage 
-        propertyData={{
-          projectId: selectedProperty.id,
-          projectName: selectedProperty.projectName,
-          builderName: selectedProperty.builderName,
-        }}
-        onBack={handleBackFromFlatDetails}
-      />
-    );
-  }
-
-  // Show HouseVillaDetailsPage if showHouseVillaDetails is true
-  if (showHouseVillaDetails && selectedProperty) {
-    return (
-      <HouseVillaDetailsPage 
-        propertyData={{
-          projectId: selectedProperty.id,
-          projectName: selectedProperty.projectName,
-          builderName: selectedProperty.builderName,
-        }}
-        onBack={handleBackFromHouseVillaDetails}
-      />
-    );
-  }
-
-  // Show PlotsDetailsPage if showPlotsDetails is true
-  if (showPlotsDetails && selectedProperty) {
-    return (
-      <PlotsDetailsPage 
-        propertyData={{
-          projectId: selectedProperty.id,
-          projectName: selectedProperty.projectName,
-          builderName: selectedProperty.builderName,
-        }}
-        onBack={handleBackFromPlotsDetails}
-      />
-    );
-  }
-
-  // Show CommercialUnitDetailsPage if showCommercialUnitDetails is true
-  if (showCommercialUnitDetails && selectedProperty) {
-    return (
-      <CommercialUnitDetailsPage 
-        propertyData={{
-          projectId: selectedProperty.id,
-          projectName: selectedProperty.projectName,
-          builderName: selectedProperty.builderName,
-        }}
-        onBack={handleBackFromCommercialUnitDetails}
-      />
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.openDrawer()}>
-          <Ionicons name="menu" size={24} color="#004d40" />
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.headerRow}>
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>Manage</Text>
-          <Text style={styles.headerSubTitle}>Property Details</Text>
-          <Text style={styles.headerDesc}>
-            Search for property details by name or builder!
-          </Text>
-        </View>
-        <LottieView
-          source={require("../../../../assets/svg/reales.json")}
-          autoPlay
-          loop
-          style={styles.lottie}
-        />
-      </View>
-      
-      <View style={styles.searchContainer}>
-        <Feather
-          name="search"
-          size={18}
-          color="#004d40"
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={styles.searchBar}
-          placeholder="Search property details..."
-          placeholderTextColor="#666"
-          value={searchQuery}
-          onChangeText={handleSearch}
-        />
-        {searchQuery?.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery("")}>
-            <AntDesign name="closecircle" size={16} color="#666" />
-          </TouchableOpacity>
-        )}
-      </View>
-      
-      {loading ? (
+  const renderPropertyTypeProperties = () => {
+    if (!propertyParams) return null;
+    if (propertyLoading) {
+      return (
         <View style={styles.loadingContainer}>
           <LottieView
             source={require("../../../../assets/svg/reales.json")}
@@ -286,42 +166,136 @@ const ManagePropertyDetail = () => {
             loop
             style={styles.loadingLottie}
           />
-          <Text style={styles.loadingText}>Loading projects...</Text>
+          <Text style={styles.loadingText}>Loading properties...</Text>
         </View>
-      ) : filteredPropertyDetails.length === 0 ? (
+      );
+    }
+    if (propertyError) {
+      return (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No projects found</Text>
-          <TouchableOpacity onPress={refetch} style={styles.retryButton}>
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
+          <Text style={styles.emptyText}>Error: {propertyError}</Text>
         </View>
-      ) : (
+      );
+    }
+    if (propertyData && propertyData.content && propertyData.content.length > 0) {
+      return (
         <FlatList
-          data={filteredPropertyDetails}
-          keyExtractor={(item) => item.id}
+          data={propertyData.content}
+          keyExtractor={(item) => item.unitId ? String(item.unitId) : item.id ? String(item.id) : Math.random().toString()}
           contentContainerStyle={styles.list}
           renderItem={renderPropertyDetail}
           showsVerticalScrollIndicator={false}
         />
-      )}
-      
-      <Modal
-        visible={actionsModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setActionsModalVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setActionsModalVisible(false)}>
-          <View style={styles.modalBackground}>
-            <TouchableWithoutFeedback>
-              <View style={styles.modalContainer}>
-                <View style={styles.modalHandle} />
-                {renderActionOptions()}
+      );
+    }
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No properties found.</Text>
+      </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {showPropertyDetailPage ? (
+        <PropertyDetailPage
+          type={propertyDetailType}
+          onBack={() => {
+            setShowPropertyDetailPage(false);
+            setPropertyParams(null); // Reset to show projects again
+          }}
+          data={propertyData && propertyData.content ? propertyData.content : undefined}
+          loading={propertyLoading}
+        />
+      ) : (
+        <>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.openDrawer()}>
+              <Ionicons name="menu" size={24} color="#004d40" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.headerRow}>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>Manage</Text>
+              <Text style={styles.headerSubTitle}>Property Details</Text>
+              <Text style={styles.headerDesc}>
+                Search for property details by name or builder!
+              </Text>
+            </View>
+            <LottieView
+              source={require("../../../../assets/svg/reales.json")}
+              autoPlay
+              loop
+              style={styles.lottie}
+            />
+          </View>
+          <View style={styles.searchContainer}>
+            <Feather
+              name="search"
+              size={18}
+              color="#004d40"
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchBar}
+              placeholder="Search property details..."
+              placeholderTextColor="#666"
+              value={searchQuery}
+              onChangeText={handleSearch}
+            />
+            {searchQuery?.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery("")}> <AntDesign name="closecircle" size={16} color="#666" /> </TouchableOpacity>
+            )}
+          </View>
+          {propertyParams ? (
+            renderPropertyTypeProperties()
+          ) : (
+            loading ? (
+              <View style={styles.loadingContainer}>
+                <LottieView
+                  source={require("../../../../assets/svg/reales.json")}
+                  autoPlay
+                  loop
+                  style={styles.loadingLottie}
+                />
+                <Text style={styles.loadingText}>Loading projects...</Text>
+              </View>
+            ) : filteredPropertyDetails.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No projects found</Text>
+                <TouchableOpacity onPress={refetch} style={styles.retryButton}>
+                  <Text style={styles.retryText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <FlatList
+                data={filteredPropertyDetails}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.list}
+                renderItem={renderPropertyDetail}
+                showsVerticalScrollIndicator={false}
+              />
+            )
+          )}
+          <Modal
+            visible={actionsModalVisible}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setActionsModalVisible(false)}
+          >
+            <TouchableWithoutFeedback onPress={() => setActionsModalVisible(false)}>
+              <View style={styles.modalBackground}>
+                <TouchableWithoutFeedback>
+                  <View style={styles.modalContainer}>
+                    <View style={styles.modalHandle} />
+                    {renderActionOptions()}
+                  </View>
+                </TouchableWithoutFeedback>
               </View>
             </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+          </Modal>
+        </>
+      )}
     </SafeAreaView>
   );
 };
