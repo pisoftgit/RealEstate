@@ -225,7 +225,7 @@ const PropertyDetailPage = ({ type, onBack, data, loading }) => {
         </View>
         <View style={styles.cardFieldRow}>
           <Feather name="maximize" size={16} color="#fff" style={{marginRight:4}} />
-          <Text style={styles.cardFieldText}>Area: {item.area ? `${item.area} sqft` : "-"}</Text>
+          <Text style={styles.cardFieldText}>Area: {item.area ? `${item.area} ${item.areaUnit?.unitName || ''}` : "-"}</Text>
         </View>
       </View>
       <View style={styles.cardContentRow}>
@@ -235,7 +235,7 @@ const PropertyDetailPage = ({ type, onBack, data, loading }) => {
         </View>
         <View style={styles.cardFieldRow}>
           <Feather name="layers" size={16} color="#fff" style={{marginRight:4}} />
-          <Text style={styles.cardFieldText}>Total Floors: {item.totalFloors || "-"}</Text>
+          <Text style={styles.cardFieldText}>Floor No.: {item.floorNumber || "-"}</Text>
         </View>
       </View>
       <View style={styles.cardMetaRow}>
@@ -268,7 +268,7 @@ const PropertyDetailPage = ({ type, onBack, data, loading }) => {
       <View style={styles.cardContentRow}>
         <View style={styles.cardFieldRow}>
           <Feather name="maximize" size={16} color="#fff" style={{marginRight:4}} />
-          <Text style={styles.cardFieldText}>Area: {item.area ? `${item.area} ${item.areaUnit?.unitName || ''}` : '-'}</Text>
+          <Text style={styles.cardFieldText}>Area: {item.carpetArea ? `${item.carpetArea} ${item.areaUnit?.unitName || ''}` : '-'}</Text>
         </View>
         <View style={styles.cardFieldRow}>
           <Feather name="tool" size={16} color="#fff" style={{marginRight:4}} />
@@ -311,7 +311,7 @@ const PropertyDetailPage = ({ type, onBack, data, loading }) => {
         </View>
         <View style={styles.cardFieldRow}>
           <Feather name="maximize" size={16} color="#fff" style={{marginRight:4}} />
-          <Text style={styles.cardFieldText}>Area: {item.area ? `${item.area} sqft` : "-"}</Text>
+          <Text style={styles.cardFieldText}>Area: {item.area ? `${item.area} ${item.areaUnit?.unitName || ''}` : "-"}</Text>
         </View>
       </View>
       <View style={styles.cardMetaRow}>
@@ -463,6 +463,16 @@ const PropertyDetailPage = ({ type, onBack, data, loading }) => {
         }}
         propertyType={type}
         initialData={editingItem}
+        propIds={
+          editingItem
+            ? (editingItem.propertyId || editingItem.id)
+            : selectedIds
+                .map(id => {
+                  const item = filteredData.find(i => (i.unitId ? String(i.unitId) : i.id ? String(i.id) : null) === String(id));
+                  return item?.propertyId || item?.id;
+                })
+                .filter(Boolean)
+        }
       />
       {/* Property Detail View Modal */}
       <PropertyDetailView
@@ -483,6 +493,7 @@ const PropertyDetailPage = ({ type, onBack, data, loading }) => {
         }}
         onSave={handleSavePlc}
         initialData={selectedItemForPlc?.plcDetails || null}
+        propertyId={selectedItemForPlc?.propertyId || selectedItemForPlc?.id}
       />
       {/* Loading overlay for list or edit fetch */}
       {(editLoading || loading) && (

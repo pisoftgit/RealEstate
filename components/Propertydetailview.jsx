@@ -225,18 +225,22 @@ const PropertyDetailView = ({ visible, onClose, item, propertyType }) => {
     <View style={styles.tabContent}>
       <DetailRow 
         label="Carpet Area" 
-        value={data?.area || data?.carpetArea} 
-        suffix={` ${data?.areaUnit?.unitName || "sq ft"}`} 
+        value={data?.carpetArea} 
+        suffix={` ${data?.carpetAreaUnit?.unitName || "sq ft"}`} 
       />
       <DetailRow 
         label="Loading %" 
-        value={data?.loadingPercent || data?.loading} 
+        value={data?.loadingPercentage ?? data?.loadingPercent ?? data?.loading} 
         suffix="%" 
       />
       <DetailRow 
         label="Super Area" 
-        value={data?.superArea || data?.superBuiltUpArea} 
-        suffix={` ${data?.areaUnit?.unitName || "sq ft"}`}
+        value={
+          data?.carpetArea && (data?.loadingPercentage ?? data?.loadingPercent ?? data?.loading)
+            ? (Number(data.carpetArea) + (Number(data.carpetArea) * Number(data.loadingPercentage ?? data.loadingPercent ?? data.loading) / 100)).toFixed(2)
+            : data?.superArea || data?.superBuiltUpArea
+        }
+        suffix={` ${data?.carpetAreaUnit?.unitName || "sq ft"}`}
       />
       <DetailRow 
         label="Basic Cost" 

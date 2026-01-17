@@ -12,10 +12,14 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { getAllPlc } from '../services/api';
+import useSavePlcDetails from '../hooks/useSavePlcDetails';
 
-const PlcForm = ({ visible, onClose, onSave, initialData = null }) => {
+const PlcForm = ({ visible, onClose, onSave, initialData = null, propertyId }) => {
   const [plcs, setPlcs] = useState([{ id: 1, plcName: '', plcId: '', rateValue: '', rateUnit: '', isPercentage: false }]);
-  const [loading, setLoading] = useState(false);
+  // Remove local loading, use hook loading
+  // const [loading, setLoading] = useState(false);
+    // Use the custom hook for saving PLC details
+    const { savePlcDetails, loading, error, response } = useSavePlcDetails();
   const [plcOptions, setPlcOptions] = useState([]);
   const [loadingPlcData, setLoadingPlcData] = useState(false);
   const [showPlcDropdown, setShowPlcDropdown] = useState({});
@@ -146,12 +150,25 @@ const PlcForm = ({ visible, onClose, onSave, initialData = null }) => {
     );
   };
 
-  // Save all PLCs
-  const handleSave = () => {
-    if (onSave) {
-      onSave(plcs);
+  // Save all PLCs to API
+  const handleSave = async () => {
+    // Prepare plcDetails array for API
+    const plcDetails = plcs.map((plc) => ({
+      plcId: plc.plcId,
+      rate: Number(plc.rateValue),
+      isPercentage: plc.isPercentage,
+    }));
+    if (!propertyId) {
+      Alert.alert('Error', 'Property ID is required');
+      return;
     }
-    onClose();
+    const res = await savePlcDetails(propertyId, plcDetails);
+    if (res) {
+      if (onSave) onSave(res);
+      onClose();
+    } else if (error) {
+      Alert.alert('Error', error.message || 'Failed to save PLC details');
+    }
   };
 
   return (
@@ -344,6 +361,9 @@ const PlcForm = ({ visible, onClose, onSave, initialData = null }) => {
                   <Feather name="save" size={20} color="#fff" />
                   <Text style={styles.savePlcText}>Save Plc</Text>
                 </>
+              )}
+              {error && (
+                <Text style={{ color: 'red', marginTop: 8 }}>{error.message || 'Failed to save PLC details'}</Text>
               )}
             </TouchableOpacity>
           </View>

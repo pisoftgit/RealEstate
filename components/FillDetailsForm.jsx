@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from 'expo-file-system';
 import * as SecureStore from "expo-secure-store";
 import { Dropdown, MultiSelect } from "react-native-element-dropdown";
 import useFurnishingStatusActions from "../hooks/useFurnishingStatusActions";
@@ -28,7 +29,11 @@ import { API_BASE_URL } from "../services/api";
 
 const { height: screenHeight } = Dimensions.get("window");
 
-const FillDetailsForm = ({ visible, onClose, selectedCount = 0, onSave, propertyType, initialData }) => {
+import useFillDetails from '../hooks/useFillDetails';
+
+const FillDetailsForm = ({ visible, onClose, selectedCount = 0, onSave, propertyType, initialData, propIds }) => {
+  propIds
+    const { fillDetails, loading: fillLoading, error: fillError } = useFillDetails();
   const [furnishing, setFurnishing] = useState("");
   const [facing, setFacing] = useState("");
   const [carpetArea, setCarpetArea] = useState("");
@@ -78,8 +83,8 @@ const FillDetailsForm = ({ visible, onClose, selectedCount = 0, onSave, property
       const facingId = initialData.faceDirection?.id || initialData.faceDirectionId || initialData.facing?.id || initialData.facingId || "";
       setFacing(toStringId(facingId));
       
-      // Carpet Area - API uses "area"
-      const carpetAreaVal = initialData.area || initialData.carpetArea || initialData.totalArea || "";
+      // Carpet Area - use only initialData.carpetArea
+      const carpetAreaVal = initialData.carpetArea || "";
       setCarpetArea(carpetAreaVal ? carpetAreaVal.toString() : "");
       
       // Area Unit - API uses areaUnit.id
@@ -197,12 +202,26 @@ const FillDetailsForm = ({ visible, onClose, selectedCount = 0, onSave, property
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
       quality: 0.8,
+      base64: true,
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      const newImages = result.assets.map((asset) => ({
-        uri: asset.uri,
-        label: imageLabel || asset.fileName || "Image",
+      // Read base64 for each image
+      const newImages = await Promise.all(result.assets.map(async (asset) => {
+        let base64 = asset.base64;
+        if (!base64 && asset.uri) {
+          try {
+            const fileBase64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.Base64 });
+            base64 = fileBase64;
+          } catch (e) {
+            base64 = '';
+          }
+        }
+        return {
+          uri: asset.uri,
+          label: imageLabel || asset.fileName || "Image",
+          base64: base64 ? `data:image/jpeg;base64,${base64}` : '',
+        };
       }));
       setSelectedImages([...selectedImages, ...newImages]);
       setImageLabel("");
@@ -291,26 +310,62 @@ const FillDetailsForm = ({ visible, onClose, selectedCount = 0, onSave, property
     }
   }, [carpetArea, loadingPercent]);
 
-  const handleSave = () => {
-    const data = {
-      furnishing,
-      facing,
-      carpetArea,
-      areaUnit,
-      loadingPercent,
-      superArea,
-      kitchens,
-      basicCost,
-      amenities,
-      facilities,
+  const handleSave = async () => {
+    // Debug: log selectedImages before sending
+    console.log('FillDetailsForm selectedImages:', selectedImages);
+    // Map form state to API payload
+    const payload = {
+      propIds: propIds
+        ? Array.isArray(propIds)
+          ? propIds
+          : [propIds]
+        : initialData && initialData.propertyId
+          ? [initialData.propertyId]
+          : [],
+      possessionStatus: initialData?.possessionStatus || "READY_TO_MOVE", // Example default
+      faceDirectionId: facing ? Number(facing) : undefined,
+      furnishingStatusId: furnishing ? Number(furnishing) : undefined,
+      hasParking: initialData?.hasParking ?? true, // Example default
+      carpetArea: carpetArea ? Number(carpetArea) : undefined,
+      carpetAreaUnitId: areaUnit ? Number(areaUnit) : undefined,
+      loadingPercentage: loadingPercent ? Number(loadingPercent) : undefined,
+      basicAmount: basicCost ? Number(basicCost) : undefined,
+      totalAmount: initialData?.totalAmount || undefined,
       description,
-      deleteExistingFiles,
-      ownershipType,
-      khasraNo,
-      propertyType,
+      amenityIds: amenities.map(Number),
+      facilityIds: facilities.map(Number),
+      shouldDeletePreviousFile: deleteExistingFiles,
+      propertyMediaList: selectedImages
+        .filter(img => !!img.base64)
+        .map((img, idx) => ({
+          mediaLabel: img.label || `image${idx+1}`,
+          contentType: 'image/jpeg',
+          mediaBase64: img.base64,
+        })),
+      flat: (propertyType === 'GROUP_BLOCK' || propertyType === 'FLAT') ? {
+        totalNoOfKitchen: kitchens ? Number(kitchens) : undefined,
+      } : undefined,
+      houseVilla: propertyType === 'HOUSE_VILLA' ? {
+        totalNoOfKitchen: kitchens ? Number(kitchens) : undefined,
+        totalNoOfFloors: initialData?.totalNoOfFloors || undefined,
+      } : undefined,
+      plot: propertyType === 'PLOT' ? {
+        ownerShipTypeId: ownershipType ? Number(ownershipType) : undefined,
+      } : undefined,
+      commercialUnit: propertyType === 'COMMERCIAL_PROPERTY_UNIT' ? {
+        ownerShipTypeId: ownershipType ? Number(ownershipType) : undefined,
+      } : undefined,
     };
-    onSave && onSave(data);
-    onClose();
+    console.log('FillDetails Payload:', payload);
+    try {
+      const result = await fillDetails(payload);
+      console.log('FillDetails API Response:', result);
+      onSave && onSave(result);
+      onClose();
+    } catch (err) {
+      console.log('FillDetails API Error:', err?.response?.data || err);
+      Alert.alert('Error', 'Failed to save details.');
+    }
   };
 
   // Normalize propertyType so checks are case-insensitive
@@ -332,10 +387,25 @@ const FillDetailsForm = ({ visible, onClose, selectedCount = 0, onSave, property
     value: f.id?.toString(),
   }));
 
-  const unitDropdownData = (units || []).map((u) => ({
+  let unitDropdownData = (units || []).map((u) => ({
     label: u.name,
     value: u.id?.toString(),
   }));
+
+  // If initialData.carpetAreaUnit exists and is not in the dropdown, add it
+  if (initialData && initialData.carpetAreaUnit && initialData.carpetAreaUnit.unitName && initialData.carpetAreaUnit.id) {
+    const exists = unitDropdownData.some(u => u.value === initialData.carpetAreaUnit.id.toString());
+    if (!exists) {
+      unitDropdownData = [
+        { label: initialData.carpetAreaUnit.unitName, value: initialData.carpetAreaUnit.id.toString() },
+        ...unitDropdownData
+      ];
+    }
+    // Preselect carpetAreaUnit
+    if (areaUnit !== initialData.carpetAreaUnit.id.toString()) {
+      setAreaUnit(initialData.carpetAreaUnit.id.toString());
+    }
+  }
 
   const amenitiesDropdownData = (amenityList || []).map((a) => ({
     label: a.name,
@@ -441,12 +511,13 @@ const FillDetailsForm = ({ visible, onClose, selectedCount = 0, onSave, property
                 maxHeight={260}
                 labelField="label"
                 valueField="value"
-                placeholder={areaUnit ? undefined : "Unit"}
+                placeholder={(initialData && initialData.carpetAreaUnit && initialData.carpetAreaUnit.unitName) ? undefined : "Unit"}
                 value={areaUnit}
                 onChange={(item) => {
                   setAreaUnit(item.value);
                 }}
               />
+           
             </View>
 
             <Text style={styles.label}>Loading %</Text>
@@ -679,9 +750,14 @@ const FillDetailsForm = ({ visible, onClose, selectedCount = 0, onSave, property
           </ScrollView>
 
           {/* Save Button */}
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-            <Text style={styles.saveBtnText}>Save Details</Text>
+          <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={fillLoading}>
+            <Text style={styles.saveBtnText}>{fillLoading ? 'Saving...' : 'Save Details'}</Text>
           </TouchableOpacity>
+          {fillError && (
+            <Text style={{ color: 'red', textAlign: 'center', marginTop: 8 }}>
+              Error saving details. Please try again.
+            </Text>
+          )}
         </View>
       </View>
 
