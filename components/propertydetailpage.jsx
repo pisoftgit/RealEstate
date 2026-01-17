@@ -52,14 +52,45 @@ const PropertyDetailPage = ({ type, onBack, data, loading }) => {
   // We only show dummy data if the data prop is explicitly undefined (not yet fetching or dev mode).
   const sourceData = loading ? [] : (Array.isArray(data) ? data : (dummyData[type] || []));
 
-  // Filtered data - supporting both API and dummy data fields
-  const filteredData = sourceData.filter(
-    (item) =>
+  // Filtered data - support search and filter params (structureId, area, towerId)
+  const filteredData = sourceData.filter((item) => {
+    // Search filter (tower/flat/unit)
+    const matchesSearch =
       (item.towerName && item.towerName.toLowerCase().includes(search.toLowerCase())) ||
       (item.tower && item.tower.toLowerCase().includes(search.toLowerCase())) ||
       (item.unitNumber && item.unitNumber.toLowerCase().includes(search.toLowerCase())) ||
-      (item.flatNumber && item.flatNumber.toLowerCase().includes(search.toLowerCase()))
-  );
+      (item.flatNumber && item.flatNumber.toLowerCase().includes(search.toLowerCase()));
+
+    // Structure filter
+    let matchesStructure = true;
+    if (filters.structureId) {
+      // Try both flatHouseStructure?.id and structureId direct
+      matchesStructure =
+        (item.flatHouseStructure && String(item.flatHouseStructure.id) === String(filters.structureId)) ||
+        (item.structureId && String(item.structureId) === String(filters.structureId));
+    }
+
+    // Area filter
+    let matchesArea = true;
+    if (filters.area) {
+      // Try both area and carpetArea
+      matchesArea =
+        (item.area && String(item.area) === String(filters.area)) ||
+        (item.carpetArea && String(item.carpetArea) === String(filters.area));
+    }
+
+    // Tower filter
+    let matchesTower = true;
+    if (filters.towerId) {
+      // Try both towerId and tower?.id
+      matchesTower =
+        (item.towerId && String(item.towerId) === String(filters.towerId)) ||
+        (item.tower && String(item.tower) === String(filters.towerId)) ||
+        (item.towerName && String(item.towerName) === String(filters.towerId));
+    }
+
+    return matchesSearch && matchesStructure && matchesArea && matchesTower;
+  });
   const paginatedData = filteredData.slice((page - 1) * pageSize, page * pageSize);
   const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
 
@@ -443,7 +474,11 @@ const PropertyDetailPage = ({ type, onBack, data, loading }) => {
         visible={filterVisible}
         onClose={() => setFilterVisible(false)}
         propertyType={type}
-        onApply={() => setFilterVisible(false)}
+        onApply={(filterParams) => {
+          setFilters(filterParams || {});
+          setFilterVisible(false);
+          setPage(1); // Reset to first page on filter apply
+        }}
         filters={filters}
         setFilters={setFilters}
         projectId={sourceData[0]?.projectId}

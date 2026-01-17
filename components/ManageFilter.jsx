@@ -1,22 +1,101 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState } from "react";
+import * as SecureStore from 'expo-secure-store';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions, Platform, ScrollView, ActivityIndicator } from "react-native";
 import { useSocietyBlocks } from "../hooks/useRealEstateProperties";
+import { API_BASE_URL } from "../services/api";
+
 
 const screenWidth = Dimensions.get("window").width;
 
-const structureOptions = ["1BHK", "2BHK", "3BHK", "4BHK"];
-const areaOptions = ["500 sqft", "1000 sqft", "1500 sqft", "2000 sqft"]; // Example
+const defaultStructureOptions = ["1BHK", "2BHK", "3BHK", "4BHK"];
+// Area options will be fetched from API for GROUP_BLOCK
 const houseVillaOptions = ["Villa Type 1", "Villa Type 2"];
 const plotTypeOptions = ["Residential", "Commercial", "Industrial"];
 
 const ManageFilter = ({ visible, onClose, propertyType, onApply, filters, setFilters, projectId }) => {
   const { blocks, loading: blocksLoading } = useSocietyBlocks(propertyType === "GROUP_BLOCK" ? projectId : null);
 
+  // Area and structure options state
+  const [areaOptions, setAreaOptions] = useState(["500 sqft", "1000 sqft", "1500 sqft", "2000 sqft"]);
+  const [areaLoading, setAreaLoading] = useState(false);
+  const [areaError, setAreaError] = useState(null);
+  const [structureOptions, setStructureOptions] = useState(defaultStructureOptions);
+  const [structureLoading, setStructureLoading] = useState(false);
+  const [structureError, setStructureError] = useState(null);
+
+  useEffect(() => {
+    // Only fetch for GROUP_BLOCK and valid projectId
+    if (propertyType && projectId) {
+      setAreaLoading(true);
+      setAreaError(null);
+      setStructureLoading(true);
+      setStructureError(null);
+      (async () => {
+        try {
+          const secretKey = await SecureStore.getItemAsync('auth_token');
+          // Area fetch
+          const areaRes = await fetch(`${API_BASE_URL}/real-estate-properties/areas?propertyItem=${propertyType}&projectId=${projectId}`,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                secret_key: secretKey,
+              },
+            }
+          );
+          if (!areaRes.ok) {
+            console.error('Area API response not ok:', areaRes.status, areaRes.statusText);
+            throw new Error("Failed to fetch area options");
+          }
+          const areaData = await areaRes.json();
+          console.log('Area API response:', areaData);
+          if (Array.isArray(areaData)) {
+            setAreaOptions(areaData.map(a => a.areaDetails));
+          } else {
+            setAreaOptions(["500 sqft", "1000 sqft", "1500 sqft", "2000 sqft"]);
+            setAreaError("Area API did not return array");
+          }
+          setAreaLoading(false);
+
+          // Structure fetch
+          const structureRes = await fetch(`${API_BASE_URL}/real-estate-properties/structures?propertyItem=${propertyType}&projectId=${projectId}`,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                secret_key: secretKey,
+              },
+            }
+          );
+          if (!structureRes.ok) {
+            console.error('Structure API response not ok:', structureRes.status, structureRes.statusText);
+            throw new Error("Failed to fetch structure options");
+          }
+          const structureData = await structureRes.json();
+          console.log('Structure API response:', structureData);
+          if (Array.isArray(structureData)) {
+            setStructureOptions(structureData.map(s => s.structure));
+          } else {
+            setStructureOptions(defaultStructureOptions);
+            setStructureError("Structure API did not return array");
+          }
+        } catch (err) {
+          setAreaError("Error loading area options: " + err.message);
+          setStructureError("Error loading structure options: " + err.message);
+          console.error('Area/Structure API error:', err);
+          setAreaOptions(["500 sqft", "1000 sqft", "1500 sqft", "2000 sqft"]);
+          setStructureOptions(defaultStructureOptions);
+        } finally {
+          setAreaLoading(false);
+          setStructureLoading(false);
+        }
+      })();
+    }
+  }, [propertyType, projectId]);
+
   const towerOptions = useMemo(() => {
     if (blocks && Array.isArray(blocks)) {
       return blocks.map(block => block.blockHouseName);
     }
-    return ["Tower 1", "Tower 2", "Tower 3"]; // Fallback
+    return []
   }, [blocks]);
 
   // Helper to render a simple option list
@@ -24,19 +103,19 @@ const ManageFilter = ({ visible, onClose, propertyType, onApply, filters, setFil
     <View style={{ marginBottom: 10 }}>
       <Text style={styles.filterLabel}>{label}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-        {options.map((opt) => (
+        {options.map((opt, idx) => (
           <TouchableOpacity
-            key={opt}
+            key={typeof opt === 'object' ? opt.id || opt.value || idx : opt}
             style={[
               styles.optionBtn,
-              filters[filterKey] === opt && styles.optionBtnSelected,
+              filters[filterKey] === (typeof opt === 'object' ? opt.value || opt.id : opt) && styles.optionBtnSelected,
             ]}
-            onPress={() => setFilters({ ...filters, [filterKey]: filters[filterKey] === opt ? undefined : opt })}
+            onPress={() => setFilters({ ...filters, [filterKey]: filters[filterKey] === (typeof opt === 'object' ? opt.value || opt.id : opt) ? undefined : (typeof opt === 'object' ? opt.value || opt.id : opt) })}
           >
             <Text style={[
               styles.optionBtnText,
-              filters[filterKey] === opt && styles.optionBtnTextSelected,
-            ]}>{opt}</Text>
+              filters[filterKey] === (typeof opt === 'object' ? opt.value || opt.id : opt) && styles.optionBtnTextSelected,
+            ]}>{typeof opt === 'object' ? (opt.label || opt.structure || opt.areaDetails || opt.name || opt.value) : opt}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -49,8 +128,20 @@ const ManageFilter = ({ visible, onClose, propertyType, onApply, filters, setFil
       case "GROUP_BLOCK":
         return (
           <>
-            {renderOptions("Structure", structureOptions, "structure")}
-            {renderOptions("Area", areaOptions, "area")}
+            {structureLoading ? (
+              <ActivityIndicator size="small" color="#033b01ff" style={{ marginVertical: 10 }} />
+            ) : structureError ? (
+              <Text style={{ color: 'red', marginBottom: 10 }}>{structureError}</Text>
+            ) : (
+              renderOptions("Structure", structureOptions, "structure")
+            )}
+            {areaLoading ? (
+              <ActivityIndicator size="small" color="#033b01ff" style={{ marginVertical: 10 }} />
+            ) : areaError ? (
+              <Text style={{ color: 'red', marginBottom: 10 }}>{areaError}</Text>
+            ) : (
+              renderOptions("Area", areaOptions, "area")
+            )}
             {blocksLoading ? (
                <ActivityIndicator size="small" color="#033b01ff" style={{ marginVertical: 10 }} />
             ) : (
@@ -83,6 +174,31 @@ const ManageFilter = ({ visible, onClose, propertyType, onApply, filters, setFil
     }
   };
 
+  // Helper to get selected structureId, area, towerId
+  const getSelectedFilterParams = () => {
+    let structureId = null;
+    let area = null;
+    let towerId = null;
+    // Try to find structureId from structureOptions
+    if (filters.structure && Array.isArray(structureOptions)) {
+      const found = structureOptions.find(opt => (typeof opt === 'object' ? (opt.value || opt.id || opt.structure) : opt) === filters.structure || (typeof opt === 'string' && opt === filters.structure));
+      if (found && typeof found === 'object' && found.id) structureId = found.id;
+    }
+    // Area: if areaOptions are objects, get value, else use string
+    if (filters.area && Array.isArray(areaOptions)) {
+      const found = areaOptions.find(opt => (typeof opt === 'object' ? (opt.value || opt.area || opt.areaDetails) : opt) === filters.area || (typeof opt === 'string' && opt === filters.area));
+      if (found && typeof found === 'object' && found.area) area = found.area;
+      else if (typeof filters.area === 'string') area = parseFloat(filters.area);
+    }
+    // Tower: if towerOptions are objects, get id, else use string
+    if (filters.tower && Array.isArray(towerOptions)) {
+      const found = towerOptions.find(opt => (typeof opt === 'object' ? (opt.value || opt.id || opt.name) : opt) === filters.tower || (typeof opt === 'string' && opt === filters.tower));
+      if (found && typeof found === 'object' && found.id) towerId = found.id;
+      else if (typeof filters.tower === 'string') towerId = filters.tower;
+    }
+    return { structureId, area, towerId };
+  };
+
   return (
     <Modal
       visible={visible}
@@ -102,7 +218,7 @@ const ManageFilter = ({ visible, onClose, propertyType, onApply, filters, setFil
           <ScrollView contentContainerStyle={styles.content}>
             {renderFilters()}
           </ScrollView>
-          <TouchableOpacity style={styles.applyBtn} onPress={onApply}>
+          <TouchableOpacity style={styles.applyBtn} onPress={() => onApply(getSelectedFilterParams())}>
             <Text style={styles.applyBtnText}>Apply Filters</Text>
           </TouchableOpacity>
         </View>

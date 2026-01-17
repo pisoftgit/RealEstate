@@ -74,7 +74,7 @@ export const useSocietyBlocks = (projectId) => {
       setError(null);
       try {
         const secretKey = await SecureStore.getItemAsync('auth_token');
-        const response = await fetch(`${API_BASE_URL}/real-estate-properties/getAllSocietyBlocksByProjectId/${projectId}`, {
+        const response = await fetch(`${API_BASE_URL}/society-block/getAllSocietyBlocksByProjectId/${projectId}`, {
           method: 'GET',
           headers: {
             secret_key: secretKey,
@@ -82,7 +82,6 @@ export const useSocietyBlocks = (projectId) => {
         });
         const text = await response.text();
         if (!response.ok) throw new Error(text || 'Failed to fetch blocks');
-        
         const result = JSON.parse(text);
         setBlocks(result.data || result);
       } catch (err) {
