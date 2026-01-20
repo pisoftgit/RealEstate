@@ -569,6 +569,19 @@ export const defaultModules = [
           },
         ],
       },
+      {
+        name: "underwritten",
+        path: "/(drawer)/InventoryManagement/Underwriting",
+        title: "Underwritten",
+        icon: Brief,
+        children: [
+          {
+            name: "AddUnderwritten",
+            path: "/(drawer)/InventoryManagement/Underwriting/Addunderwrite",
+            title: "Add Underwritten",
+          },
+        ],
+      }
     ],
   },
   {
