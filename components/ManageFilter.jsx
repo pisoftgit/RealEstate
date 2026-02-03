@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions, Platform, ScrollView, ActivityIndicator } from "react-native";
 import { useSocietyBlocks } from "../hooks/useRealEstateProperties";
 import { API_BASE_URL } from "../services/api";
-
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -246,14 +246,14 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     height: '100%',
-    width: screenWidth * 0.8,
+    width: wp('80%'),
     backgroundColor: '#fff',
-    paddingTop: Platform.OS === 'android' ? 30 : 50,
-    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? hp('3.7%') : hp('6.2%'),
+    paddingHorizontal: wp('5%'),
     shadowColor: '#000',
     shadowOffset: { width: -2, height: 0 },
     shadowOpacity: 0.2,
-    shadowRadius: 8,
+    shadowRadius: wp('2%'),
     elevation: 10,
     zIndex: 2,
   },
@@ -261,48 +261,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: hp('2.5%'),
   },
   headerText: {
-    fontSize: 22,
+    fontSize: wp('5.5%'),
     color: '#064226ff',
     fontFamily: 'PlusSB',
   },
   closeText: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     color: '#666',
     fontFamily: 'PlusL',
   },
   content: {
-    paddingBottom: 30,
+    paddingBottom: hp('3.7%'),
   },
   filterLabel: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontWeight: '600',
-    marginTop: 18,
-    marginBottom: 8,
+    marginTop: hp('2.2%'),
+    marginBottom: hp('1%'),
     color: '#033b01ff',
     fontFamily: 'PlusSB',
   },
   applyBtn: {
     backgroundColor: '#033b01ff',
-    paddingVertical: 14,
-    borderRadius: 10,
+    paddingVertical: hp('1.8%'),
+    borderRadius: wp('2.5%'),
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: hp('2.5%'),
   },
   applyBtnText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusSB',
   },
   optionBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: wp('3.5%'),
+    paddingVertical: hp('1%'),
+    borderRadius: wp('5%'),
     backgroundColor: '#f1f1f1',
-    marginRight: 8,
-    marginBottom: 8,
+    marginRight: wp('2%'),
+    marginBottom: hp('1%'),
     borderWidth: 1,
     borderColor: '#ddd',
   },
@@ -312,8 +312,7 @@ const styles = StyleSheet.create({
   },
   optionBtnText: {
     color: '#033b01ff',
-    fontSize: 14,
-    
+    fontSize: wp('3.5%'),
     fontFamily: 'PlusL',
   },
   optionBtnTextSelected: {

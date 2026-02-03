@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, Switch, TextInput, Platform } from 
 import DropDownPicker from 'react-native-dropdown-picker';
 import useAssignFrom from '../hooks/useAssignFrom';
 import * as SecureStore from 'expo-secure-store';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const COLORS = {
   primary: '#2e7d32',
@@ -21,49 +22,48 @@ const STYLES = StyleSheet.create({
   label: {
     fontWeight: '500',
     color: COLORS.text,
-    marginBottom: 5,
-    marginTop: 10,
+    marginBottom: hp('0.7%'),
+    marginTop: hp('1.2%'),
     fontFamily: 'PlusR',
   },
   input: {
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 5,
+    borderRadius: wp('2%'),
+    padding: wp('3%'),
+    marginBottom: hp('0.7%'),
     backgroundColor: COLORS.input,
     color: COLORS.text,
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusL',
   },
   dropdown: {
     borderColor: COLORS.border,
-    borderRadius: 8,
+    borderRadius: wp('2%'),
     backgroundColor: COLORS.input,
-    marginBottom: 15,
+    marginBottom: hp('2%'),
     fontFamily: 'PlusR',
   },
   dropdownContainer: {
     borderColor: COLORS.border,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: wp('2%'),
     backgroundColor: COLORS.card,
     fontFamily: 'PlusR',
   },
   card: {
     backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 10,
-    marginHorizontal: 10,
-    marginBottom: 20,
+    borderRadius: wp('4%'),
+    padding: wp('2.5%'),
+    marginHorizontal: wp('2.5%'),
+    marginBottom: hp('2.5%'),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: hp('0.5%') },
     shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowRadius: wp('1.5%'),
     elevation: 5,
   },
 });
-
 
 const UnderwriteForm = ({ level }) => {
   // Dropdown states

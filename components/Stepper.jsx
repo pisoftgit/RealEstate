@@ -7,6 +7,7 @@ import {
   Animated,
   Easing,
 } from 'react-native';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const Stepper = ({ currentStep, labels, onStepPress }) => {
   const animatedWidths = useRef(labels.map(() => new Animated.Value(0))).current;
@@ -95,7 +96,7 @@ const Stepper = ({ currentStep, labels, onStepPress }) => {
 
 const styles = StyleSheet.create({
   wrapper: {
-    paddingVertical: 20,
+    paddingVertical: hp('2.5%'),
     backgroundColor: '#fff',
   },
   stepperContainer: {
@@ -103,8 +104,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 0,
     width: '100%',
-    marginLeft: 30,
-    marginTop: 90
+    marginLeft: wp('8%'),
+    marginTop: hp('11.2%'),
   },
   stepSection: {
     flex: 1,
@@ -116,28 +117,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   circle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: wp('8%'),
+    height: wp('8%'),
+    borderRadius: wp('4%'),
     justifyContent: 'center',
     alignItems: 'center',
   },
   innerDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: wp('2.2%'),
+    height: wp('2.2%'),
+    borderRadius: wp('1.1%'),
     backgroundColor: '#fff',
   },
   checkmark: {
-    fontSize: 12,
+    fontSize: wp('3.2%'),
     color: '#fff',
     fontWeight: 'bold',
   },
   label: {
-    fontSize: 10,
+    fontSize: wp('2.7%'),
     color: '#666',
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: hp('0.5%'),
     fontFamily: 'PlusR',
   },
   completedLabel: {
@@ -150,30 +151,23 @@ const styles = StyleSheet.create({
   },
   line: {
     height: 2,
-    marginHorizontal: 8,
-    marginTop: -15,
+    marginHorizontal: wp('2%'),
+    marginTop: -hp('1.8%'),
     alignSelf: 'center',
-    left: -23,
+    left: -wp('6%'),
   },
-
-
-
-
-
-
   lineWrapper: {
     position: 'relative',
     flexGrow: 1,
     height: 2,
-    marginHorizontal: -5,  // slightly more space
-    marginTop: -15,
+    marginHorizontal: -wp('1.2%'),
+    marginTop: -hp('1.8%'),
     justifyContent: 'center',
   },
   staticLine: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#ccc',
     borderRadius: 1,
-    
   },
   animatedLine: {
     height: 2,

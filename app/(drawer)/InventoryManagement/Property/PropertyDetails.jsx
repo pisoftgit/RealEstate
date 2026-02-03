@@ -21,6 +21,7 @@ import useStructure from "../../../../hooks/useStructure";
 import AddPropertyUnits from "../../../../components/AddPropertyUnits";
 import TowerUnitSerializer from "./TowerUnitSerializer";
 import ExistingPropertyUnitForm from "./ExistingPropertyUnitForm";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const COLORS = {
   primary: "#004d40", 
@@ -725,7 +726,6 @@ const ApartmentComplexSection = ({ towerType, setTowerType, projectId, subProper
   );
 };
 
-
 /* -------------------- Independent House Section -------------------- */
 const IndependentHouseSection = ({ projectId, subPropertyTypeId }) => (
   <View style={styles.sectionContent}>
@@ -769,7 +769,6 @@ const CommercialPlotSection = ({ projectId, subPropertyTypeId }) => (
     />
   </View>
 );
-
 
 /* ----------------------------- Main Component ---------------------------- */
 export default function PropertyDetails() {
@@ -1119,93 +1118,93 @@ export default function PropertyDetails() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 16,
-    paddingTop:30,
-    paddingBottom: 50,
+    padding: wp('4%'),
+    paddingTop: hp('4%'),
+    paddingBottom: hp('6%'),
   },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
-    paddingHorizontal: 5,
+    marginBottom: hp('2.5%'),
+    paddingHorizontal: wp('1.2%'),
   },
   headerTitle: {
-    fontSize: 26,
+    fontSize: wp('6.8%'),
     fontFamily: "PlusSB",
     color: COLORS.primary,
   },
   backButton: {
-    padding: 5,
+    padding: wp('1.2%'),
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 15,
+    paddingHorizontal: wp('4%'),
+    paddingVertical: hp('2%'),
     backgroundColor: COLORS.card,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     shadowColor: COLORS.text,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: hp('0.25%') },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: wp('1%'),
     elevation: 3,
   },
   sectionContainer: {
     backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: wp('4%'),
+    padding: wp('5%'),
+    marginBottom: hp('2.5%'),
     shadowColor: COLORS.text,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: hp('0.25%') },
     shadowOpacity: 0.15,
-    shadowRadius: 4,
+    shadowRadius: wp('1%'),
     elevation: 5,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: wp('4.5%'),
     fontFamily: "PlusSB",
     color: COLORS.primary,
     borderBottomWidth: 2,
     borderBottomColor: COLORS.border,
-    paddingBottom: 8,
-    marginBottom: 16,
+    paddingBottom: hp('1%'),
+    marginBottom: hp('2%'),
   },
   propertyRow: {
-    marginBottom: 15,
+    marginBottom: hp('1.8%'),
   },
   label: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: "PlusSB",
-    marginBottom: 8,
+    marginBottom: hp('1%'),
     color: COLORS.text,
   },
   subLabel: {
-    fontSize: 15,
+    fontSize: wp('4%'),
     fontFamily: "PlusSB",
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: hp('1.2%'),
+    marginBottom: hp('1.2%'),
     color: COLORS.text,
   },
   instructionText: {
-    fontSize: 13,
+    fontSize: wp('3.2%'),
     fontFamily: "PlusL",
     color: COLORS.placeholder,
-    marginBottom: 15,
+    marginBottom: hp('1.8%'),
   },
   
   // Option Buttons (Horizontal Scroll)
   optionButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 12,
-    marginRight: 10,
+    paddingVertical: hp('1.2%'),
+    paddingHorizontal: wp('4.5%'),
+    borderRadius: wp('3%'),
+    marginRight: wp('2.5%'),
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: hp('0.12%') },
     shadowOpacity: 0.05,
-    shadowRadius: 1,
+    shadowRadius: wp('0.2%'),
     elevation: 2,
   },
   optionButtonActivePrimary: { backgroundColor: COLORS.primary },
@@ -1215,31 +1214,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  optionText: { fontSize: 14, fontFamily: "PlusM" },
+  optionText: { fontSize: wp('3.5%'), fontFamily: "PlusM" },
   optionTextActive: { color: COLORS.card, fontFamily: "PlusSB" },
   optionTextInactive: { color: COLORS.text, fontFamily: "PlusL" },
-  italicText: { fontStyle: "italic", fontFamily: "PlusL", color: COLORS.placeholder, textAlign: 'center', paddingVertical: 10 },
-  sectionContent: { marginTop: 5 },
+  italicText: { fontStyle: "italic", fontFamily: "PlusL", color: COLORS.placeholder, textAlign: 'center', paddingVertical: hp('1.2%') },
+  sectionContent: { marginTop: hp('0.6%') },
   
   // Form Section (for separating form components)
   formSection: {
     backgroundColor: COLORS.background,
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
+    borderRadius: wp('3%'),
+    padding: wp('4%'),
+    marginBottom: hp('1.8%'),
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   
   // Tower Type Toggle Buttons
-  toggleRow: { flexDirection: "row", gap: 10, marginBottom: 15 },
+  toggleRow: { flexDirection: "row", gap: wp('2.5%'), marginBottom: hp('1.2%') },
   toggleButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: hp('1.5%'),
+    borderRadius: wp('3%'),
     backgroundColor: COLORS.input,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -1248,64 +1247,54 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  toggleLabel: { marginLeft: 8, fontFamily: 'PlusSB', color: COLORS.text, fontSize: 14 },
-
-  // Radio Buttons
-  radioGroup: { flexDirection: "row", gap: 24, marginBottom: 12 },
+  toggleLabel: { marginLeft: wp('2%'), fontFamily: 'PlusSB', color: COLORS.text, fontSize: wp('3.5%') },
+  radioGroup: { flexDirection: "row", gap: wp('6%'), marginBottom: hp('1.2%') },
   radioRow: { flexDirection: "row", alignItems: "center" },
-  radioLabel: { marginLeft: 8, fontFamily: "PlusM", color: COLORS.text },
-
-  // Primary Button (Save/Action)
+  radioLabel: { marginLeft: wp('2%'), fontFamily: "PlusM", color: COLORS.text },
   primaryButton: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.secondary,
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginTop: 20,
+    paddingVertical: hp('1.8%'),
+    borderRadius: wp('3%'),
+    marginTop: hp('2.5%'),
     elevation: 4,
     shadowColor: COLORS.secondary,
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: hp('0.37%') },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowRadius: wp('1%'),
   },
-  primaryButtonText: { color: COLORS.card, fontSize: 16, fontFamily: "PlusSB", textAlign: "center" },
-
-  // Secondary Button (Add Unit)
+  primaryButtonText: { color: COLORS.card, fontSize: wp('4%'), fontFamily: "PlusSB", textAlign: "center" },
   secondaryButton: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.card,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginTop: 10,
+    paddingVertical: hp('1.5%'),
+    borderRadius: wp('3%'),
+    marginTop: hp('1.2%'),
     borderWidth: 1.5,
   },
-  secondaryButtonText: { fontSize: 14, fontFamily: "PlusSB", textAlign: "center" },
-
-  // Inputs
-  inputBox: { marginBottom: 15 },
-  inputLabel: { marginBottom: 4, fontFamily: "PlusSB", color: COLORS.text },
+  secondaryButtonText: { fontSize: wp('3.5%'), fontFamily: "PlusSB", textAlign: "center" },
+  inputBox: { marginBottom: hp('1.8%') },
+  inputLabel: { marginBottom: hp('0.6%'), fontFamily: "PlusSB", color: COLORS.text },
   input: {
     backgroundColor: COLORS.input,
-    padding: 12,
-    borderRadius: 12,
+    padding: wp('3%'),
+    borderRadius: wp('3%'),
     borderWidth: 1,
     borderColor: COLORS.border,
     color: COLORS.text,
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: "PlusL",
   },
-  
-  // Unit Box
   unitBox: { 
-    marginBottom: 20, 
-    padding: 15,
-    paddingTop: 5,
+    marginBottom: hp('2.5%'), 
+    padding: wp('4%'),
+    paddingTop: hp('1.2%'),
     backgroundColor: COLORS.input,
-    borderRadius: 12,
+    borderRadius: wp('3%'),
     borderLeftWidth: 4,
   },
   unitHeader: {
@@ -1314,82 +1303,78 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    marginBottom: 10,
-    paddingVertical: 5,
+    marginBottom: hp('1.2%'),
+    paddingVertical: hp('0.6%'),
   },
   unitHeaderText: {
     fontFamily: 'PlusSB',
     color: COLORS.primary,
   },
   removeButton: {
-    padding: 5,
+    padding: wp('1.2%'),
     alignSelf: 'flex-end',
   },
   errorText: { 
-    marginTop: 15,
-    padding: 10,
-    borderRadius: 8,
+    marginTop: hp('2.5%'),
+    padding: wp('2.5%'),
+    borderRadius: wp('2%'),
     borderLeftWidth: 4,
     borderColor: COLORS.warning,
     backgroundColor: '#fffbe6',
     fontFamily: 'PlusM',
   },
-  
-  // Linkable Units Info
   linkableUnitsInfo: {
     backgroundColor: '#3b82f620',
-    padding: 12,
-    borderRadius: 10,
-    marginVertical: 15,
+    padding: wp('3%'),
+    borderRadius: wp('2.5%'),
+    marginVertical: hp('1.8%'),
     borderWidth: 1,
     borderColor: '#3b82f6',
   },
   linkableUnitsText: {
-    fontSize: 15,
+    fontSize: wp('4%'),
     fontFamily: "PlusM",
     color: '#1e40af',
     textAlign: 'center',
   },
   linkableUnitsBold: {
     fontFamily: 'PlusSB',
-    fontSize: 16,
+    fontSize: wp('4.2%'),
   },
-  
-  // Floor Structures Table
   floorStructuresTable: {
-    marginTop: 20,
-    padding: 15,
+    marginTop: hp('2.5%'),
+    padding: wp('3%'),
     backgroundColor: '#f9fafb',
-    borderRadius: 12,
+    borderRadius: wp('3%'),
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
   structureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 10,
+    paddingVertical: hp('1.5%'),
+    paddingHorizontal: wp('2.5%'),
     backgroundColor: COLORS.background,
-    borderRadius: 8,
-    marginTop: 8,
+    borderRadius: wp('2%'),
+    marginTop: hp('1%'),
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
   structureName: {
-    fontSize: 15,
+    fontSize: wp('4%'),
     fontFamily: 'PlusSB',
     color: COLORS.text,
   },
   structureArea: {
-    fontSize: 13,
+    fontSize: wp('3.2%'),
     fontFamily: 'PlusM',
     color: '#10b981',
-    marginTop: 2,
+    marginTop: hp('0.3%'),
   },
   structureQty: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: 'PlusSB',
     color: COLORS.text,
-    marginRight: 15,
+    marginRight: wp('3.5%'),
   },
 });

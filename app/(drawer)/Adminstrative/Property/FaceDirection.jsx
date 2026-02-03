@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 // Import your API hook here
 import useFaceDirectionActions from '../../../../hooks/useFaceDirectionActions';
@@ -95,79 +96,81 @@ export default function FaceDirection() {
 // Styles remain unchanged
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f8f9fa' },
-  container: { flex: 1, backgroundColor: '#f8f9fa', padding: 20 },
+  container: { flex: 1, backgroundColor: '#f8f9fa', padding: wp('5%') },
   header: {
-    paddingVertical: 18,
-    marginBottom: 8,
+    paddingVertical: hp('2.2%'),
+    marginBottom: hp('1%'),
   },
   title: {
-    fontSize: 32,
+    fontSize: wp('8%'),
     fontFamily: 'PlusSB',
     color: '#333',
-    marginLeft: 16,
+    marginLeft: wp('4%'),
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: wp('4%'),
+    padding: wp('4%'),
+    marginBottom: hp('2%'),
     elevation: 3,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: wp('4.5%'),
     fontFamily: 'PlusSB',
     color: '#333',
-    marginBottom: 12,
+    marginBottom: hp('1.5%'),
   },
   formRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: hp('1.5%'),
   },
   label: {
-    width: 120,
+    width: wp('30%'),
     color: '#333',
     fontFamily: 'PlusR',
+    fontSize: wp('3.5%'),
   },
   input: {
     flex: 1,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 8,
+    borderRadius: wp('2%'),
+    padding: wp('2%'),
     backgroundColor: '#f5f5f5',
     color: '#333',
     fontFamily: 'PlusR',
+    fontSize: wp('3.5%'),
   },
   submitButton: {
     backgroundColor: '#5aaf57',
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: hp('1.2%'),
+    borderRadius: wp('2%'),
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: hp('1%'),
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusSB',
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#5aaf57',
-    padding: 8,
-    borderRadius: 8,
-    marginBottom: 4,
+    padding: wp('2%'),
+    borderRadius: wp('2%'),
+    marginBottom: hp('0.5%'),
   },
   tableHeaderText: {
     flex: 1,
     color: '#fff',
     textAlign: 'center',
     fontFamily: 'PlusSB',
-    fontSize: 14,
+    fontSize: wp('3.2%'),
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 8,
+    padding: wp('2%'),
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
     backgroundColor: '#fff',
@@ -177,15 +180,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#333',
     fontFamily: 'PlusR',
-    fontSize: 13,
+    fontSize: wp('3%'),
   },
   actionCell: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
+    gap: wp('3%'),
   },
   iconBtn: {
-    padding: 4,
+    padding: wp('1%'),
   },
 });

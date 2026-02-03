@@ -8,6 +8,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import moment from 'moment';
 import { API_BASE_URL } from '../../../services/api';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const Appointments = () => {
   const { user } = useUser();
@@ -202,51 +203,51 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    padding: 20,
+    padding: wp('5%'),
   },
   menuContainer: {
-    marginBottom: 10,
+    marginBottom: hp('1.2%'),
   },
   header: {
-    fontSize: 32,
+    fontSize: wp('8%'),
     fontFamily: 'PlusR',
-    marginVertical: 10,
+    marginVertical: hp('1.2%'),
   },
   loadingText: {
-    fontSize: 18,
+    fontSize: wp('4.5%'),
     fontFamily: 'PlusR',
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: hp('2.5%'),
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: wp('4.5%'),
     fontFamily: 'PlusR',
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: hp('2.5%'),
     color: '#555',
   },
   listContainer: {
-    paddingBottom: 20,
+    paddingBottom: hp('2.5%'),
   },
   sectionHeader: {
     backgroundColor: '#f0f9f0',
-    padding: 10,
-    borderRadius: 8,
-    marginVertical: 8,
+    padding: wp('2.5%'),
+    borderRadius: wp('2%'),
+    marginVertical: hp('1%'),
     borderLeftWidth: 4,
     borderLeftColor: '#5aaf57',
   },
   sectionHeaderText: {
-    fontSize: 18,
+    fontSize: wp('4.5%'),
     fontFamily: 'PlusSB',
     color: '#333',
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    marginVertical: 8,
-    marginHorizontal: 4,
-    padding: 15,
+    borderRadius: wp('3%'),
+    marginVertical: hp('1%'),
+    marginHorizontal: wp('1%'),
+    padding: wp('4%'),
     shadowColor: '#5aaf57',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
@@ -254,44 +255,42 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   cardHeader: {
-    flex:1,
+    flex: 1,
     flexDirection: 'row',
-    justifyContent:"space-between",
-    
+    justifyContent: "space-between",
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    paddingBottom: 10,
-    marginBottom: 10,
+    paddingBottom: hp('1.2%'),
+    marginBottom: hp('1.2%'),
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 2,
+    marginVertical: hp('0.3%'),
   },
   headerRow2: {
     flexDirection: 'row',
-  
     alignItems: 'center',
-    marginVertical: 2,
+    marginVertical: hp('0.3%'),
   },
   icon: {
-    marginRight: 8,
+    marginRight: wp('2%'),
   },
   name: {
-    fontSize: 20,
+    fontSize: wp('5%'),
     fontFamily: 'PlusSB',
     color: '#333',
   },
   mobile: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusR',
     color: '#555',
   },
   cardBody: {
-    gap: 8,
+    gap: hp('1%'),
   },
   detail: {
-    fontSize: 15,
+    fontSize: wp('3.8%'),
     fontFamily: 'PlusR',
     color: '#333',
   },
@@ -300,27 +299,27 @@ const styles = StyleSheet.create({
     color: '#5aaf57',
   },
   remarkInputContainer: {
-    marginTop: 8,
-    gap: 10,
+    marginTop: hp('1%'),
+    gap: hp('1.2%'),
   },
   remarkInput: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 15,
+    borderRadius: wp('2%'),
+    padding: wp('2.5%'),
+    fontSize: wp('3.8%'),
     fontFamily: 'PlusR',
-    minHeight: 60,
+    minHeight: hp('7%'),
     textAlignVertical: 'top',
   },
   submitBtn: {
     backgroundColor: '#5aaf57',
-    borderRadius: 8,
-    paddingVertical: 10,
+    borderRadius: wp('2%'),
+    paddingVertical: hp('1.2%'),
     alignItems: 'center',
   },
   submitBtnText: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusSB',
     color: '#fff',
   },

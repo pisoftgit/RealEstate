@@ -22,6 +22,7 @@ import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 import { useUser } from "../../../context/UserContext";
 import { API_BASE_URL } from "../../../services/api";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const Followup = () => {
   const navigation = useNavigation();
@@ -800,16 +801,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   header: {
-    fontSize: 32,
+    fontSize: wp('8%'),
     fontFamily: "PlusR",
-    marginLeft: 10,
-    marginBottom: 10,
+    marginLeft: wp('2.5%'),
+    marginBottom: hp('1.2%'),
   },
   detailCard: {
     backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 20,
+    borderRadius: wp('2%'),
+    padding: wp('4%'),
+    marginBottom: hp('2.5%'),
     shadowColor: "#5aaf57",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.5,
@@ -818,25 +819,25 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
   },
   detailTitle: {
-    fontSize: 18,
+    fontSize: wp('4.5%'),
     fontFamily: "PlusSB",
     color: "#5aaf57",
-    marginBottom: 10,
-    marginLeft: 10,
+    marginBottom: hp('1.2%'),
+    marginLeft: wp('2.5%'),
   },
   detailRow: {
     flexDirection: "row",
-    marginBottom: 8,
+    marginBottom: hp('1%'),
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: "PlusSB",
     color: "#333",
-    marginLeft: 10,
-    width: 210,
+    marginLeft: wp('2.5%'),
+    width: wp('55%'),
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: "PlusR",
     color: "#555",
     flex: 1,
@@ -844,10 +845,11 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
-    padding: 12,
-    borderRadius: 8,
-    marginVertical: 5,
+    padding: wp('3%'),
+    borderRadius: wp('2%'),
+    marginVertical: hp('0.7%'),
     backgroundColor: "#fff",
+    fontSize: wp('3.8%'),
   },
   inputError: {
     borderColor: "red",
@@ -855,10 +857,10 @@ const styles = StyleSheet.create({
   radioBtn: {
     borderWidth: 1,
     borderColor: "#ccc",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginRight: 10,
+    paddingVertical: hp('1%'),
+    paddingHorizontal: wp('4%'),
+    borderRadius: wp('2%'),
+    marginRight: wp('2.5%'),
   },
   radioBtnSelected: {
     backgroundColor: "#5aaf57",
@@ -867,38 +869,38 @@ const styles = StyleSheet.create({
   submitBtn: {
     borderColor: "#5aaf57",
     borderWidth: 1,
-    padding: 10,
-    width: 120,
-    borderRadius: 8,
+    padding: wp('2.5%'),
+    width: wp('32%'),
+    borderRadius: wp('2%'),
     alignSelf: "center",
     alignItems: "center",
-    marginTop: 20,
-    marginBottom: 40,
+    marginTop: hp('2.5%'),
+    marginBottom: hp('5%'),
   },
   dropDownContainer: {
     borderColor: "#ccc",
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: wp('2%'),
     backgroundColor: "#fff",
   },
   label: {
-    fontSize: 14,
-    marginBottom: 4,
-    marginTop: 13,
+    fontSize: wp('3.7%'),
+    marginBottom: hp('0.5%'),
+    marginTop: hp('1.7%'),
     color: "#5aaf57",
     fontFamily: "PlusSB",
-    marginRight: 4,
+    marginRight: wp('1%'),
   },
   requiredMark: {
     color: "red",
-    fontSize: 14,
-    marginTop: 13,
+    fontSize: wp('3.7%'),
+    marginTop: hp('1.7%'),
   },
   errorText: {
     color: "red",
-    fontSize: 12,
-    marginLeft: 8,
-    marginTop: 2,
+    fontSize: wp('3.2%'),
+    marginLeft: wp('2%'),
+    marginTop: hp('0.3%'),
   },
 });
 

@@ -22,6 +22,7 @@ import { useUserProfile } from "../hooks/useUserProfile";
 import AttendanceCard from './AttendenceCard';
 import  Userlogo from '../assets/svg/loguser.svg';
 import Felogo from '../assets/svg/Folder.svg';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const { height, width } = Dimensions.get('window');
 const HEADER_MAX_HEIGHT = height * 0.27;
@@ -232,9 +233,9 @@ const styles = StyleSheet.create({
     top: 0,
     width: '100%',
     backgroundColor: 'transparent',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 50 : 60,
-    paddingBottom: 20,
+    paddingHorizontal: wp('5%'),
+    paddingTop: Platform.OS === 'android' ? hp('2%') : hp('7.5%'),
+    paddingBottom: hp('2.5%'),
     zIndex: 10,
     elevation: 5,
     
@@ -245,22 +246,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   centerTextContainer: {
-    marginTop: HEADER_MIN_HEIGHT-10 ,
-  alignItems: 'center',
-  // position: 'absolute',
-  width: '100%',
-  zIndex: 15,
+    marginTop: HEADER_MIN_HEIGHT - 10,
+    alignItems: 'center',
+    width: '100%',
+    zIndex: 15,
   },
   bigWelcome: {
-   
     color: '#000',
-    fontSize: 36,
-    // fontWeight: '700',
-    fontFamily:"PlusR"
+    fontSize: wp('9%'),
+    fontFamily: "PlusR"
   },
   svgicon:{
-    marginLeft:30,
-    right:10,
+    marginLeft: wp('8%'),
+    right: wp('2.5%'),
   },
  
   card: {
@@ -269,85 +267,58 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: width * 0.80,
     height: CARD_HEIGHT,
-    // borderBottomWidth:0.5,
     backgroundColor: 'transparent',
-    borderRadius: 16,
+    borderRadius: wp('4%'),
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent:"center",
-    padding: 11,
+    justifyContent: "center",
+    padding: wp('3%'),
     zIndex: 20,
     ...Platform.select({
       ios: {
         shadowColor: '#5aaf57',
         shadowOpacity: 0.3,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: wp('2%'),
+        shadowOffset: { width: 0, height: hp('0.5%') },
       },
-      // android: {
-      //   elevation: 6,
-      // },
     }),
   },
   avatar: {
-    width: 65,
-    height: 65,
-    borderRadius: 40,
-    marginLeft:50,
-    
-    // borderColor: '#00AC88',
-    // borderWidth: 2,
+    width: wp('16%'),
+    height: wp('16%'),
+    borderRadius: wp('8%'),
+    marginLeft: wp('12%'),
     resizeMode: 'cover',
   },
   
   cardContent: {
-    
-    marginLeft:20,
+    marginLeft: wp('5%'),
     flexShrink: 1,
   },
   ani: {
     ...StyleSheet.absoluteFillObject,
-    // marginRight: 10,
-    height:200,
-    width:200
-,
-transform:[{scale:4.5}],
-
-
-},
-// ani2: {
-//   marginRight: 30,
-//   height:50,
-//   width:50
-// ,paddingLeft:20,
-// transform:[{scale:2.5}],
-// // marginBottom:2,
-
-
-
-
-//   },
+    height: wp('50%'),
+    width: wp('50%'),
+    transform: [{ scale: 4.5 }],
+  },
   name: {
-    fontSize: 25,
-    // fontWeight: '600',
+    fontSize: wp('6.2%'),
     color: '#000',
-    fontFamily:"PlusR"
+    fontFamily: "PlusR"
   },
   designation: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     color: '#196f3d',
-    marginVertical: 2,
+    marginVertical: hp('0.3%'),
   },
   details: {
-    fontSize: 13,
+    fontSize: wp('3.2%'),
     color: '#196f3d',
-    fontFamily:"PlusR",
+    fontFamily: "PlusR",
   },
   scrollContent: {
-    paddingTop: HEADER_MAX_HEIGHT -160 ,
-    paddingBottom: 150,
-    // borderWidth:1,
-    
+    paddingTop: HEADER_MAX_HEIGHT - 160,
+    paddingBottom: hp('18%'),
   },
 });
 

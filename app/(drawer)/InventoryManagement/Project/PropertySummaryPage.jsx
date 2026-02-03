@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import PropertySummary from '../../../../components/PropertySummary';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const PropertySummaryPage = () => {
   const router = useRouter();
@@ -79,38 +80,38 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: Platform.OS === "android" ? 25 : 0,
+    paddingTop: Platform.OS === "android" ? hp('3%') : 0,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingHorizontal: wp('5%'),
+    paddingVertical: hp('2%'),
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
-    paddingTop: Platform.OS === "android" ? 40 : 15,
+    paddingTop: Platform.OS === "android" ? hp('5%') : hp('2%'),
   },
   backButton: {
-    padding: 5,
+    padding: wp('1.2%'),
   },
   headerTextContainer: {
     flex: 1,
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: wp('5.2%'),
     fontFamily: 'PlusSB',
     color: '#004d40',
     textAlign: 'center',
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: 'PlusR',
     color: '#666',
     textAlign: 'center',
-    marginTop: 2,
+    marginTop: hp('0.3%'),
   },
   content: {
     flex: 1,
@@ -118,32 +119,32 @@ const styles = StyleSheet.create({
   },
   projectInfo: {
     backgroundColor: '#fff',
-    margin: 15,
-    padding: 15,
-    borderRadius: 10,
+    margin: wp('4%'),
+    padding: wp('4%'),
+    borderRadius: wp('2.5%'),
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: hp('0.25%'),
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
+    shadowRadius: wp('1%'),
     elevation: 5,
   },
   projectName: {
-    fontSize: 18,
+    fontSize: wp('4.8%'),
     fontFamily: 'PlusSB',
     color: '#004d40',
-    marginBottom: 5,
+    marginBottom: hp('0.6%'),
   },
   builderName: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusR',
     color: '#666',
-    marginBottom: 3,
+    marginBottom: hp('0.4%'),
   },
   address: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: 'PlusL',
     color: '#888',
   },

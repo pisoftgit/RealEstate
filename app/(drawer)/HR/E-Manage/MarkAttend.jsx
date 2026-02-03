@@ -6,6 +6,7 @@ import EmployeeList from '../../../../components/EmployeeList';
 import AttendanceCalendar from '../../../../components/AttendanceCalendar';
 import { useNavigation } from 'expo-router';
 import MarkToday from '../../../../components/MarkToday';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const MarkAttend = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -68,12 +69,12 @@ const MarkAttend = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS === 'android' ? 25 : 0,
+    paddingTop: Platform.OS === 'android' ? hp('3%') : 0,
     backgroundColor: '#fff',
   },
   header: {
-    paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingHorizontal: wp('4%'),
+    paddingBottom: hp('1.2%'),
   },
   headerContent: {
     flexDirection: 'row',
@@ -83,34 +84,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 33,
+    fontSize: wp('8.5%'),
     fontFamily: 'PlusSB',
   },
   greenText: {
     color: '#5aaf57',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     color: '#111',
-    marginTop: 10,
+    marginTop: hp('1.2%'),
     fontFamily: 'PlusR',
   },
   lottie: {
-    width: 50,
-    height: 50,
+    width: wp('13%'),
+    height: wp('13%'),
     transform: [{ scale: 1.5 }],
-    bottom: 12,
-    marginRight: 40,
+    bottom: hp('1.5%'),
+    marginRight: wp('10%'),
   },
   markTodayBtn: {
     color: '#5aaf57',
     alignSelf: 'flex-end',
     borderWidth: 0.5,
-    borderRadius: 10,
+    borderRadius: wp('2.5%'),
     borderColor: '#5aaf57',
-    padding: 10,
+    padding: wp('2.5%'),
     fontFamily: 'PlusSB',
-    bottom: 28,
+    bottom: hp('3.5%'),
   },
 });
 

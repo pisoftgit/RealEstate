@@ -12,6 +12,7 @@ import useMonthlyAttendance from '../hooks/useMonthlyAttendance';
 import moment from 'moment';
 import LottieView from 'lottie-react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -170,61 +171,56 @@ const AttendanceCalendar = ({ employee, onBack }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
+  container: { flex: 1, padding: wp('5%'), backgroundColor: '#fff' },
   backButton: {
     color: '#5aaf57',
-    marginBottom: 10,
-    fontSize: 16,
+    marginBottom: hp('1.2%'),
+    fontSize: wp('4%'),
     fontWeight: 'bold',
   },
   name:{
-    fontSize: 32, 
+    fontSize: wp('8%'), 
     fontFamily:"PlusSB",
-    
-    marginBottom: 10,
+    marginBottom: hp('1.2%'),
     color:"#5aaf57"
-   
-
   },
-  title: { fontSize: 32, 
+  title: { 
+    fontSize: wp('8%'), 
     fontFamily:"PlusR",
-    
-    
-    marginTop:12,
-    marginBottom: 7 },
+    marginTop: hp('1.5%'),
+    marginBottom: hp('0.9%')
+  },
   calendar: {
     borderTopWidth: 1,
-    paddingTop: 10,
+    paddingTop: hp('1.2%'),
     borderColor: '#eee',
-    width: screenWidth - 40,
+    width: wp('90%'),
     alignSelf: 'center',
   },
   summaryContainer: {
-    marginTop: 30,
-    padding: 15,
+    marginTop: hp('3.7%'),
+    padding: wp('4%'),
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: wp('3%'),
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: wp('1.5%'),
+    shadowOffset: { width: 0, height: hp('0.25%') },
     elevation: 2,
   },
   summaryTitle: {
-    fontSize: 22,
-    // fontWeight: '600',
+    fontSize: wp('5.5%'),
     fontFamily:"PlusR",
-    marginBottom: 10,
+    marginBottom: hp('1.2%'),
     color: '#333',
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: hp('0.7%'),
   },
   summaryItem: {
-    fontSize: 16,
-    // fontWeight: '500',
+    fontSize: wp('4%'),
     fontFamily:"PlusR"
   },
 });

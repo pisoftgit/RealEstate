@@ -12,6 +12,7 @@ import dayjs from 'dayjs';
 import { useUser } from '../context/UserContext';
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '../services/api';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const generateWeekDates = (centerDate = dayjs()) => {
   const days = [];
@@ -139,49 +140,49 @@ export default function AdminAppointments() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 12,
+    padding: wp('3%'),
     backgroundColor: '#fff',
-    borderRadius: 20,
-    margin: 16,
+    borderRadius: wp('5%'),
+    margin: wp('4%'),
     elevation: 4,
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: wp('2%'),
+    shadowOffset: { width: 0, height: hp('0.25%') },
   },
   header: {
-    fontSize: 16,
-    marginBottom: 12,
+    fontSize: wp('4.2%'),
+    marginBottom: hp('1.2%'),
     color: '#000',
     fontFamily: "PlusR",
   },
   dateSelector: {
-    paddingBottom: 12,
+    paddingBottom: hp('1.2%'),
     justifyContent: 'space-between',
   },
   dayBox: {
     alignItems: 'center',
-    marginHorizontal: 8,
+    marginHorizontal: wp('2%'),
   },
   dayText: {
-    fontSize: 12,
+    fontSize: wp('3.2%'),
     color: '#444',
     fontFamily: "PlusR",
   },
   dateCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: wp('9%'),
+    height: wp('9%'),
+    borderRadius: wp('4.5%'),
     backgroundColor: '#eee',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    marginTop: hp('0.5%'),
   },
   selectedDate: {
     backgroundColor: '#007bff',
   },
   dateText: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     color: '#333',
   },
   selectedText: {
@@ -189,43 +190,43 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   timeline: {
-    maxHeight: 210, // Height for 3 appointment cards (3 * ~70px each)
-    paddingTop: 8,
-    paddingBottom: 16,
+    maxHeight: hp('28%'),
+    paddingTop: hp('1%'),
+    paddingBottom: hp('2%'),
   },
   itemRow: {
     flexDirection: 'row',
-    marginVertical: 10,
+    marginVertical: hp('1.2%'),
     alignItems: 'flex-start',
   },
   iconContainer: {
-    width: 40,
+    width: wp('10%'),
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: hp('0.3%'),
   },
   textContainer: {
     flex: 1,
-    paddingLeft: 10,
+    paddingLeft: wp('2.5%'),
     borderLeftWidth: 2,
     borderLeftColor: '#ccc',
   },
   itemText: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     color: '#111',
-    marginBottom: 2,
+    marginBottom: hp('0.3%'),
     fontFamily: "PlusR",
   },
   timeText: {
-    fontSize: 12,
+    fontSize: wp('3%'),
     color: '#888',
-    marginBottom: 2,
+    marginBottom: hp('0.3%'),
   },
   descriptionText: {
-    fontSize: 12,
+    fontSize: wp('3%'),
     color: '#666',
   },
   noAppointments: {
-    padding: 16,
+    padding: wp('4%'),
     color: '#aaa',
     fontStyle: 'italic',
   },

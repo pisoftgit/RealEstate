@@ -24,6 +24,7 @@ import moment from 'moment';
 import { useUser } from '../../../context/UserContext';
 import axios from 'axios';
 import { API_BASE_URL } from '../../../services/api';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const AddLead = () => {
   const [image, setImage] = useState(null);
@@ -636,11 +637,12 @@ const styles = {
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    padding: 12,
-    borderRadius: 8,
-    marginVertical: 5,
+    padding: wp('3%'),
+    borderRadius: wp('2%'),
+    marginVertical: hp('0.7%'),
     backgroundColor: '#fff',
     flex: 1,
+    fontSize: wp('3.8%'),
   },
   inputError: {
     borderColor: 'red',
@@ -648,10 +650,10 @@ const styles = {
   radioBtn: {
     borderWidth: 1,
     borderColor: '#ccc',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginRight: 10,
+    paddingVertical: hp('1%'),
+    paddingHorizontal: wp('4%'),
+    borderRadius: wp('2%'),
+    marginRight: wp('2.5%'),
   },
   radioBtnSelected: {
     backgroundColor: '#5aaf57',
@@ -659,47 +661,47 @@ const styles = {
   },
   row: {
     flexDirection: 'row',
-    gap: 10,
+    gap: wp('2.5%'),
   },
   submitBtn: {
     borderColor: "#5aaf57",
     borderWidth: 1,
-    padding: 10,
-    width: 120,
-    borderRadius: 8,
+    padding: wp('2.5%'),
+    width: wp('32%'),
+    borderRadius: wp('2%'),
     alignSelf: 'center',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 40,
+    marginTop: hp('2.5%'),
+    marginBottom: hp('5%'),
   },
   label: {
-    fontSize: 14,
-    marginBottom: 4,
-    marginTop: 13,
+    fontSize: wp('3.7%'),
+    marginBottom: hp('0.5%'),
+    marginTop: hp('1.7%'),
     color: '#5aaf57',
     fontFamily: 'PlusSB',
-    marginRight: 4,
+    marginRight: wp('1%'),
   },
   requiredMark: {
     color: 'red',
-    fontSize: 14,
-    marginTop: 13,
+    fontSize: wp('3.7%'),
+    marginTop: hp('1.7%'),
   },
   errorText: {
     color: 'red',
-    fontSize: 12,
-    marginLeft: 8,
-    marginTop: 2,
+    fontSize: wp('3.2%'),
+    marginLeft: wp('2%'),
+    marginTop: hp('0.3%'),
   },
   dropplace: {
     color: '#777',
-    fontSize: 14,
+    fontSize: wp('3.7%'),
     fontFamily: 'PlusR',
   },
   dropDownContainer: {
     borderColor: '#ccc',
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: wp('2%'),
     backgroundColor: '#fff',
   },
 };

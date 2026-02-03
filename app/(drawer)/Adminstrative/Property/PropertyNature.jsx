@@ -6,6 +6,7 @@ import {
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from "expo-router";
 import usePropertyNatureActions from '../../../../hooks/usePropertyNatureActions'; // ✅ hook
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 export default function PropertyNature() {
   const navigation = useNavigation();
@@ -160,21 +161,21 @@ export default function PropertyNature() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f8f9fa' },
-  scrollContent: { paddingBottom: 24 },
-  container: { flex: 1, backgroundColor: '#f8f9fa', padding: 20 },
-  header: { paddingVertical: 18 },
-  title: { fontSize: 32, fontFamily: 'PlusSB', color: '#333', marginTop: 8 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, elevation: 3 },
-  cardTitle: { fontSize: 18, fontFamily: 'PlusSB', color: '#333', marginBottom: 12 },
-  formRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  label: { width: 120, color: '#333', fontFamily: 'PlusR' },
-  input: { flex: 1, borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8, padding: 8, backgroundColor: '#f5f5f5', color: '#333', fontFamily: 'PlusR' },
-  submitButton: { backgroundColor: '#5aaf57', paddingVertical: 10, borderRadius: 8, alignItems: 'center', marginTop: 8 },
-  submitButtonText: { color: '#fff', fontSize: 16, fontFamily: 'PlusSB' },
-  tableHeader: { flexDirection: 'row', backgroundColor: '#5aaf57', padding: 8, borderRadius: 8, marginBottom: 4 },
-  tableHeaderText: { flex: 1, color: '#fff', textAlign: 'center', fontFamily: 'PlusSB', fontSize: 14 },
-  tableRow: { flexDirection: 'row', padding: 8, borderBottomWidth: 1, borderBottomColor: '#f0f0f0', backgroundColor: '#fff' },
-  tableCell: { flex: 1, textAlign: 'center', color: '#333', fontFamily: 'PlusR', fontSize: 13 },
-  actionCell: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 12 },
-  iconBtn: { padding: 4 },
+  scrollContent: { paddingBottom: hp('3%') },
+  container: { flex: 1, backgroundColor: '#f8f9fa', padding: wp('5%') },
+  header: { paddingVertical: hp('2.2%') },
+  title: { fontSize: wp('8%'), fontFamily: 'PlusSB', color: '#333', marginTop: hp('1%') },
+  card: { backgroundColor: '#fff', borderRadius: wp('4%'), padding: wp('4%'), marginBottom: hp('2%'), elevation: 3 },
+  cardTitle: { fontSize: wp('4.5%'), fontFamily: 'PlusSB', color: '#333', marginBottom: hp('1.5%') },
+  formRow: { flexDirection: 'row', alignItems: 'center', marginBottom: hp('1.5%') },
+  label: { width: wp('30%'), color: '#333', fontFamily: 'PlusR', fontSize: wp('3.5%') },
+  input: { flex: 1, borderWidth: 1, borderColor: '#e0e0e0', borderRadius: wp('2%'), padding: wp('2%'), backgroundColor: '#f5f5f5', color: '#333', fontFamily: 'PlusR', fontSize: wp('3.5%') },
+  submitButton: { backgroundColor: '#5aaf57', paddingVertical: hp('1.2%'), borderRadius: wp('2%'), alignItems: 'center', marginTop: hp('1%') },
+  submitButtonText: { color: '#fff', fontSize: wp('4%'), fontFamily: 'PlusSB' },
+  tableHeader: { flexDirection: 'row', backgroundColor: '#5aaf57', padding: wp('2%'), borderRadius: wp('2%'), marginBottom: hp('0.5%') },
+  tableHeaderText: { flex: 1, color: '#fff', textAlign: 'center', fontFamily: 'PlusSB', fontSize: wp('3.2%') },
+  tableRow: { flexDirection: 'row', padding: wp('2%'), borderBottomWidth: 1, borderBottomColor: '#f0f0f0', backgroundColor: '#fff' },
+  tableCell: { flex: 1, textAlign: 'center', color: '#333', fontFamily: 'PlusR', fontSize: wp('3%') },
+  actionCell: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: wp('3%') },
+  iconBtn: { padding: wp('1%') },
 });

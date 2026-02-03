@@ -14,6 +14,7 @@ import { useNavigation, useRouter } from "expo-router";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { ArrowDown01, Eye } from "lucide-react-native";
 import { DrawerActions } from '@react-navigation/native';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 /* --------------------------------- THEME COLORS --------------------------------- */
 const COLORS = {
     primary: "#004d40",
@@ -286,44 +287,75 @@ const Serialize = () => {
 };
 
 const actionButtonBase = {
-    padding: 10,
+    padding: hp('1.2%'),
     borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 40,
-    height: 40,
+    width: wp('10%'),
+    height: wp('10%'),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: hp('0.12%') },
     shadowOpacity: 0.2,
-    shadowRadius: 2,
+    shadowRadius: wp('0.5%'),
 };
 
 /* -------------------------- Stylesheet (Themed) --------------------------- */
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.background },
     header: {
-        flexDirection: "row", alignItems: "center", justifyContent: 'space-between', paddingHorizontal: 20,
-        paddingVertical: 15, paddingTop: 40, backgroundColor: COLORS.card, borderBottomWidth: 1, borderBottomColor: COLORS.border, marginBottom: 5,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: 'space-between',
+        paddingHorizontal: wp('5%'),
+        paddingVertical: hp('2%'),
+        paddingTop: hp('5%'),
+        backgroundColor: COLORS.card,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+        marginBottom: hp('0.6%'),
     },
-    title: { flex: 1, fontSize: 26, fontFamily: "PlusSB", marginLeft: 15, color: COLORS.primary },
-    addButton: { backgroundColor: COLORS.secondary, padding: 8, borderRadius: 50, elevation: 3 },
-    cardContainer: { paddingHorizontal: 20, paddingVertical: 8 },
+    title: {
+        flex: 1,
+        fontSize: wp('6.8%'),
+        fontFamily: "PlusSB",
+        marginLeft: wp('3.5%'),
+        color: COLORS.primary
+    },
+    addButton: { backgroundColor: COLORS.secondary, padding: wp('2%'), borderRadius: 50, elevation: 3 },
+    cardContainer: { paddingHorizontal: wp('5%'), paddingVertical: hp('1.2%') },
     card: {
-        flexDirection: "row", justifyContent: 'space-between', alignItems: "center", backgroundColor: COLORS.card, padding: 18,
-        borderRadius: 15, borderLeftWidth: 6, borderLeftColor: COLORS.secondary, elevation: 3, shadowColor: COLORS.primary,
-        shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 3,
+        flexDirection: "row",
+        justifyContent: 'space-between',
+        alignItems: "center",
+        backgroundColor: COLORS.card,
+        padding: wp('4.5%'),
+        borderRadius: wp('4%'),
+        borderLeftWidth: wp('1.5%'),
+        borderLeftColor: COLORS.secondary,
+        elevation: 3,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: hp('0.25%') },
+        shadowOpacity: 0.15,
+        shadowRadius: wp('0.8%'),
     },
-    projectName: { fontSize: 18, fontFamily: "PlusSB", color: COLORS.text, marginBottom: 5 },
-    projectText: { fontSize: 14, fontFamily: "PlusM", color: COLORS.text, marginTop: 2, opacity: 0.8 },
-    dateText: { fontSize: 12, fontFamily: "PlusL", color: COLORS.placeholder, marginTop: 5, fontStyle: 'italic' },
-    reraContainer: { flexDirection: "row", alignItems: "center", marginTop: 10, paddingTop: 5, borderTopWidth: 1, borderTopColor: COLORS.border },
-    reraText: { marginLeft: 8, fontSize: 14, fontFamily: "PlusM" },
-    actionButtons: { flexDirection: "column", marginLeft: 15, gap: 10 },
+    projectName: { fontSize: wp('4.8%'), fontFamily: "PlusSB", color: COLORS.text, marginBottom: hp('0.6%') },
+    projectText: { fontSize: wp('3.5%'), fontFamily: "PlusM", color: COLORS.text, marginTop: hp('0.3%'), opacity: 0.8 },
+    dateText: { fontSize: wp('3%'), fontFamily: "PlusL", color: COLORS.placeholder, marginTop: hp('0.6%'), fontStyle: 'italic' },
+    reraContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: hp('1.2%'),
+        paddingTop: hp('0.6%'),
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border
+    },
+    reraText: { marginLeft: wp('2%'), fontSize: wp('3.5%'), fontFamily: "PlusM" },
+    actionButtons: { flexDirection: "column", marginLeft: wp('3.5%'), gap: hp('1.2%') },
     serializeButton: { ...actionButtonBase, backgroundColor: "#dcfce7", borderWidth: 1, borderColor: COLORS.success },
     viewButton: { ...actionButtonBase, backgroundColor: "#dbeafe", borderWidth: 1, borderColor: "#2563eb" },
-    stateContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20, gap: 10 },
-    emptyText: { fontSize: 18, fontFamily: "PlusM", color: COLORS.placeholder },
+    stateContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: wp('5%'), gap: hp('1.2%') },
+    emptyText: { fontSize: wp('4.8%'), fontFamily: "PlusM", color: COLORS.placeholder },
 });
 
 export default Serialize;

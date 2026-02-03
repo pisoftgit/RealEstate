@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 import { API_BASE_URL } from "../../../../services/api";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const COLORS = {
   primary: "#004d40",
@@ -316,19 +317,19 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
+    padding: wp('4%'),
+    paddingBottom: hp('5%'),
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: hp('2.5%'),
   },
   backButton: {
-    marginRight: 15,
+    marginRight: wp('4%'),
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: wp('5.5%'),
     fontFamily: "PlusSB",
     color: COLORS.primary,
     flex: 1,
@@ -339,7 +340,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    marginTop: 10,
+    marginTop: hp('1.2%'),
     fontFamily: "PlusM",
     color: COLORS.placeholder,
   },
@@ -347,20 +348,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: wp('5%'),
   },
   errorText: {
-    marginTop: 10,
+    marginTop: hp('1.2%'),
     fontFamily: "PlusM",
     color: COLORS.error,
     textAlign: "center",
   },
   retryButton: {
-    marginTop: 20,
+    marginTop: hp('2.5%'),
     backgroundColor: COLORS.secondary,
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingHorizontal: wp('8%'),
+    paddingVertical: hp('1.5%'),
+    borderRadius: wp('2%'),
   },
   retryButtonText: {
     color: COLORS.background,
@@ -368,25 +369,25 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: COLORS.card,
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 20,
+    borderRadius: wp('3%'),
+    padding: wp('4%'),
+    marginBottom: hp('2.5%'),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: wp('4.5%'),
     fontFamily: "PlusSB",
     color: COLORS.primary,
-    marginBottom: 15,
+    marginBottom: hp('1.8%'),
   },
   tabsContainer: {
-    marginBottom: 15,
+    marginBottom: hp('1.8%'),
   },
   tab: {
     backgroundColor: COLORS.input,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 10,
+    paddingHorizontal: wp('5%'),
+    paddingVertical: hp('1.2%'),
+    borderRadius: wp('5%'),
+    marginRight: wp('2.5%'),
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -404,7 +405,7 @@ const styles = StyleSheet.create({
   },
   table: {
     backgroundColor: COLORS.background,
-    borderRadius: 8,
+    borderRadius: wp('2%'),
     overflow: "hidden",
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -412,19 +413,19 @@ const styles = StyleSheet.create({
   tableHeader: {
     flexDirection: "row",
     backgroundColor: COLORS.primary,
-    padding: 10,
+    padding: wp('2.5%'),
   },
   tableHeaderText: {
     fontFamily: "PlusSB",
     color: COLORS.background,
-    fontSize: 12,
+    fontSize: wp('3%'),
   },
   tableBody: {
-    maxHeight: 400,
+    maxHeight: hp('50%'),
   },
   tableRow: {
     flexDirection: "row",
-    padding: 10,
+    padding: wp('2.5%'),
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     alignItems: "center",
@@ -432,11 +433,11 @@ const styles = StyleSheet.create({
   tableCell: {
     fontFamily: "PlusM",
     color: COLORS.text,
-    fontSize: 12,
+    fontSize: wp('3%'),
   },
   tableFooter: {
     backgroundColor: COLORS.input,
-    padding: 10,
+    padding: wp('2.5%'),
   },
   tableFooterText: {
     fontFamily: "PlusM",
@@ -450,47 +451,47 @@ const styles = StyleSheet.create({
   cardGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: wp('2.5%'),
   },
   card: {
     backgroundColor: COLORS.background,
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: wp('2.5%'),
+    padding: wp('4%'),
     width: "48%",
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: "PlusSB",
     color: COLORS.primary,
-    marginBottom: 8,
+    marginBottom: hp('1%'),
   },
   cardText: {
-    fontSize: 13,
+    fontSize: wp('3.2%'),
     fontFamily: "PlusM",
     color: COLORS.text,
-    marginBottom: 5,
+    marginBottom: hp('0.6%'),
   },
   statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    marginTop: 8,
+    paddingHorizontal: wp('2.5%'),
+    paddingVertical: hp('0.8%'),
+    borderRadius: wp('3%'),
+    marginTop: hp('1%'),
     alignSelf: "flex-start",
   },
   statusText: {
-    fontSize: 11,
+    fontSize: wp('2.8%'),
     fontFamily: "PlusSB",
     textTransform: "uppercase",
   },
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",
-    padding: 40,
+    padding: wp('10%'),
   },
   emptyText: {
-    marginTop: 15,
+    marginTop: hp('1.8%'),
     fontFamily: "PlusM",
     color: COLORS.placeholder,
     textAlign: "center",

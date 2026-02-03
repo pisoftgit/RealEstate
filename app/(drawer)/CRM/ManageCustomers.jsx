@@ -9,7 +9,7 @@ import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import { API_BASE_URL } from '../../../services/api';
-
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const ManageCustomers = () => {
   const navigation = useNavigation();
@@ -179,49 +179,49 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    padding: 20,
+    padding: wp('5%'),
   },
   menuContainer: {
-    marginBottom: 10,
+    marginBottom: hp('1.2%'),
   },
   header: {
-    fontSize: 32,
+    fontSize: wp('8%'),
     fontFamily: 'PlusR',
-    marginVertical: 10,
+    marginVertical: hp('1.2%'),
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 8,
-    marginVertical: 20,
-    paddingHorizontal: 10,
+    borderRadius: wp('2%'),
+    marginVertical: hp('2.5%'),
+    paddingHorizontal: wp('2.5%'),
   },
   searchInput: {
     flex: 1,
-    padding: 10,
-    fontSize: 16,
+    padding: wp('2.5%'),
+    fontSize: wp('4%'),
     fontFamily: 'PlusR',
   },
   searchIcon: {
-    marginLeft: 5,
+    marginLeft: wp('1.2%'),
   },
   listContent: {
-    paddingBottom: 20,
+    paddingBottom: hp('2.5%'),
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusR',
     color: '#333',
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: hp('2.5%'),
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
+    borderRadius: wp('3%'),
+    padding: wp('4%'),
+    marginBottom: hp('2%'),
     shadowColor: '#5aaf57',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
@@ -234,39 +234,39 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profilePicContainer: {
-    marginRight: 15,
+    marginRight: wp('4%'),
   },
   profilePic: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: wp('13%'),
+    height: wp('13%'),
+    borderRadius: wp('6.5%'),
   },
   detailsContainer: {
     flex: 1,
   },
   name: {
-    fontSize: 18,
+    fontSize: wp('4.5%'),
     fontFamily: 'PlusSB',
     color: '#333',
-    marginBottom: 5,
+    marginBottom: hp('0.6%'),
   },
   detail: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: 'PlusR',
     color: '#666',
-    marginBottom: 3,
+    marginBottom: hp('0.4%'),
   },
   updateIcon: {
     position: 'absolute',
     top: 0,
     right: 0,
-    padding: 5,
+    padding: wp('1.2%'),
   },
   addDocsIcon: {
     position: 'absolute',
     top: 0,
-    right: 50,
-    padding: 5,
+    right: wp('12%'),
+    padding: wp('1.2%'),
   },
   loaderContainer: {
     flex: 1,
@@ -274,9 +274,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loader: {
-    width: 100,
-    height: 100,
-    transform:[{scale:2.8}],
-    bottom:30,
+    width: wp('25%'),
+    height: wp('25%'),
+    transform: [{ scale: 2.8 }],
+    bottom: hp('3.5%'),
   },
 });

@@ -17,6 +17,7 @@ import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import LottieView from 'lottie-react-native';
 import useAddUser from '../../../hooks/useAddUser';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 export default function Adduser() {
   const navigation = useNavigation();
@@ -362,68 +363,68 @@ export default function Adduser() {
     backgroundColor: '#fff',
   },
   header: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 40,
-    paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingTop: Platform.OS === 'ios' ? hp('6.5%') : hp('5%'),
+    paddingHorizontal: wp('4%'),
+    paddingBottom: hp('1.2%'),
     backgroundColor: '#fff',
   },
   menuButton: {
-    width: 40,
+    width: wp('10%'),
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: wp('4%'),
+    paddingBottom: hp('2%'),
     backgroundColor: '#fff',
   },
   headerTextContainer: {
     flexDirection: 'column',
   },
   headerTitle: {
-    fontSize: 32,
+    fontSize: wp('8%'),
     fontFamily: 'PlusR',
     color: '#222',
-    lineHeight: 38,
+    lineHeight: wp('9.5%'),
   },
   headerSubTitle: {
-    fontSize: 32,
+    fontSize: wp('8%'),
     fontFamily: 'PlusSB',
     color: '#5aaf57',
-    lineHeight: 38,
+    lineHeight: wp('9.5%'),
   },
   lottie: {
-    width: 120,
-    height: 120,
+    width: wp('32%'),
+    height: wp('32%'),
   },
   scrollView: {
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
   scrollContent: {
-    padding: 20,
+    padding: wp('5%'),
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: wp('4%'),
+    padding: wp('4%'),
+    marginBottom: wp('4%'),
     elevation: 3,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: wp('4.5%'),
     fontFamily: 'PlusSB',
     color: '#333',
-    marginBottom: 12,
+    marginBottom: hp('1.2%'),
   },
   formRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: hp('1.2%'),
   },
   label: {
-    width: 120,
+    width: wp('32%'),
     color: '#333',
     fontFamily: 'PlusR',
   },
@@ -434,11 +435,12 @@ export default function Adduser() {
     flex: 1,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 8,
+    borderRadius: wp('2%'),
+    padding: wp('2%'),
     backgroundColor: '#f5f5f5',
     color: '#333',
     fontFamily: 'PlusR',
+    fontSize: wp('4%'),
   },
   dateInput: {
     flex: 1,
@@ -447,8 +449,8 @@ export default function Adduser() {
     justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 8,
+    borderRadius: wp('2%'),
+    padding: wp('2%'),
     backgroundColor: '#f5f5f5',
   },
   dateText: {
@@ -459,25 +461,25 @@ export default function Adduser() {
     flex: 1,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    borderRadius: 8,
+    borderRadius: wp('2%'),
     backgroundColor: '#f5f5f5',
     overflow: 'hidden',
   },
   picker: {
-    height: 40,
+    height: hp('5%'),
     color: '#333',
   },
   toggleContainer: {
     flex: 1,
     flexDirection: 'row',
-    borderRadius: 8,
+    borderRadius: wp('2%'),
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#e0e0e0',
   },
   toggleButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: hp('1%'),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -489,7 +491,7 @@ export default function Adduser() {
   },
   toggleText: {
     fontFamily: 'PlusSB',
-    fontSize: 14,
+    fontSize: wp('3.5%'),
   },
   toggleTextActive: {
     color: '#fff',
@@ -500,7 +502,7 @@ export default function Adduser() {
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: hp('1%'),
   },
   resetButton: {
     flex: 1,
@@ -508,18 +510,18 @@ export default function Adduser() {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff',
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginRight: 8,
+    paddingVertical: hp('1.2%'),
+    borderRadius: wp('2%'),
+    marginRight: wp('2%'),
     borderWidth: 1,
     borderColor: '#ddd',
     elevation: 2,
   },
   resetButtonText: {
     color: '#666',
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusSB',
-    marginLeft: 6,
+    marginLeft: wp('1.5%'),
   },
   submitButton: {
     flex: 1,
@@ -527,9 +529,9 @@ export default function Adduser() {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#5aaf57',
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginLeft: 8,
+    paddingVertical: hp('1.2%'),
+    borderRadius: wp('2%'),
+    marginLeft: wp('2%'),
     elevation: 3,
   },
   submitButtonDisabled: {
@@ -538,8 +540,8 @@ export default function Adduser() {
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusSB',
-    marginLeft: 6,
+    marginLeft: wp('1.5%'),
   },
 });

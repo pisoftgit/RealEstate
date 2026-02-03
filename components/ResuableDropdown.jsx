@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const ReusableDropdown = ({ label, data, value, onChange }) => {
   const [isFocus, setIsFocus] = useState(false);
@@ -51,43 +52,43 @@ export default ReusableDropdown;
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 12,
+    marginBottom: hp('1.5%'),
   },
   dropdown: {
-    height: 50,
+    height: hp('6.5%'),
     borderColor: '#ccc',
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
+    borderRadius: wp('2%'),
+    paddingHorizontal: wp('2.5%'),
     backgroundColor: '#fafafa',
   },
   icon: {
-    marginRight: 5,
+    marginRight: wp('1.2%'),
   },
   label: {
     position: 'absolute',
     backgroundColor: 'white',
-    left: 14,
-    top: -8,
+    left: wp('3.5%'),
+    top: -hp('1%'),
     zIndex: 999,
-    paddingHorizontal: 6,
-    fontSize: 12,
+    paddingHorizontal: wp('1.5%'),
+    fontSize: wp('3.2%'),
     color: '#444',
   },
   placeholderStyle: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     color: '#999',
   },
   selectedTextStyle: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     color: '#000',
   },
   iconStyle: {
-    width: 20,
-    height: 20,
+    width: wp('5%'),
+    height: wp('5%'),
   },
   inputSearchStyle: {
-    height: 40,
-    fontSize: 14,
+    height: hp('5.2%'),
+    fontSize: wp('3.5%'),
   },
 });

@@ -20,6 +20,7 @@ import moment from 'moment';
 import { useUser } from '../../../../context/UserContext';
 import MyLeaves from '../../../../components/MyLeaves';
 import { API_BASE_URL } from '../../../../services/api';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const ApplyLeave = () => {
   const navigation = useNavigation();
@@ -422,81 +423,76 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    paddingTop: Platform.OS === 'ios' ? 80 : 20,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingTop: Platform.OS === 'ios' ? hp('10%') : hp('2.5%'),
+    paddingHorizontal: wp('4%'),
+    paddingBottom: hp('1.5%'),
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomColor: '#ccc',
   },
-  appdate:{
-
-    fontSize:16,
-    fontFamily:"PlusR"
-
-
+  appdate: {
+    fontSize: wp('4%'),
+    fontFamily: "PlusR"
   },
-  ename:{
-fontSize:18,
-    fontFamily:"PlusR",
-    alignSelf:"flex-end"
-    ,color:"#5aaf57"
-    
-
+  ename: {
+    fontSize: wp('4.5%'),
+    fontFamily: "PlusR",
+    alignSelf: "flex-end",
+    color: "#5aaf57"
   },
   myLeaves: {
     color: '#5aaf57',
-    fontSize: 15,
+    fontSize: wp('3.8%'),
     fontFamily: "PlusR",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    paddingVertical: hp('0.7%'),
+    paddingHorizontal: wp('3%'),
+    borderRadius: wp('1.5%'),
     borderWidth: 1,
     borderColor: '#5aaf57',
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: wp('5%'),
+    paddingBottom: hp('5%'),
   },
   pageTitle: {
-    fontSize: 32,
+    fontSize: wp('8%'),
     fontFamily: "PlusR",
-    marginBottom: 14,
+    marginBottom: hp('1.8%'),
     color: '#222',
   },
   pageSubtitle: {
-    fontSize: 15,
-    marginTop: 4,
+    fontSize: wp('3.8%'),
+    marginTop: hp('0.5%'),
     color: '#555',
-    marginBottom: 16,
+    marginBottom: hp('2%'),
     fontFamily: "PlusR",
   },
   label: {
-    fontSize: 15,
+    fontSize: wp('3.8%'),
     fontFamily: "PlusR",
-    marginTop: 14,
-    marginBottom: 6,
+    marginTop: hp('1.7%'),
+    marginBottom: hp('0.7%'),
     color: '#5aaf57',
   },
   dateValue: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     color: '#333',
     fontFamily: "PlusR",
   },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
+    borderRadius: wp('2%'),
+    padding: wp('2.5%'),
+    fontSize: wp('3.5%'),
     fontFamily: "PlusR",
-    backgroundColor: '##fff',
+    backgroundColor: '#fff',
   },
   dropdown: {
     borderColor: '#ccc',
-    borderRadius: 8,
-    marginBottom: 8,
+    borderRadius: wp('2%'),
+    marginBottom: hp('1%'),
   },
   dropdownBox: {
     borderColor: '#ccc',
@@ -504,40 +500,38 @@ fontSize:18,
   textArea: {
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 8,
+    borderRadius: wp('2%'),
     fontFamily: "PlusR",
-    padding: 10,
-    fontSize: 14,
-    height: 100,
+    padding: wp('2.5%'),
+    fontSize: wp('3.5%'),
+    height: hp('13%'),
     textAlignVertical: 'top',
     backgroundColor: '#fff',
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
-    marginBottom:12,
-    
+    gap: wp('3%'),
+    marginBottom: hp('1.5%'),
   },
   half: {
     flex: 1,
-    
   },
   inlineInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   submitButton: {
-    marginTop: 24,
+    marginTop: hp('3%'),
     backgroundColor: '#5aaf57',
-    paddingVertical: 14,
-    borderRadius: 10,
+    paddingVertical: hp('1.7%'),
+    borderRadius: wp('2.5%'),
     alignItems: 'center',
     justifyContent: 'center',
   },
   submitText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusR',
   },
 });

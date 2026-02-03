@@ -9,6 +9,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 import EmployeeDetailsForm from "../../../../components/EmployeeDetailsForm";
 import GeneralDetailsForm from "../../../../components/GeneralDetailsForm";
@@ -143,7 +144,7 @@ export default function AddEmployee({ navigation }) {
 
   // const handleSubmit = async (finalData) => {
 
-  //   console.log('Submit button clicked');
+  //   console.log('Submit button clicked')
   //   try {
   //     const image = finalData.employeeDetails.profileImage; // assume this field is added in the form
   //     const result = await addNewEmployee(finalData, image);
@@ -233,16 +234,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: wp('4%'),
+    paddingVertical: hp('1.2%'),
     backgroundColor: "#fff",
-    // elevation: 4,
     zIndex: 10,
   },
 
   stepperContainer: {
     position: "absolute",
-    left: 38,
+    left: wp('10%'),
     right: 0,
     alignItems: "center",
     zIndex: -1,

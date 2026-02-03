@@ -5,6 +5,7 @@ import { useNavigation } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import useHr from '../../../../../hooks/useHr';
 import { useUser } from '../../../../../context/UserContext';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 export default function Branch() {
   const navigation = useNavigation();
@@ -31,7 +32,7 @@ export default function Branch() {
   const [authorizedPersonEmail, setAuthorizedPersonEmail] = useState('');
   const [authorizedPersonDesignation, setAuthorizedPersonDesignation] = useState('');
   const [signatureImage, setSignatureImage] = useState(null);
-  
+
   const [editing, setEditing] = useState(null);
   const [branches, setBranches] = useState([]);
 
@@ -121,10 +122,10 @@ export default function Branch() {
 
         // Call the update API
         await updateBranch(editing.id, branchData);
-        
+
         // Refresh the branches list from API
         await getAllBranches();
-        
+
         Alert.alert('Success', 'Branch updated successfully!');
         setEditing(null);
       } else {
@@ -151,10 +152,10 @@ export default function Branch() {
 
         // Call the API
         const result = await createBranch(branchData);
-        
+
         // Refresh the branches list from API
         await getAllBranches();
-        
+
         Alert.alert('Success', 'Branch created successfully!');
       }
 
@@ -202,14 +203,14 @@ export default function Branch() {
     setAuthorizedPersonContact(item.authorizedPersonContact || '');
     setAuthorizedPersonEmail(item.authorizedPersonEmail || '');
     setAuthorizedPersonDesignation(item.authorizedPersonDesignation || '');
-    
+
     // Handle branch logo/signature image
     if (item.branchPic) {
       setSignatureImage(`data:${item.branchLogoType};base64,${item.branchPic}`);
     } else {
       setSignatureImage(null);
     }
-    
+
     setEditing(item);
     setActiveView('form');
   };
@@ -239,7 +240,7 @@ Contact: ${item.authorizedPersonContact || 'N/A'}
 Email: ${item.authorizedPersonEmail || 'N/A'}
 Designation: ${item.authorizedPersonDesignation || 'N/A'}
     `.trim();
-    
+
     Alert.alert('Branch Details', details);
   };
 
@@ -253,7 +254,7 @@ Designation: ${item.authorizedPersonDesignation || 'N/A'}
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu" size={28} color="BLACK" />
+            <Ionicons name="menu" size={hp('3.5%')} color="BLACK" />
           </TouchableOpacity>
           <Text style={styles.title}>Branch Management</Text>
         </View>
@@ -493,7 +494,7 @@ Designation: ${item.authorizedPersonDesignation || 'N/A'}
                 <Text style={styles.label}>Authorized Signature</Text>
                 <View style={styles.photoContainer}>
                   <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
-                    <Ionicons name="camera" size={24} color="#5aaf57" />
+                    <Ionicons name="camera" size={hp('2.8%')} color="#5aaf57" />
                     <Text style={styles.photoButtonText}>Pick Signature</Text>
                   </TouchableOpacity>
                   {signatureImage && (
@@ -503,8 +504,8 @@ Designation: ${item.authorizedPersonDesignation || 'N/A'}
               </View>
 
               {/* Submit Button */}
-              <TouchableOpacity 
-                style={[styles.submitButton, loading && styles.submitButtonDisabled]} 
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.submitButtonDisabled]}
                 onPress={handleSubmit}
                 disabled={loading}
               >
@@ -550,9 +551,9 @@ Designation: ${item.authorizedPersonDesignation || 'N/A'}
                   <View key={item.id} style={styles.tableRow}>
                     <View style={[styles.tableCell, { flex: 1 }]}>
                       {item.branchPic ? (
-                        <Image 
-                          source={{ uri: `data:${item.branchLogoType};base64,${item.branchPic}` }} 
-                          style={styles.thumbnailImage} 
+                        <Image
+                          source={{ uri: `data:${item.branchLogoType};base64,${item.branchPic}` }}
+                          style={styles.thumbnailImage}
                         />
                       ) : (
                         <View style={styles.noImagePlaceholder}>
@@ -567,13 +568,13 @@ Designation: ${item.authorizedPersonDesignation || 'N/A'}
                     </Text>
                     <View style={[styles.actionCell, { flex: 1.5 }]}>
                       <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                        <Feather name="edit" size={18} color="#5aaf57" />
+                        <Feather name="edit" size={hp('2.2%')} color="#5aaf57" />
                       </TouchableOpacity>
                       <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                        <Ionicons name="trash" size={18} color="#d32f2f" />
+                        <Ionicons name="trash" size={hp('2.2%')} color="#d32f2f" />
                       </TouchableOpacity>
                       <TouchableOpacity style={styles.iconBtn} onPress={() => handleView(item)}>
-                        <Feather name="eye" size={18} color="#2196F3" />
+                        <Feather name="eye" size={hp('2.2%')} color="#2196F3" />
                       </TouchableOpacity>
                     </View>
                   </View>

@@ -15,6 +15,7 @@ import { Platform } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import useTestAPIs from "../../hooks/useTestAPIs";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const { height } = Dimensions.get("window");
 
@@ -26,7 +27,7 @@ const Onboard = () => {
     <>
       <ImageBackground
         source={require("../../assets/images/onboard.jpg")}
-        style={[styles.imageBackground, { height: height * 0.79 }]}
+        style={[styles.imageBackground, { height: hp('79%') }]}
         resizeMode="cover"
       >
         <Stack.Screen options={{ headerShown: false }} />
@@ -50,31 +51,26 @@ const Onboard = () => {
             Let's <Text style={styles.greenText}>Work</Text>
           </Text>
 
-
-  
           <View style={styles.bottomView}>
-  <View style={styles.rowContainer}>
-    <Text style={styles.bottomText3}>
-      Click here to proceed for Login
-    </Text>
+            <View style={styles.rowContainer}>
+              <Text style={styles.bottomText3}>
+                Click here to proceed for Login
+              </Text>
 
-    <TouchableOpacity
-      style={styles.button}
-      onPress={() => {
-        // console.log("Navigating to Login");
-        Router.push("/(auth)/Login");
-        // Router.push("/(drawer)/(tabs)/Home");
-        // Router.push("/(drawer)/HR/E-Manage/AddEmp");
-      }}
-    >
-      <Ionicons
-        name="chevron-forward-circle-sharp"
-        size={60}
-        color="black"
-      />
-    </TouchableOpacity>
-  </View>
-</View>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => {
+                  Router.push("/(auth)/Login");
+                }}
+              >
+                <Ionicons
+                  name="chevron-forward-circle-sharp"
+                  size={hp('8%')}
+                  color="black"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </ImageBackground>
     </>
@@ -103,54 +99,54 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   wrapper: {
-    paddingBottom: 50,
-    paddingHorizontal: 20,
+    paddingBottom: hp('6%'),
+    paddingHorizontal: wp('5%'),
     alignItems: "center",
   },
   title: {
-    fontSize: 30,
+    fontSize: hp('4%'),
     color: "#fff",
-    letterSpacing: 2.4,
-    marginTop: -120,
+    letterSpacing: wp('0.6%'),
+    marginTop: hp('-15%'),
     fontFamily: "PlusB",
   },
   description: {
-    fontSize: 12,
+    fontSize: hp('1.6%'),
     color: "#fff",
-    letterSpacing: 1.1,
-    lineHeight: 20,
-    top: 14,
+    letterSpacing: wp('0.2%'),
+    lineHeight: hp('2.5%'),
+    top: hp('1.8%'),
     fontFamily: "PlusR",
-    marginTop: -16,
-    marginLeft: 9,
+    marginTop: hp('-2%'),
+    marginLeft: wp('2%'),
   },
   bottomContainer: {
     position: "relative",
     backgroundColor: "#fff",
-    height: height * 0.3,
+    height: hp('30%'),
     justifyContent: "center",
-    paddingHorizontal: 30,
-    marginBottom: 10,
-    alignItems: "flex-start", 
+    paddingHorizontal: wp('8%'),
+    marginBottom: hp('1.2%'),
+    alignItems: "flex-start",
     width: "100%",
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    minHeight: 150,
-    
+    borderTopLeftRadius: wp('10%'),
+    borderTopRightRadius: wp('10%'),
+    minHeight: hp('20%'),
+
   },
   bottomText: {
-    fontSize: 32,
+    fontSize: hp('4.2%'),
     color: Colors.black,
     fontFamily: "PlusSB",
-    marginBottom: 6,
+    marginBottom: hp('0.8%'),
 
   },
   bottomText2: {
-    fontSize: 22,
+    fontSize: hp('3%'),
     color: "Colors.black",
     fontFamily: "PlusR",
-    marginBottom: 4,
-    
+    marginBottom: hp('0.5%'),
+
   },
 
   greenText: {
@@ -158,36 +154,26 @@ const styles = StyleSheet.create({
   },
   button: {
     right: 1,
-    //  position: "static",
-    // alignSelf: "flex-end",
-    
   },
-
-
-
-
 
   bottomView: {
-    padding: 20,
+    paddingVertical: hp('2%'),
     backgroundColor: '#fff',
+    width: '100%',
   },
-  
+
   rowContainer: {
     flexDirection: 'row',
-    gap: Platform.OS === 'ios' ? 50 : 30,
+    gap: Platform.OS === 'ios' ? wp('12%') : wp('8%'),
     justifyContent: 'space-between',
     alignItems: 'center',
-    left: -16
+    left: wp('-4%'),
   },
-  
+
   bottomText3: {
-    fontSize: 14,
+    fontSize: hp('1.8%'),
     color: 'black',
     fontFamily: 'PlusR',
-  
-  },
-  
-  button: {
-    // Optional: add margin or padding if needed
+
   },
 });

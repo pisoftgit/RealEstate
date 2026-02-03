@@ -3,17 +3,18 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Aler
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import useGeneral from '../../../../hooks/useGeneral';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 export default function Religion() {
   const navigation = useNavigation();
-  const { 
-    getAllReligions, 
-    saveReligion, 
-    updateReligion, 
+  const {
+    getAllReligions,
+    saveReligion,
+    updateReligion,
     deleteReligion,
     religions: apiReligions,
-    loading, 
-    error 
+    loading,
+    error
   } = useGeneral();
 
   const [religion, setReligion] = useState('');
@@ -61,7 +62,7 @@ export default function Religion() {
 
       // Reset form and refresh list
       setReligion('');
-      
+
       // Refresh the list
       await fetchReligions();
     } catch (err) {
@@ -109,7 +110,7 @@ export default function Religion() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu" size={28} color="BLACK" />
+            <Ionicons name="menu" size={hp('3.5%')} color="BLACK" />
           </TouchableOpacity>
           <Text style={styles.title}>Religion</Text>
         </View>
@@ -135,8 +136,8 @@ export default function Religion() {
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity 
-              style={[styles.submitButton, loading && styles.disabledButton]} 
+            <TouchableOpacity
+              style={[styles.submitButton, loading && styles.disabledButton]}
               onPress={handleSubmit}
               disabled={loading}
             >
@@ -156,7 +157,7 @@ export default function Religion() {
           {/* Existing Religion Card */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Existing Religion</Text>
-            
+
             {isLoadingData ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#5aaf57" />
@@ -180,10 +181,10 @@ export default function Religion() {
                     <Text style={[styles.tableCell, { flex: 2 }]}>{item.name}</Text>
                     <View style={[styles.actionCell, { flex: 1 }]}>
                       <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                        <Feather name="edit" size={18} color="#5aaf57" />
+                        <Feather name="edit" size={hp('2.2%')} color="#5aaf57" />
                       </TouchableOpacity>
                       <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                        <Ionicons name="trash" size={18} color="#d32f2f" />
+                        <Ionicons name="trash" size={hp('2.2%')} color="#d32f2f" />
                       </TouchableOpacity>
                     </View>
                   </View>

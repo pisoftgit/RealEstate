@@ -16,10 +16,9 @@ import { Dropdown } from "react-native-element-dropdown";
 import RNPickerSelect from "react-native-picker-select";
 
 import useDropdownData from "../hooks/useDropdownData";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const { height } = Dimensions.get("window");
-
-
 
 const CustomDropdown = ({ value, setValue, data, placeholder }) => {
   const [isFocus, setIsFocus] = useState(false);
@@ -44,7 +43,6 @@ const CustomDropdown = ({ value, setValue, data, placeholder }) => {
     />
   );
 };
-
 
 export default function GeneralDetailsForm({ initialData, onNext, onBack }) {
   const [data, setData] = useState(initialData || {});
@@ -360,122 +358,99 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-   
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginBottom: 20,
-    // marginTop: 50,
-    marginTop: Platform.OS === 'ios' ? 60 : 50,
+    paddingHorizontal: wp('5%'),
+    marginBottom: hp('2.5%'),
+    marginTop: Platform.OS === 'ios' ? hp('7.5%') : hp('6.2%'),
   },
-
   headerTextContainer: {
     flex: 1,
   },
   headerTitle: {
-    fontSize: 35,
+    fontSize: wp('9%'),
     fontFamily: "PlusSB",
   },
   
   greenText: {
     color: "#5aaf57",
-    // fontFamily: "PlusSB",
   },
   headerSubTitle: {
-    fontSize: 30,
+    fontSize: wp('7.5%'),
     fontFamily: "PlusSB",
     color: "#5aaf57",
-    marginTop: -5,
+    marginTop: -hp('0.6%'),
   },
   headerDesc: {
-    fontSize: 13,
+    fontSize: wp('3.2%'),
     fontFamily: "PlusR",
-    marginTop: 5,
+    marginTop: hp('0.6%'),
   },
   flexGrid: {
     flexDirection: "column",
-    gap: 16,
-    paddingHorizontal: 16,
-    marginTop: 10,
+    gap: hp('2%'),
+    paddingHorizontal: wp('4%'),
+    marginTop: hp('1.2%'),
   },
   rowContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 12,
+    gap: wp('3%'),
   },
   
   inputWrapper: {
     flex: 1,
-    marginBottom: 4,
-    minWidth: 100,
+    marginBottom: hp('0.5%'),
+    minWidth: wp('25%'),
   },
   input: {
-    height: 42,
+    height: hp('5.2%'),
     backgroundColor: "#fff",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    fontSize: 13,
+    borderRadius: wp('2.5%'),
+    paddingHorizontal: wp('3.5%'),
+    fontSize: wp('3.5%'),
     fontFamily: "PlusR",
     borderColor: "#ccc",
     borderWidth: 1,
-    // shadowColor: "#000",
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 2,
-    // elevation: 2,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   label: {
-    fontSize: 12,
+    fontSize: wp('3.2%'),
     fontFamily: "PlusSB",
-    marginBottom: 4,
+    marginBottom: hp('0.5%'),
     color: "#5aaf57",
   },
   buttonsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 16,
+    padding: wp('4%'),
   },
-
-
-
-
-
-
   dropdown: {
-    height: 42,
+    height: hp('5.2%'),
     backgroundColor: "#fff",
-    borderRadius: 10,
-    paddingHorizontal: 14,
+    borderRadius: wp('2.5%'),
+    paddingHorizontal: wp('3.5%'),
     borderColor: "#ccc",
     borderWidth: 1,
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: "PlusR",
     justifyContent: "center",
     zIndex: 1000,
   },
-  
   dropdownContainer: {
     backgroundColor: "#fff",
     borderColor: "#ccc",
-    borderRadius: 10,
+    borderRadius: wp('2.5%'),
     zIndex: 999,
   },
-  
   dropdownPlaceholder: {
     color: "#333",
     fontFamily: "PlusR",
-    fontSize: 14
+    fontSize: wp('3.7%')
   }
-  
-
-
-
-
-  
 });

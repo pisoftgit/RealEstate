@@ -8,6 +8,7 @@ import { useUser } from '../../../context/UserContext';
 import * as SecureStore from 'expo-secure-store';
 import axios from 'axios';
 import { API_BASE_URL } from '../../../services/api';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const statusColors = {
   'Not Started': '#888c4a',  // Gray
@@ -272,37 +273,37 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    padding: 20,
+    padding: wp('5%'),
   },
   header: {
-    fontSize: 32,
+    fontSize: wp('8%'),
     fontFamily: 'PlusR',
-    marginTop: 10,
+    marginTop: hp('1.2%'),
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 15,
+    marginVertical: hp('1.8%'),
     backgroundColor: '#ffff',
-    borderRadius: 10,
-    paddingHorizontal: 10,
+    borderRadius: wp('2.5%'),
+    paddingHorizontal: wp('2.5%'),
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: wp('2%'),
     color: "#5aaf57"
   },
   searchInput: {
     flex: 1,
-    height: 40,
-    fontSize: 16,
+    height: hp('5%'),
+    fontSize: wp('4%'),
     fontFamily: "PlusR"
   },
   card: {
     backgroundColor: '#fff',
     flexDirection: 'row',
-    paddingTop: 10,
-    marginVertical: 8,
-    borderRadius: 12,
+    paddingTop: hp('1.2%'),
+    marginVertical: hp('1%'),
+    borderRadius: wp('3%'),
     shadowColor: '#5aaf57',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
@@ -311,65 +312,65 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   image: {
-    width: 90,
-    height: 90,
+    width: wp('24%'),
+    height: wp('24%'),
     alignSelf: "center",
-    marginRight: 5,
-    marginLeft: 15,
-    borderRadius: 60,
+    marginRight: wp('1.2%'),
+    marginLeft: wp('4%'),
+    borderRadius: wp('12%'),
   },
   details: {
     flex: 1,
-    paddingLeft: 50,
+    paddingLeft: wp('13%'),
     alignItems: "baseline",
   },
   name: {
-    fontSize: 18,
-    marginTop: 30,
-    marginBottom: 10,
+    fontSize: wp('4.5%'),
+    marginTop: hp('3.5%'),
+    marginBottom: hp('1.2%'),
     fontFamily: "PlusR"
   },
   contact: {
-    fontSize: 15,
-    marginBottom: 1,
+    fontSize: wp('3.8%'),
+    marginBottom: hp('0.2%'),
     fontFamily: 'PlusR',
     color: '#555',
   },
   gender: {
-    fontSize: 15,
+    fontSize: wp('3.8%'),
     color: '#555',
     fontFamily: 'PlusR',
   },
   buttonRow: {
     flexDirection: 'row',
     alignSelf: "flex-end",
-    marginTop: 10,
-    gap: 10,
+    marginTop: hp('1.2%'),
+    gap: wp('2.5%'),
   },
   actionBtn: {
     backgroundColor: 'transparent',
-    padding: 6,
-    borderRadius: 6,
-    bottom: 7,
+    padding: wp('1.5%'),
+    borderRadius: wp('1.5%'),
+    bottom: hp('0.8%'),
   },
   statusBadge: {
     position: 'absolute',
-    top: -6,
+    top: -hp('0.7%'),
     left: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingHorizontal: wp('2%'),
+    paddingVertical: hp('0.6%'),
+    borderRadius: wp('2%'),
   },
   statusText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: wp('3.2%'),
     fontFamily: "PlusSB"
   },
   deleteIcon: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    padding: 4,
+    top: hp('1%'),
+    right: wp('2%'),
+    padding: wp('1%'),
   },
   modalContainer: {
     flex: 1,
@@ -380,36 +381,33 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: 'white',
     width: '90%',
-    borderRadius: 10,
-    padding: 20,
+    borderRadius: wp('2.5%'),
+    padding: wp('5%'),
     elevation: 10,
   },
   closeModal: {
-    alignSelf: 'flex-end',
+    position: 'absolute',
+    top: hp('1.2%'),
+    right: wp('2%'),
+    zIndex: 10,
   },
   modalTitle: {
-    fontSize: 24,
-    marginBottom: 15,
+    fontSize: wp('6%'),
+    marginBottom: hp('2%'),
     fontFamily: "PlusSB",
     textAlign: 'center',
   },
   modalSectionTitle: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: "PlusSB",
-    marginTop: 10,
-    marginBottom: 5,
+    marginTop: hp('1.2%'),
+    marginBottom: hp('0.7%'),
     color: '#5aaf57',
   },
   modalText: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: "PlusSB",
-    marginBottom: 4,
+    marginBottom: hp('0.5%'),
     color: '#333',
   },
-  closeModal: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    zIndex: 10,
-  }
 });

@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import { getAllJuniorRequestedLeaves, getLeaveById } from "../../../../services/api";
 import { useUser } from '../../../../context/UserContext';
 import { useNavigation } from 'expo-router';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const screenHeight = Dimensions.get("window").height;
 
@@ -143,52 +144,50 @@ const ManageLeaves = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS === "android" ? 25 : 0,
+    paddingTop: Platform.OS === "android" ? hp('3%') : 0,
     backgroundColor: "#fff",
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginTop: Platform.OS === "ios" ? 60 : 70,
-    marginBottom: 20,
+    paddingHorizontal: wp('5%'),
+    marginTop: Platform.OS === "ios" ? hp('7.5%') : hp('8.5%'),
+    marginBottom: hp('2.5%'),
   },
   headerTextContainer: {
     flex: 1,
-    bottom:30,
+    bottom: hp('4%'),
   },
   headerTitle: {
-    fontSize: 35,
+    fontSize: wp('9%'),
     fontFamily: "PlusSB",
-    
   },
   headerSubTitle: {
-    fontSize: 30,
+    fontSize: wp('7.5%'),
     fontFamily: "PlusSB",
     color: "#5aaf57",
-    marginTop: -7,
+    marginTop: -hp('1%'),
   },
   headerDesc: {
-    fontSize: 12,
+    fontSize: wp('3%'),
     fontFamily: "PlusR",
-    marginTop: 14,
+    marginTop: hp('1.7%'),
   },
   lottie: {
-    width: 90,
-    height: 70,
+    width: wp('24%'),
+    height: wp('18%'),
     transform: [{ scale: 2 }],
-    bottom: 15,
-    top: -45,
-    marginRight: 20,
+    bottom: hp('1.8%'),
+    top: -hp('5.6%'),
+    marginRight: wp('5%'),
   },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 12,
-    height: 200,
-    padding: 15,
-    marginBottom: 15,
-    
+    borderRadius: wp('3%'),
+    height: hp('25%'),
+    padding: wp('4%'),
+    marginBottom: hp('2%'),
     elevation: 5,
     shadowColor: "#32cd32",
     shadowOffset: { width: 0, height: 2 },
@@ -198,43 +197,42 @@ const styles = StyleSheet.create({
   cardRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    
   },
   serial: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: "PlusR",
     color: "#444",
   },
   date: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: "PlusR",
     color: "#777",
   },
   info: {
-    marginTop: 6,
-    fontSize: 14,
+    marginTop: hp('0.7%'),
+    fontSize: wp('3.5%'),
     fontFamily: "PlusR",
     color: "#333",
   },
   label: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: "PlusSB",
     color: "#000",
   },
   status: {
-    marginTop: 8,
-    fontSize: 13,
+    marginTop: hp('1%'),
+    fontSize: wp('3.2%'),
     fontFamily: "PlusSB",
     borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 2,
-    paddingHorizontal: 8,
+    borderRadius: wp('2%'),
+    paddingVertical: hp('0.3%'),
+    paddingHorizontal: wp('2%'),
     alignSelf: "flex-start",
     textTransform: "capitalize",
   },
   header: {
-    paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingHorizontal: wp('4%'),
+    paddingBottom: hp('1.2%'),
   },
 });
 

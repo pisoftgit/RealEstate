@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import useMonthlyAttendance from '../../hooks/useMonthlyAttendance';
 import fetchMonthlyAttendance from '../../hooks/fetchMonthlyAtendance';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 const screenWidth = Dimensions.get('window').width;
 
 const AttendanceCalendarEmployee = ({ onBack }) => {
@@ -189,49 +190,49 @@ const AttendanceCalendarEmployee = ({ onBack }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
+  container: { flex: 1, padding: wp('5%'), backgroundColor: '#fff' },
   title: {
-    fontSize: 32,
+    fontSize: wp('8%'),
     fontFamily: 'PlusSB',
-    marginTop:22,
-    marginBottom: 7,
+    marginTop: hp('2.7%'),
+    marginBottom: hp('0.9%'),
     color: '#5aaf57',
   },
   calendar: {
     borderTopWidth: 1,
-    paddingTop: 10,
+    paddingTop: hp('1.2%'),
     borderColor: '#eee',
-    width: screenWidth - 40,
+    width: wp('90%'),
     alignSelf: 'center',
   },
   summaryContainer: {
-    marginTop: 30,
-    padding: 15,
+    marginTop: hp('3.7%'),
+    padding: wp('4%'),
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: wp('3%'),
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: wp('1.5%'),
+    shadowOffset: { width: 0, height: hp('0.25%') },
     elevation: 2,
   },
   summaryTitle: {
-    fontSize: 22,
+    fontSize: wp('5.5%'),
     fontFamily: 'PlusR',
-    marginBottom: 10,
+    marginBottom: hp('1.2%'),
     color: '#333',
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: hp('0.7%'),
   },
   summaryItem: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusR',
   },
   menu: {
-   marginTop:50,
+    marginTop: hp('6.2%'),
   },
 });
 

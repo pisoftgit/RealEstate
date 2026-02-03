@@ -6,6 +6,7 @@ import { useNavigation, useLocalSearchParams } from 'expo-router';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '../../../../services/api';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const GeneratedSalary = () => {
   const navigation = useNavigation();
@@ -245,24 +246,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    padding: 20,
+    padding: wp('5%'),
   },
   backButton: {
-    marginBottom: 20,
+    marginBottom: hp('2.5%'),
   },
   title: {
-    fontSize: 32,
-    fontFamily: 'PlusR', // Replace with available font if needed
-    marginBottom: 20,
+    fontSize: wp('8%'),
+    fontFamily: 'PlusR',
+    marginBottom: hp('2.5%'),
     color: '#333',
   },
   searchBar: {
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 20,
-    fontSize: 16,
+    borderRadius: wp('2%'),
+    padding: wp('2.5%'),
+    marginBottom: hp('2.5%'),
+    fontSize: wp('4%'),
     fontFamily: 'PlusR',
     backgroundColor: '#fff',
   },
@@ -271,9 +272,9 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 25,
+    borderRadius: wp('3%'),
+    padding: wp('5%'),
+    marginBottom: hp('3%'),
     elevation: 3,
     shadowColor: '#5aaf57',
     shadowOffset: { width: 0, height: 3 },
@@ -281,64 +282,64 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   cardTitle: {
-    fontSize: 20,
+    fontSize: wp('5%'),
     fontFamily: 'PlusSB',
     color: '#333',
-    marginBottom: 15,
+    marginBottom: hp('1.8%'),
     textAlign: 'center',
   },
   cardRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: hp('1%'),
   },
   cardSection: {
-    marginVertical: 10,
+    marginVertical: hp('1.2%'),
     borderTopWidth: 1,
     borderTopColor: '#eee',
-    paddingTop: 10,
+    paddingTop: hp('1.2%'),
   },
   cardSubtitle: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusSB',
     color: '#5aaf57',
-    marginBottom: 8,
+    marginBottom: hp('1%'),
   },
   cardLabel: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: 'PlusR',
     color: '#666',
   },
   cardValue: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: 'PlusR',
     color: '#333',
   },
   netPay: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusSB',
     color: '#5aaf57',
   },
   submitButton: {
     backgroundColor: '#5aaf57',
-    borderRadius: 8,
-    paddingVertical: 15,
+    borderRadius: wp('2%'),
+    paddingVertical: hp('2%'),
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: hp('2.5%'),
   },
   submitButtonText: {
-    fontSize: 18,
+    fontSize: wp('4.5%'),
     fontFamily: 'PlusSB',
     color: '#fff',
   },
   loader: {
-    marginTop: 20,
+    marginTop: hp('2.5%'),
   },
   noDataText: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusR',
     color: '#666',
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: hp('2.5%'),
   },
 });

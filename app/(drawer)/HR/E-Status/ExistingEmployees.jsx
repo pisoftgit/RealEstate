@@ -18,6 +18,7 @@ import LottieView from "lottie-react-native";
 import { Feather, AntDesign, Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRouter } from "expo-router";
 import { Dimensions } from "react-native";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 import { getAllActiveOrInactiveEmployees, getAllEmployees, getAllEmployeesbyId } from "../../../../services/api";
 
@@ -364,108 +365,99 @@ const ExistingEmployees = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS === "android" ? 25 : 30,
+    paddingTop: Platform.OS === "android" ? hp('3%') : hp('4%'),
     backgroundColor: "#fff",
   },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: wp('4%'),
+    paddingVertical: hp('1.2%'),
     backgroundColor: "#fff",
-    // elevation: 4,
     zIndex: 10,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginTop: Platform.OS === "ios" ? 90 : 70,
-    marginBottom: 20,
+    paddingHorizontal: wp('5%'),
+    marginTop: Platform.OS === "ios" ? hp('11.2%') : hp('8.5%'),
+    marginBottom: hp('2.5%'),
   },
-
   headerTextContainer: {
     flex: 1,
   },
-
   headerTitle: {
-    fontSize: 35,
+    fontSize: wp('9%'),
     fontFamily: "PlusSB",
-    marginTop: -89,
+    marginTop: -hp('11.5%'),
   },
-
   headerSubTitle: {
-    fontSize: 30,
+    fontSize: wp('7.5%'),
     fontFamily: "PlusSB",
     color: "#5aaf57",
-    marginTop: -5,
+    marginTop: -hp('0.6%'),
   },
-
   headerDesc: {
-    fontSize: 12,
+    fontSize: wp('3%'),
     fontFamily: "PlusR",
-    marginTop: 5,
+    marginTop: hp('0.6%'),
   },
   lottie: {
-    width: 80,
-    height: 50,
+    width: wp('21%'),
+    height: wp('13%'),
     transform: [{ scale: 2 }],
-    bottom: 15,
-    top: -45,
-    marginRight: 20,
+    bottom: hp('1.8%'),
+    top: -hp('5.6%'),
+    marginRight: wp('5%'),
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#f9f9f9",
-    marginHorizontal: 15,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    marginVertical: 10,
+    marginHorizontal: wp('4%'),
+    borderRadius: wp('2.5%'),
+    paddingHorizontal: wp('2.5%'),
+    marginVertical: hp('1.2%'),
     shadowColor: "#32cd32",
     elevation: 3,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
-    marginTop: -20,
+    marginTop: -hp('2.5%'),
   },
   searchBar: {
     flex: 1,
-    height: 40,
-    fontSize: 14,
+    height: hp('5%'),
+    fontSize: wp('3.5%'),
     fontFamily: "PlusR",
     fontWeight: "600",
     color: "#333",
-    paddingLeft: 8,
+    paddingLeft: wp('2%'),
   },
   searchIcon: {
-    marginRight: 5,
+    marginRight: wp('1.2%'),
   },
-
   iconContainer: {
-    width: 45,
+    width: wp('12%'),
     alignItems: "center",
-    marginTop: 10,
+    marginTop: hp('1.2%'),
   },
   icon: {
     marginLeft: "auto",
-    paddingLeft: 10,
-    marginTop: -10,
+    paddingLeft: wp('2.5%'),
+    marginTop: -hp('1.2%'),
   },
-
-  //new
-
   list: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingHorizontal: wp('4%'),
+    paddingBottom: hp('2.5%'),
   },
   item: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 13,
+    padding: wp('3.5%'),
     borderBottomWidth: 1,
     borderColor: "#eee",
   },
@@ -473,49 +465,44 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
   },
-
   id: {
-    width: 5,
-    fontSize: 13,
+    width: wp('1.3%'),
+    fontSize: wp('3.2%'),
     color: "#888",
     textAlign: "center",
     flex: 1,
   },
   index: {
-    fontSize: 13,
+    fontSize: wp('3.2%'),
     color: "#888",
     textAlign: "center",
-    // flex: 1,
   },
   imageWrapper: {
     flex: 1,
     alignItems: "center",
   },
   name: {
-    width: 200,
-    fontSize: 16,
+    width: wp('53%'),
+    fontSize: wp('4%'),
     color: "#111",
     fontFamily: "PlusR",
     textAlign: "center",
-    marginRight: 92,
+    marginRight: wp('23%'),
   },
   department: {
-    width: 52,
-    fontSize: 11,
+    width: wp('14%'),
+    fontSize: wp('2.8%'),
     color: "#5aaf57",
     fontFamily: "PlusR",
     textAlign: "center",
-    marginRight: 92,
+    marginRight: wp('23%'),
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    marginRight: 30,
+    width: wp('11%'),
+    height: wp('11%'),
+    borderRadius: wp('5.5%'),
+    marginRight: wp('8%'),
   },
-
-  //new modal styles
-
   modalBackground: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
@@ -524,34 +511,34 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: "85%",
-    height: "70%", // fixed modal height
+    height: "70%",
     backgroundColor: "white",
-    borderRadius: 30,
-    padding: 16,
+    borderRadius: wp('7.5%'),
+    padding: wp('4%'),
     justifyContent: "space-between",
   },
   headerSection: {
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: hp('1%'),
   },
   modalAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 10,
+    width: wp('21%'),
+    height: wp('21%'),
+    borderRadius: wp('10.5%'),
+    marginBottom: hp('1.2%'),
   },
   modalName: {
-    fontSize: 18,
+    fontSize: wp('4.5%'),
     fontFamily: "PlusSB",
-    marginBottom: 4,
+    marginBottom: hp('0.5%'),
   },
   modalInfo: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: "PlusR",
     color: "#555",
   },
   scrollContainer: {
-    paddingBottom: 10,
+    paddingBottom: hp('1.2%'),
   },
   flatListContainer: {
     maxHeight: "60%",
@@ -559,19 +546,19 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginVertical: 4,
-    paddingHorizontal: 6,
+    marginVertical: hp('0.5%'),
+    paddingHorizontal: wp('1.5%'),
   },
   infoLabel: {
     fontFamily: "PlusR",
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     color: "#444",
     fontWeight: "600",
     width: "50%",
   },
   infoValue: {
     fontFamily: "PlusR",
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     color: "#666",
     width: "50%",
     textAlign: "right",
@@ -579,14 +566,14 @@ const styles = StyleSheet.create({
   closeBtn: {
     alignSelf: "center",
     backgroundColor: "#5aaf57",
-    paddingVertical: 10,
-    paddingHorizontal: 25,
-    borderRadius: 8,
-    marginTop: 8,
+    paddingVertical: hp('1.2%'),
+    paddingHorizontal: wp('6%'),
+    borderRadius: wp('2%'),
+    marginTop: hp('1%'),
   },
   closeBtnText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: "PlusR",
   },
 });

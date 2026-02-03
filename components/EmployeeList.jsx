@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import moment from 'moment';
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '../services/api';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const EmployeeList = ({ onSelectEmployee }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -199,37 +200,37 @@ const EmployeeList = ({ onSelectEmployee }) => {
 
 const styles = StyleSheet.create({
   list: {
-    paddingHorizontal: 16,
-    paddingBottom: 30,
+    paddingHorizontal: wp('4%'),
+    paddingBottom: hp('4%'),
   },
   listWrapper: {
-    height: 320,
+    height: hp('40%'),
   },
   item: {
     flexDirection: 'row',
-    paddingVertical: 22,
+    paddingVertical: hp('3%'),
     borderBottomWidth: 1,
     borderColor: '#ddd',
     alignItems: 'center',
     justifyContent: 'center',
   },
   id: {
-    width: 55,
-    fontSize: 14,
+    width: wp('14%'),
+    fontSize: wp('3.5%'),
     fontFamily: 'PlusR',
     color: '#333',
     textAlign: 'center',
   },
   name: {
     flex: 1,
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusR',
     color: '#111',
     textAlign: 'left',
   },
   time: {
-    width: 80,
-    fontSize: 14,
+    width: wp('20%'),
+    fontSize: wp('3.5%'),
     color: '#333',
     textAlign: 'center',
     fontFamily: 'PlusR',
@@ -238,45 +239,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   indicatorDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 8,
+    width: wp('2.5%'),
+    height: wp('2.5%'),
+    borderRadius: wp('1.25%'),
+    marginRight: wp('2%'),
   },
   searchWrapper: {
     flexDirection: 'row',
-    marginHorizontal: 16,
-    marginTop: 20,
-    marginBottom: 20,
-    padding: 10,
-    borderRadius: 8,
+    marginHorizontal: wp('4%'),
+    marginTop: hp('2.5%'),
+    marginBottom: hp('2.5%'),
+    padding: wp('2.5%'),
+    borderRadius: wp('2%'),
     borderColor: '#ccc',
     borderWidth: 1,
     alignItems: 'center',
   },
   searchIcon: {
-    marginRight: 10,
+    marginRight: wp('2.5%'),
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusR',
   },
   dateButton: {
-    marginTop: 10,
-    marginBottom: 20,
-    marginHorizontal: 36,
-    padding: 10,
+    marginTop: hp('1.2%'),
+    marginBottom: hp('2.5%'),
+    marginHorizontal: wp('9%'),
+    padding: wp('2.5%'),
     backgroundColor: '#fff',
-    borderRadius: 8,
+    borderRadius: wp('2%'),
     alignItems: 'center',
     justifyContent: 'space-evenly',
     ...Platform.select({
       ios: {
         shadowColor: '#5aaf57',
         shadowOpacity: 0.3,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: 1 },
+        shadowRadius: wp('1%'),
+        shadowOffset: { width: 0, height: hp('0.12%') },
       },
       android:{
         elevation:3,
@@ -285,7 +286,7 @@ const styles = StyleSheet.create({
   },
   dateButtonText: {
     color: '#111',
-    fontSize: 15,
+    fontSize: wp('3.8%'),
     fontFamily: 'PlusR',
   },
   modalOverlay: {
@@ -296,29 +297,29 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 12,
+    padding: wp('5%'),
+    borderRadius: wp('3%'),
     width: '90%',
     alignItems: 'center',
   },
   legendContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingHorizontal: wp('4%'),
+    paddingBottom: hp('1.2%'),
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 6,
+    width: wp('3%'),
+    height: wp('3%'),
+    borderRadius: wp('1.5%'),
+    marginRight: wp('1.5%'),
   },
   legendText: {
-    fontSize: 13,
+    fontSize: wp('3.2%'),
     color: '#444',
     fontFamily: 'PlusR',
   },

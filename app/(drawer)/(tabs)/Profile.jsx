@@ -1,4 +1,4 @@
-import { View,Alert, Text, SafeAreaView, StyleSheet, Image, Dimensions, Platform, TouchableOpacity } from 'react-native';
+import { View, Alert, Text, SafeAreaView, StyleSheet, Image, Platform, TouchableOpacity } from 'react-native';
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '../../../context/UserContext';
@@ -6,73 +6,72 @@ import Malelogo from "../../../assets/svg/loguser.svg";
 import { LinearGradient } from 'expo-linear-gradient';
 import useLogin from '../../../hooks/useLogin';
 import { useRouter } from 'expo-router';
-
-const { width } = Dimensions.get("screen");
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const Profile = () => {
   const Router = useRouter();
   const { user, img } = useUser() || {};
-  const {logout,loading}=useLogin();
+  const { logout, loading } = useLogin();
   console.log(user)
 
- const renderProfileImage = () => {
-  if (user.userCategoryCode === '0') {
-    if (user.gender === 'Female') {
-      return <Femalelogo height={80} width={80} />;
+  const renderProfileImage = () => {
+    if (user.userCategoryCode === '0') {
+      if (user.gender === 'Female') {
+        return <Femalelogo height={wp('21.3%')} width={wp('21.3%')} />;
+      } else {
+        return <Malelogo height={wp('21.3%')} width={wp('21.3%')} />;
+      }
+    } else if (!img) {
+      if (user.gender === 'Female') {
+        return <Image
+          source={require("../../../assets/images/woman.png")}
+          style={Styles.img2}
+        />;
+      } else {
+        return <Malelogo height={wp('21.3%')} width={wp('21.3%')} />;
+      }
     } else {
-      return <Malelogo height={80} width={80} />;
+      return (
+        <Image
+          source={{ uri: `data:image/jpeg;base64,${img}` }}
+          style={Styles.img}
+        />
+      );
     }
-  } else if (!img) {
-    if (user.gender === 'Female') {
-      return  <Image
-        source={require("../../../assets/images/woman.png")}
-        style={Styles.img2}
-      />;
-    } else {
-      return <Malelogo height={80} width={80} />;
-    }
-  } else {
-    return (
-      <Image
-        source={{ uri: `data:image/jpeg;base64,${img}` }}
-        style={Styles.img}
-      />
-    );
-  }
-};
+  };
 
-const handleLogout=()=>{
-  Alert.alert(
-    "Confirm Logout",
-    "Are you sure to Logout?",
-    [
-      {
-        text:"cancel", style:"cancel"
-      },
-      {
-        text:"Log-Out", style:"destructive",
-        onPress:async()=>{
-          await logout();
-          Router.replace("(auth)/Login")
+  const handleLogout = () => {
+    Alert.alert(
+      "Confirm Logout",
+      "Are you sure to Logout?",
+      [
+        {
+          text: "cancel", style: "cancel"
+        },
+        {
+          text: "Log-Out", style: "destructive",
+          onPress: async () => {
+            await logout();
+            Router.replace("(auth)/Login")
+
+          },
 
         },
+      ],
+      { cancelable: true }
 
-      },
-    ],
-    {cancelable:true}
-
-  );
+    );
 
 
 
-}
+  }
 
   return (
     <SafeAreaView style={Styles.container}>
       {/* Header */}
       <View style={Styles.header}>
-        <Ionicons name="menu" size={24} color="black" />
-        <Text style={Styles.title}>User  <Text style={{color:"#5aaf57"}}>Profile</Text> </Text>
+        <Ionicons name="menu" size={hp('3%')} color="black" />
+        <Text style={Styles.title}>My  <Text style={{ color: "#5aaf57" }}>Profile</Text> </Text>
       </View>
 
       {/* Profile Card with Image */}
@@ -82,11 +81,11 @@ const handleLogout=()=>{
         </View>
 
         <LinearGradient
-  colors={['#5AAF57', '#8DDC85']}
-  start={{ x: 0, y: 0 }}
-  end={{ x: 1, y: 3 }}
-  style={Styles.card}
->
+          colors={['#5AAF57', '#8DDC85']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 3 }}
+          style={Styles.card}
+        >
           <View style={Styles.infoSection}>
             <Text style={Styles.name}>{user.name}</Text>
             <Text style={Styles.info}>
@@ -100,34 +99,34 @@ const handleLogout=()=>{
       </View>
 
       <Text style={Styles.divcont}>
-      
+
       </Text>
       <Text style={Styles.set} >
 
         <Ionicons ></Ionicons>
-        
+
         Settings</Text>
 
       {/* Menu */}
       <View style={Styles.menuWrapper}>
         <TouchableOpacity style={Styles.menuButton}>
-          <Ionicons name="lock-closed-outline" size={20} color="#333" />
+          <Ionicons name="lock-closed-outline" size={hp('2.5%')} color="#333" />
           <Text style={Styles.menuText}>Change Password</Text>
-          <Ionicons name="chevron-forward" style={Styles.chevy} size={20} color="#333" />
+          <Ionicons name="chevron-forward" style={Styles.chevy} size={hp('2.5%')} color="#333" />
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
 
-        onPress={handleLogout}
-        disabled={loading}
-        
-        style={Styles.menuButton}>
-         
-         
+          onPress={handleLogout}
+          disabled={loading}
 
-          <Ionicons name="log-out-outline" size={20} color="#333" />
-          <Text style={Styles.menuText}>{loading ?"Logging out..." : "Logout"}</Text>
-           <Ionicons name="chevron-forward" style={Styles.chevy} size={20} color="#333" />
+          style={Styles.menuButton}>
+
+
+
+          <Ionicons name="log-out-outline" size={hp('2.5%')} color="#333" />
+          <Text style={Styles.menuText}>{loading ? "Logging out..." : "Logout"}</Text>
+          <Ionicons name="chevron-forward" style={Styles.chevy} size={hp('2.5%')} color="#333" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -143,40 +142,36 @@ const Styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'column',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    marginBottom: 20,
+    paddingHorizontal: wp('5%'),
+    paddingTop: hp('2.5%'),
+    marginBottom: hp('2.5%'),
   },
   title: {
-    marginTop: 15,
-    fontSize: 32,
-    fontWeight: 'bold',
+    marginTop: hp('1.8%'),
+    fontSize: hp('4%'),
     color: '#333',
     fontFamily: 'PlusSB',
-  },
-  divcont:{
-    height:1,
-    backgroundColor:"#ccc",
-    width:width*0.8,
-    marginVertical:10,
-    bottom:10,
-    alignSelf:"center"
-
-  
     
+  },
+  divcont: {
+    height: 1,
+    backgroundColor: "#ccc",
+    width: wp('80%'),
+    marginVertical: hp('1.2%'),
+    bottom: hp('1.2%'),
+    alignSelf: "center"
   },
   cardWrapper: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: hp('2.5%'),
   },
   card: {
-    width: width * 0.75,
-    height: 100,
+    width: wp('75%'),
+    height: hp('12.3%'),
     borderRadius: 12,
-    paddingLeft: 50,
-  
+    paddingLeft: wp('13.3%'),
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: hp('2.5%'),
     ...Platform.select({
       ios: {
         shadowColor: "#5aaf57",
@@ -191,62 +186,52 @@ const Styles = StyleSheet.create({
   },
   profileImageContainer: {
     position: 'absolute',
-    left: 20,
-    top: 15,
+    left: wp('5.3%'),
+    top: hp('1.8%'),
     backgroundColor: 'white',
     borderRadius: 60,
-    padding: 15,
+    padding: wp('4%'),
     zIndex: 10,
-    
-    
   },
-  set:{
-    padding:10,
-    paddingLeft:30,
-    fontSize:20,
-    fontFamily:"PlusSB",
-    color:"#5aaf57"
-
+  set: {
+    padding: wp('2.6%'),
+    paddingLeft: wp('8%'),
+    fontSize: hp('2.5%'),
+    fontFamily: "PlusSB",
+    color: "#5aaf57"
   },
   img: {
-    height: 80,
-    width: 80 ,
+    height: wp('21.3%'),
+    width: wp('21.3%'),
     borderRadius: 70,
   },
-   img2: {
-    height: 80,
-    width: 70 ,
+  img2: {
+    height: wp('21.3%'),
+    width: wp('18.6%'),
     borderRadius: 80,
   },
   infoSection: {
-
-    alignSelf:"center"
+    alignSelf: "center"
   },
   name: {
     color: '#fff',
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: hp('2.7%'),
+    marginBottom: hp('0.5%'),
     fontFamily: "PlusSB",
   },
   info: {
     color: 'white',
-    fontSize: 12,
+    fontSize: hp('1.5%'),
     fontFamily: "PlusSB",
   },
-  chevy:{
-
-    marginLeft:"auto"
-   
-
-
-
+  chevy: {
+    marginLeft: "auto"
   },
   menuWrapper: {
     backgroundColor: 'white',
-    marginHorizontal: 20,
+    marginHorizontal: wp('5.3%'),
     borderRadius: 12,
-    paddingVertical: 5,
+    paddingVertical: hp('0.6%'),
     ...Platform.select({
       ios: {
         shadowColor: "#5aaf57",
@@ -262,15 +247,14 @@ const Styles = StyleSheet.create({
   menuButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
+    paddingVertical: hp('1.8%'),
+    paddingHorizontal: wp('5.3%'),
     borderBottomColor: '#ddd',
-    // borderBottomWidth: 1,
   },
   menuText: {
-    fontSize: 16,
+    fontSize: hp('2%'),
     fontFamily: "PlusR",
     color: '#333',
-    marginLeft: 15,
+    marginLeft: wp('4%'),
   },
 });

@@ -4,18 +4,19 @@ import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import useHr from '../../../../../hooks/useHr';
 import { Picker } from '@react-native-picker/picker';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 export default function Designation() {
   const navigation = useNavigation();
-  const { 
-    getAllDepartments, 
-    getAllDesignations, 
-    addDesignation, 
-    updateDesignation, 
-    deleteDesignation, 
-    departments, 
-    designations, 
-    loading 
+  const {
+    getAllDepartments,
+    getAllDesignations,
+    addDesignation,
+    updateDesignation,
+    deleteDesignation,
+    departments,
+    designations,
+    loading
   } = useHr();
 
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
@@ -32,7 +33,7 @@ export default function Designation() {
         console.error('Error fetching data:', error);
       }
     };
-    
+
     fetchData();
   }, []);
 
@@ -113,7 +114,7 @@ export default function Designation() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu" size={28} color="BLACK" />
+            <Ionicons name="menu" size={hp('3.5%')} color="BLACK" />
           </TouchableOpacity>
           <Text style={styles.title}>Designation</Text>
         </View>
@@ -158,8 +159,8 @@ export default function Designation() {
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity 
-              style={[styles.submitButton, loading && styles.disabledButton]} 
+            <TouchableOpacity
+              style={[styles.submitButton, loading && styles.disabledButton]}
               onPress={handleSubmit}
               disabled={loading}
             >
@@ -181,7 +182,7 @@ export default function Designation() {
           {/* Existing Designations Card */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Existing Designations</Text>
-            
+
             {/* Table Header */}
             <View style={styles.tableHeader}>
               <Text style={[styles.tableHeaderText, { flex: 0.5 }]}>S. No</Text>
@@ -204,10 +205,10 @@ export default function Designation() {
                   <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.name}</Text>
                   <View style={[styles.actionCell, { flex: 1 }]}>
                     <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                      <Feather name="edit" size={18} color="#5aaf57" />
+                      <Feather name="edit" size={hp('2.2%')} color="#5aaf57" />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                      <Ionicons name="trash" size={18} color="#d32f2f" />
+                      <Ionicons name="trash" size={hp('2.2%')} color="#d32f2f" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -226,37 +227,37 @@ export default function Designation() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f8f9fa' },
-  container: { flex: 1, backgroundColor: '#f8f9fa', padding: 20 },
+  container: { flex: 1, backgroundColor: '#f8f9fa', padding: wp('5%') },
   header: {
-    paddingVertical: 18,
-    marginBottom: 8,
+    paddingVertical: hp('2%'),
+    marginBottom: hp('1%'),
   },
   title: {
-    fontSize: 32,
+    fontSize: hp('4%'),
     fontFamily: 'PlusSB',
     color: '#333',
-    marginLeft: 16,
+    marginLeft: wp('4%'),
   },
   card: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    padding: wp('4%'),
+    marginBottom: hp('2%'),
     elevation: 3,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: hp('2.2%'),
     fontFamily: 'PlusSB',
     color: '#333',
-    marginBottom: 12,
+    marginBottom: hp('1.5%'),
   },
   formRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: hp('1.5%'),
   },
   label: {
-    width: 120,
+    width: wp('30%'),
     color: '#333',
     fontFamily: 'PlusR',
   },
@@ -268,7 +269,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 8,
-    padding: 8,
+    padding: wp('2%'),
     backgroundColor: '#f5f5f5',
     color: '#333',
     fontFamily: 'PlusR',
@@ -279,44 +280,44 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: '#5aaf57',
-    paddingVertical: 10,
+    paddingVertical: hp('1.2%'),
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: hp('1%'),
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: hp('2%'),
     fontFamily: 'PlusSB',
   },
   cancelButton: {
     backgroundColor: '#666',
-    paddingVertical: 10,
+    paddingVertical: hp('1.2%'),
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: hp('1%'),
   },
   cancelButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: hp('2%'),
     fontFamily: 'PlusSB',
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#5aaf57',
-    padding: 8,
+    padding: wp('2%'),
     borderRadius: 8,
-    marginBottom: 4,
+    marginBottom: hp('0.5%'),
   },
   tableHeaderText: {
     color: '#fff',
     textAlign: 'center',
     fontFamily: 'PlusSB',
-    fontSize: 14,
+    fontSize: hp('1.7%'),
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 8,
+    padding: wp('2%'),
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
     backgroundColor: '#fff',
@@ -325,25 +326,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#333',
     fontFamily: 'PlusR',
-    fontSize: 13,
+    fontSize: hp('1.6%'),
   },
   actionCell: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
+    gap: wp('3%'),
   },
   iconBtn: {
-    padding: 4,
+    padding: wp('1%'),
   },
   emptyState: {
-    padding: 20,
+    padding: wp('5%'),
     alignItems: 'center',
   },
   emptyStateText: {
     color: '#999',
     fontFamily: 'PlusR',
-    fontSize: 14,
+    fontSize: hp('1.7%'),
   },
   pickerContainer: {
     flex: 1,
@@ -361,13 +362,13 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   loadingContainer: {
-    padding: 20,
+    padding: wp('5%'),
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 10,
+    marginTop: hp('1%'),
     color: '#666',
     fontFamily: 'PlusR',
-    fontSize: 14,
+    fontSize: hp('1.7%'),
   },
 });

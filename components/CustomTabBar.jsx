@@ -2,6 +2,7 @@ import React from "react";
 import { View, TouchableOpacity, Text, Dimensions, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const { width } = Dimensions.get("window");
 
@@ -48,32 +49,31 @@ const CustomTabBar = ({ state, navigation }) => {
 const styles = {
   tabBar: {
     position: "absolute",
-    bottom: Platform.OS === "ios" ? 30 : 15, // Adjust for iOS and Android
+    bottom: Platform.OS === "ios" ? hp('3.7%') : hp('1.8%'),
     flexDirection: "row",
     justifyContent: "center",
-    height: 60,
+    height: hp('7.5%'),
     alignSelf: "center",
     backgroundColor: "white",
-    borderRadius: 40,
+    borderRadius: wp('10%'),
     elevation: 5,
-    // borderWidth:1,
     bordercolor:"white",
     shadowColor: "#5aaf57",
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: hp('0.5%') },
     shadowOpacity: 0.3,
-    shadowRadius: 5,
-    width: width - 30, // Dynamically adjust width
+    shadowRadius: wp('1.2%'),
+    width: wp('90%'),
   },
   tabItem: {
     flex: 1, // Each tab takes equal space
     alignItems: "center",
-    padding: 12,
+    padding: hp('1.5%'),
     position: "relative", // Required for the active line
   },
   tabText: {
-    fontSize: 12,
+    fontSize: wp('3.2%'),
     color:"#5aaf57",
-    marginTop: 4,
+    marginTop: hp('0.5%'),
   },
   activeTab: {
     // No background change for active tab
@@ -93,7 +93,7 @@ const styles = {
   activeLine: {
     position: "absolute",
     top: 0, // Line appears above the tab
-    height: 2,
+    height: hp('0.25%'),
     width: "50%",
     backgroundColor: "#4fc3f7", // Green line
     borderRadius: 2,

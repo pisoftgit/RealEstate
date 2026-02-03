@@ -21,6 +21,7 @@ import { Dropdown } from "react-native-element-dropdown";
 import { getLeaveApprovalAuthority } from "../../../../services/api";
 import { useUser } from '../../../../context/UserContext';
 import { submitLeaveAction } from "../../../../services/api";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const CustomDropdown = ({ value, setValue, data, placeholder, loading }) => {
   const [isFocus, setIsFocus] = useState(false);
@@ -296,28 +297,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: Platform.OS === "android" ? 10 : 0,
+    paddingTop: Platform.OS === "android" ? hp('1.2%') : 0,
   },
   content: {
-    padding: 20,
-    // marginTop: -20,
-    paddingBottom:250,
+    padding: wp('5%'),
+    paddingBottom: hp('32%'),
   },
   detailRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: hp('1.2%'),
   },
   label: {
-    fontSize: 14,
+    fontSize: wp('3.7%'),
     fontFamily: "PlusSB",
     color: "#555",
     maxWidth: "40%",
-    marginBottom:5,
+    marginBottom: hp('0.6%'),
   },
   value: {
-    fontSize: 13,
+    fontSize: wp('3.5%'),
     fontFamily: "PlusR",
     color: "#222",
     maxWidth: "55%",
@@ -330,75 +330,75 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "red",
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: "PlusR",
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginTop: Platform.OS === "ios" ? 60 : 70,
-    marginBottom: 5,
+    paddingHorizontal: wp('5%'),
+    marginTop: Platform.OS === "ios" ? hp('7.5%') : hp('8.5%'),
+    marginBottom: hp('0.6%'),
   },
   headerTextContainer: {
     flex: 1,
   },
   headerTitle: {
-    fontSize: 40,
+    fontSize: wp('10%'),
     fontFamily: "PlusSB",
-    marginTop: -89,
+    marginTop: -hp('11.5%'),
   },
   headerSubTitle: {
-    fontSize: 32,
+    fontSize: wp('8%'),
     fontFamily: "PlusSB",
     color: "#5aaf57",
-    marginTop: -7,
+    marginTop: -hp('1%'),
   },
   lottie: {
-    width: 90,
-    height: 70,
+    width: wp('24%'),
+    height: wp('18%'),
     transform: [{ scale: 2 }],
-    bottom: 15,
-    top: -25,
-    marginRight: 20,
+    bottom: hp('1.8%'),
+    top: -hp('3.2%'),
+    marginRight: wp('5%'),
   },
   inputWrapper: {
     flex: 1,
-    marginBottom: 10,
+    marginBottom: hp('1.2%'),
     minWidth: 100,
-    paddingTop: 5,
+    paddingTop: hp('0.6%'),
   },
   input: {
-    height: 42,
+    height: hp('5.5%'),
     backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    fontSize: 13,
+    borderRadius: wp('2.5%'),
+    paddingHorizontal: wp('3.5%'),
+    fontSize: wp('3.5%'),
     fontFamily: "PlusR",
     borderColor: "#ccc",
     borderWidth: 1,
   },
   dropdown: {
-    height: 42,
+    height: hp('5.5%'),
     backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    paddingHorizontal: 14,
+    borderRadius: wp('2.5%'),
+    paddingHorizontal: wp('3.5%'),
     borderColor: "#ccc",
     borderWidth: 1,
-    fontSize: 13,
+    fontSize: wp('3.5%'),
     fontFamily: "PlusR",
     justifyContent: "center",
   },
   dropdownPlaceholder: {
     color: "#999",
     fontFamily: "PlusR",
-    fontSize: 14,
+    fontSize: wp('3.7%'),
   },
   dropdownText: {
     color: "#333",
     fontFamily: "PlusR",
-    fontSize: 14,
+    fontSize: wp('3.7%'),
   },
   dateInputContainer: {
     flexDirection: "row",
@@ -407,11 +407,20 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     alignItems: "center",
-    marginTop: 20,
+    marginTop: hp('2.5%'),
   },
   header: {
-    paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingHorizontal: wp('4%'),
+    paddingBottom: hp('1.2%'),
+  },
+  rowContainer: {
+    flexDirection: 'row',
+    gap: wp('3%'),
+    marginBottom: hp('1.2%'),
+  },
+  select: {
+    fontSize: wp('3.7%'),
+    fontFamily: "PlusR",
   },
 });
 

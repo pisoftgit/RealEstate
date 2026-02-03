@@ -6,6 +6,7 @@ import axios from 'axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '../context/UserContext';
 import { API_BASE_URL } from '../services/api';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const MyLeaves = ({ goBack }) => {
   const [leaves, setLeaves] = useState([]);
@@ -175,45 +176,45 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    paddingHorizontal: 22,
-    paddingTop: 10,
+    paddingHorizontal: wp('5.5%'),
+    paddingTop: hp('1.2%'),
     backgroundColor: '#fff',
   },
   backButton: {
-    marginBottom: 8,
+    marginBottom: hp('1%'),
   },
   headerTitle: {
-    fontSize: 32,
+    fontSize: wp('8%'),
     fontFamily: "PlusR",
   },
   card: {
     backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginVertical: 15,
-    padding: 16,
-    borderRadius: 12,
+    marginHorizontal: wp('4%'),
+    marginVertical: hp('2%'),
+    padding: wp('4%'),
+    borderRadius: wp('3%'),
     elevation: 5,
     shadowColor: '#5aaf57',
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: hp('0.37%') },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowRadius: wp('1%'),
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: hp('1%'),
   },
   leaveType: {
-    fontSize: 21,
+    fontSize: wp('5.2%'),
     color: '#000',
     fontFamily: "PlusR",
   },
   statusBadge: {
-    borderRadius: 12,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    marginLeft: 10,
+    borderRadius: wp('3%'),
+    paddingVertical: hp('0.5%'),
+    paddingHorizontal: wp('2.5%'),
+    marginLeft: wp('2.5%'),
   },
   initiated: {
     backgroundColor: '#ffcc00',
@@ -223,17 +224,17 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: "PlusSB",
   },
   cardContent: {
-    marginTop: 8,
-    paddingHorizontal: 8,
+    marginTop: hp('1%'),
+    paddingHorizontal: wp('2%'),
   },
   cardText: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     color: '#111',
-    marginVertical: 5,
+    marginVertical: hp('0.7%'),
     fontFamily: "PlusR",
   },
   label: {
@@ -247,17 +248,17 @@ const styles = StyleSheet.create({
   historyButton: {
     flex: 1,
     position: 'absolute',
-    bottom: 20,
-    right: 16,
+    bottom: hp('2.5%'),
+    right: wp('4%'),
     borderColor: '#007bff',
     borderWidth: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: wp('5%'),
+    paddingVertical: hp('0.8%'),
+    borderRadius: wp('2%'),
   },
   historyButtonText: {
     color: '#007bff',
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontFamily: "PlusSB",
   },
   modalOverlay: {
@@ -270,8 +271,8 @@ const styles = StyleSheet.create({
     width: '90%',
     maxHeight: '80%',
     backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: wp('3%'),
+    padding: wp('5%'),
   },
   modalHeader: {
     flexDirection: 'row',
@@ -279,65 +280,64 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: wp('5%'),
     fontWeight: 'bold',
     fontFamily: "PlusSB",
   },
   historyItem: {
-    marginBottom: 15,
+    marginBottom: hp('2%'),
   },
   historyLabel: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     fontWeight: 'bold',
     color: '#5aaf57',
     fontFamily: "PlusSB",
   },
   historyValue: {
-    fontSize: 14,
+    fontSize: wp('3.5%'),
     color: '#111',
     fontFamily: "PlusR",
   },
   historyDivider: {
     height: 1,
     backgroundColor: '#ccc',
-    marginVertical: 10,
+    marginVertical: hp('1.2%'),
   },
   historyCard: {
     width: '90%',
     backgroundColor: '#f7f7f7',
-    padding: 15,
-    borderRadius: 12,
+    padding: wp('4%'),
+    borderRadius: wp('3%'),
     elevation: 3,
     shadowColor: '#5aaf57',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: hp('0.25%') },
     shadowOpacity: 0.3,
-    shadowRadius: 3,
+    shadowRadius: wp('1%'),
   },
   updatedModalContent: {
     width: '95%',
     maxHeight: '85%',
     backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: wp('4%'),
+    padding: wp('5%'),
   },
   timelineContainer: {
-    marginTop: 10,
-    paddingVertical: 10,
+    marginTop: hp('1.2%'),
+    paddingVertical: hp('1.2%'),
   },
   
   timelineItem: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: hp('3.7%'),
     position: 'relative',
   },
   
   timelineLine: {
     position: 'absolute',
-    top: -30,
-    height: 30,
+    top: -hp('3.7%'),
+    height: hp('3.7%'),
     width: 2,
     backgroundColor: '#5aaf57',
     zIndex: -1,
   },
-  
 });

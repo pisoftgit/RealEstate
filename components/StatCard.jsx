@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const StatCard = ({ title, value, percentage, iconName, gradientColors }) => {
   return (
@@ -29,9 +30,9 @@ const StatCard = ({ title, value, percentage, iconName, gradientColors }) => {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 24,
-    padding: 11,
-    height: 90,
+    borderRadius: wp('6%'),
+    padding: wp('3%'),
+    height: hp('12%'),
     justifyContent: 'space-between',
   },
   header: {
@@ -41,32 +42,29 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#fff',
-    fontSize: 15,
-    // fontWeight: '600',
+    fontSize: wp('4%'),
     fontFamily:"PlusSB"
   },
   iconContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    padding: 6,
+    padding: wp('1.5%'),
     borderRadius: 9999,
     justifyContent: 'center',
     alignItems: 'center',
   },
   content: {
-    marginTop:0,
+    marginTop: 0,
   },
   value: {
     color: '#fff',
-    fontSize: 22,
-    // fontWeight: 'bold',
+    fontSize: wp('5.5%'),
     fontFamily:"PlusB"
   },
   percentage: {
     color: '#fff',
-    fontSize: 14,
-    // fontWeight: '600',
-    marginTop: -13,
-    marginLeft:"auto",
+    fontSize: wp('3.5%'),
+    marginTop: -hp('1.7%'),
+    marginLeft: "auto",
     fontFamily:"PlusSB"
   },
 });

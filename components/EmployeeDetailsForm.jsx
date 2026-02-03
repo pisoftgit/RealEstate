@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { Alert } from "react-native";
 import { Dimensions } from "react-native";
 import RNPickerSelect from "react-native-picker-select";
@@ -109,11 +110,11 @@ const CustomDropdown = ({ value, setValue, data, placeholder, loading }) => {
 export default function EmployeeDetailsForm({ initialData, onNext }) {
   const [data, setData] = useState(initialData || {});
   const [image, setImage] = useState(null);
-  const [imagebyte,setimagebyte]=useState(null)
+  const [imagebyte, setimagebyte] = useState(null)
 
 
 
-  const [imagetype,setimageType]=useState(null);
+  const [imagetype, setimageType] = useState(null);
 
   const [showSave, setShowSave] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -175,14 +176,14 @@ export default function EmployeeDetailsForm({ initialData, onNext }) {
         const seniorData = await fetchData(`seniors/${data.designation}`);
         const mappedSeniors = Array.isArray(seniorData)
           ? seniorData.map((item, index) => ({
-              label:
-                item.name ||
-                item.senior ||
-                item.fullName ||
-                item.n ||
-                `Senior ${index + 1}`,
-              value: item.id || item.employeeId || index,
-            }))
+            label:
+              item.name ||
+              item.senior ||
+              item.fullName ||
+              item.n ||
+              `Senior ${index + 1}`,
+            value: item.id || item.employeeId || index,
+          }))
           : [];
         console.log("Mapped seniors:", mappedSeniors);
         setSeniors(mappedSeniors);
@@ -245,45 +246,45 @@ export default function EmployeeDetailsForm({ initialData, onNext }) {
       base64: true,
       quality: 0.5,
     });
-  
+
     if (!result.canceled) {
       const seluri = result.assets[0];
       setImage(seluri.uri);
-      const byte=seluri.base64;
+      const byte = seluri.base64;
       setimagebyte(seluri.base64);
-  
+
       // Update data with seluri.base64 directly instead of imagebyte
-     // setData({ ...data, employeePic: byte });
+      // setData({ ...data, employeePic: byte });
       // console.log(" data printed :",data);
-  
+
       if (seluri.uri) {
         const fileExtension = seluri.uri.split('.').pop().toLowerCase();
         const mimeType =
           fileExtension === 'jpg' || fileExtension === 'jpeg'
             ? 'image/jpeg'
             : fileExtension === 'png'
-            ? 'image/png'
-            : fileExtension === 'webp'
-            ? 'image/webp'
-            : 'image/*';
-      //  console.log("mimeType :", mimeType);
-       // console.log("seluri.base64 :", seluri.base64);
-       const userSelectedImageType=mimeType;
+              ? 'image/png'
+              : fileExtension === 'webp'
+                ? 'image/webp'
+                : 'image/*';
+        //  console.log("mimeType :", mimeType);
+        // console.log("seluri.base64 :", seluri.base64);
+        const userSelectedImageType = mimeType;
         setimageType(mimeType);
-    // Use mimeType directly
+        // Use mimeType directly
 
         //console.log("byte :", byte);
-        setData({ ...data, employeePic: byte , pictureType: userSelectedImageType});
+        setData({ ...data, employeePic: byte, pictureType: userSelectedImageType });
         // setData({ ...data, });
         //console.log(" data printed :",...data);
-       // setShowSave(true);
+        // setShowSave(true);
       }
     }
   };
 
   // const pickImage = async () => {
   //   let result = await ImagePicker.launchImageLibraryAsync({
-      
+
   //     base64:true,
   //     quality: 0.5,
   //   });
@@ -296,8 +297,8 @@ export default function EmployeeDetailsForm({ initialData, onNext }) {
   //     console.log(" seluri.base64 :",data);
 
   //     console.log(" seluri.base64 :",imagebyte);
-     
-    
+
+
 
   //   if(seluri.uri){
   //     const fileExtension=seluri.uri.split('.').pop.toLowerCase();
@@ -307,7 +308,7 @@ export default function EmployeeDetailsForm({ initialData, onNext }) {
   //     console.log(mimeType);
   //     setimageType(mimeType);
   //     setData({...data, pictureType:imagetype});
-      
+
   //     setShowSave(true);
   //   }
   // }
@@ -382,8 +383,8 @@ export default function EmployeeDetailsForm({ initialData, onNext }) {
                       "name",
                       "joiningDate",
                     ].includes(item.key) && (
-                      <Text style={{ color: "red" }}>*</Text>
-                    )}
+                        <Text style={{ color: "red" }}>*</Text>
+                      )}
                   </Text>
                   {["department", "designation", "senior", "employeeType"].includes(
                     item.key
@@ -395,22 +396,22 @@ export default function EmployeeDetailsForm({ initialData, onNext }) {
                         item.key === "department"
                           ? departments
                           : item.key === "designation"
-                          ? designations
-                          : item.key === "senior"
-                          ? seniors
-                          : item.key === "employeeType"
-                          ? employeeTypes
-                          : []
+                            ? designations
+                            : item.key === "senior"
+                              ? seniors
+                              : item.key === "employeeType"
+                                ? employeeTypes
+                                : []
                       }
                       placeholder={item.placeholder}
                       loading={
                         item.key === "department"
                           ? loadingDepartments
                           : item.key === "designation"
-                          ? loadingDesignations
-                          : item.key === "senior"
-                          ? loadingSeniors
-                          : loading
+                            ? loadingDesignations
+                            : item.key === "senior"
+                              ? loadingSeniors
+                              : loading
                       }
                     />
                   ) : item.key === "joiningDate" ? (
@@ -487,23 +488,23 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     alignItems: "center",
-    marginTop: 20,
+    marginTop: hp('2.5%'),
   },
   saveIconButton: {
     backgroundColor: "#4CAF50",
-    padding: 10,
-    borderRadius: 50,
+    padding: wp('2.5%'),
+    borderRadius: wp('12%'),
     position: "absolute",
-    right: 20,
-    top: 20,
+    right: wp('5%'),
+    top: hp('2.5%'),
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginBottom: 20,
-    marginTop: Platform.OS === "ios" ? 60 : 70,
+    paddingHorizontal: wp('5%'),
+    marginBottom: hp('2.5%'),
+    marginTop: Platform.OS === "ios" ? hp('7.5%') : hp('8.5%'),
   },
   headerTextContainer: {
     flex: 1,
@@ -511,12 +512,12 @@ const styles = StyleSheet.create({
   avatarContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 10,
+    marginLeft: wp('2.5%'),
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 70,
+    width: wp('20%'),
+    height: wp('20%'),
+    borderRadius: wp('17.5%'),
     resizeMode: "cover",
   },
   placeholder: {
@@ -525,42 +526,42 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerTitle: {
-    fontSize: 35,
+    fontSize: wp('9%'),
     fontFamily: "PlusSB",
   },
   headerSubTitle: {
-    fontSize: 30,
+    fontSize: wp('7.5%'),
     fontFamily: "PlusSB",
     color: "#5aaf57",
-    marginTop: -5,
+    marginTop: -hp('0.6%'),
   },
   headerDesc: {
-    fontSize: 13,
+    fontSize: wp('3.2%'),
     fontFamily: "PlusR",
-    marginTop: 5,
+    marginTop: hp('0.6%'),
   },
   flexGrid: {
     flexDirection: "column",
-    gap: 16,
-    paddingHorizontal: 16,
-    marginTop: 10,
+    gap: hp('2%'),
+    paddingHorizontal: wp('4%'),
+    marginTop: hp('1.2%'),
   },
   rowContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 12,
+    gap: wp('3%'),
   },
   inputWrapper: {
     flex: 1,
-    marginBottom: 4,
-    minWidth: 100,
+    marginBottom: hp('0.5%'),
+    minWidth: wp('25%'),
   },
   input: {
-    height: 42,
+    height: hp('5.2%'),
     backgroundColor: "#fff",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    fontSize: 14,
+    borderRadius: wp('2.5%'),
+    paddingHorizontal: wp('3.5%'),
+    fontSize: wp('3.5%'),
     fontFamily: "PlusR",
     borderColor: "#ccc",
     borderWidth: 1,
@@ -570,19 +571,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   label: {
-    fontSize: 12,
+    fontSize: wp('3.2%'),
     fontFamily: "PlusSB",
-    marginBottom: 4,
+    marginBottom: hp('0.5%'),
     color: "#5aaf57",
   },
   dropdown: {
-    height: 42,
+    height: hp('5.2%'),
     backgroundColor: "#fff",
-    borderRadius: 10,
-    paddingHorizontal: 14,
+    borderRadius: wp('2.5%'),
+    paddingHorizontal: wp('3.5%'),
     borderColor: "#ccc",
     borderWidth: 1,
-    fontSize: 13,
+    fontSize: wp('3.5%'),
     fontFamily: "PlusR",
     justifyContent: "center",
     zIndex: 1000,
@@ -590,6 +591,6 @@ const styles = StyleSheet.create({
   dropdownPlaceholder: {
     color: "#333",
     fontFamily: "PlusR",
-    fontSize: 14,
+    fontSize: wp('3.7%'),
   },
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import StatCard from './StatCard';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const AdminStatsSection = () => {
   return (
@@ -53,12 +54,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingTop: 18,
+    paddingHorizontal: wp('3.5%'),
+    paddingTop: hp('2.2%'),
   },
   cardWrapper: {
     width: '48%',
-    marginBottom: 14,
+    marginBottom: hp('1.7%'),
   },
 });
 

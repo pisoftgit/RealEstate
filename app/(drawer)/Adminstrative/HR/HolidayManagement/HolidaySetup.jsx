@@ -5,20 +5,21 @@ import { useNavigation } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import useHoliday from '../../../../../hooks/useHoliday';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 export default function HolidaySetup() {
   const navigation = useNavigation();
-  const { 
-    getAllHolidayTypes, 
-    getAllDurations, 
+  const {
+    getAllHolidayTypes,
+    getAllDurations,
     getAllHolidays,
     saveHoliday,
     updateHoliday,
     deleteHoliday,
-    holidayTypes, 
-    durations, 
+    holidayTypes,
+    durations,
     holidays,
-    loading 
+    loading
   } = useHoliday();
 
   const [holidayType, setHolidayType] = useState('');
@@ -174,7 +175,7 @@ export default function HolidaySetup() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu" size={28} color="BLACK" />
+            <Ionicons name="menu" size={hp('3.5%')} color="BLACK" />
           </TouchableOpacity>
           <Text style={styles.title}>Holiday Setup</Text>
         </View>
@@ -200,174 +201,174 @@ export default function HolidaySetup() {
                 <View style={styles.pickerWrapper}>
                   <Picker
                     selectedValue={holidayType}
-                    onValueChange={(itemValue) => setHolidayType(itemValue)}                  style={styles.picker}
-                >
-                  <Picker.Item label="--- Select Holiday Type ---" value="" />
-                  {holidayTypes && Array.isArray(holidayTypes) && holidayTypes.length > 0 ? (
-                    holidayTypes.map((type) => (
-                      <Picker.Item 
-                        key={type.id} 
-                        label={type.holidayName} 
-                        value={type.id.toString()} 
-                      />
-                    ))
-                  ) : null}
-                </Picker>
+                    onValueChange={(itemValue) => setHolidayType(itemValue)} style={styles.picker}
+                  >
+                    <Picker.Item label="--- Select Holiday Type ---" value="" />
+                    {holidayTypes && Array.isArray(holidayTypes) && holidayTypes.length > 0 ? (
+                      holidayTypes.map((type) => (
+                        <Picker.Item
+                          key={type.id}
+                          label={type.holidayName}
+                          value={type.id.toString()}
+                        />
+                      ))
+                    ) : null}
+                  </Picker>
                 </View>
               </View>
 
-            {/* Holiday Name */}
-            <View style={styles.formRow}>
-              <Text style={styles.label}>
-                Holiday Name <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={holidayName}
-                onChangeText={setHolidayName}
-                placeholder="Enter holiday name"
-              />
-            </View>
-
-            {/* Status Dropdown */}
-            <View style={styles.formRow}>
-              <Text style={styles.label}>
-                Status <Text style={styles.required}>*</Text>
-              </Text>
-              <View style={styles.pickerWrapper}>
-                <Picker
-                  selectedValue={status}
-                  onValueChange={(itemValue) => setStatus(itemValue)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="--- Select Status ---" value="" />
-                  {durations && Array.isArray(durations) && durations.length > 0 ? (
-                    durations.map((duration) => (
-                      <Picker.Item 
-                        key={duration.id} 
-                        label={`${duration.status} (${duration.salaryDeduction}%)`}
-                        value={duration.id.toString()} 
-                      />
-                    ))
-                  ) : null}
-                </Picker>
-              </View>
-            </View>
-
-            {/* Date Picker */}
-            <View style={styles.formRow}>
-              <Text style={styles.label}>
-                Date <Text style={styles.required}>*</Text>
-              </Text>
-              <TouchableOpacity 
-                style={styles.dateInput}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={styles.dateText}>
-                  {date.toLocaleDateString('en-GB')}
+              {/* Holiday Name */}
+              <View style={styles.formRow}>
+                <Text style={styles.label}>
+                  Holiday Name <Text style={styles.required}>*</Text>
                 </Text>
-                <Ionicons name="calendar-outline" size={20} color="#666" />
+                <TextInput
+                  style={styles.input}
+                  value={holidayName}
+                  onChangeText={setHolidayName}
+                  placeholder="Enter holiday name"
+                />
+              </View>
+
+              {/* Status Dropdown */}
+              <View style={styles.formRow}>
+                <Text style={styles.label}>
+                  Status <Text style={styles.required}>*</Text>
+                </Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={status}
+                    onValueChange={(itemValue) => setStatus(itemValue)}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="--- Select Status ---" value="" />
+                    {durations && Array.isArray(durations) && durations.length > 0 ? (
+                      durations.map((duration) => (
+                        <Picker.Item
+                          key={duration.id}
+                          label={`${duration.status} (${duration.salaryDeduction}%)`}
+                          value={duration.id.toString()}
+                        />
+                      ))
+                    ) : null}
+                  </Picker>
+                </View>
+              </View>
+
+              {/* Date Picker */}
+              <View style={styles.formRow}>
+                <Text style={styles.label}>
+                  Date <Text style={styles.required}>*</Text>
+                </Text>
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={styles.dateText}>
+                    {date.toLocaleDateString('en-GB')}
+                  </Text>
+                  <Ionicons name="calendar-outline" size={20} color="#666" />
+                </TouchableOpacity>
+              </View>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  value={date}
+                  mode="date"
+                  display="default"
+                  onChange={onDateChange}
+                />
+              )}
+
+              {/* Submit Button */}
+              <TouchableOpacity
+                style={[styles.submitButton, (loading || isSubmitting) && styles.disabledButton]}
+                onPress={handleSubmit}
+                disabled={loading || isSubmitting}
+              >
+                {(loading || isSubmitting) ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
+                )}
               </TouchableOpacity>
+
+              {/* Reset/Cancel Button */}
+              {editing ? (
+                <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={styles.resetButton} onPress={handleCancel}>
+                  <Text style={styles.resetButtonText}>Reset</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
-            {showDatePicker && (
-              <DateTimePicker
-                value={date}
-                mode="date"
-                display="default"
-                onChange={onDateChange}
-              />
-            )}
+            {/* Previously Holidays Added Data Card */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Previously Holidays Added Data</Text>
 
-            {/* Submit Button */}
-            <TouchableOpacity 
-              style={[styles.submitButton, (loading || isSubmitting) && styles.disabledButton]} 
-              onPress={handleSubmit}
-              disabled={loading || isSubmitting}
-            >
-              {(loading || isSubmitting) ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.submitButtonText}>{editing ? 'Update' : 'Submit'}</Text>
-              )}
-            </TouchableOpacity>
-
-            {/* Reset/Cancel Button */}
-            {editing ? (
-              <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity style={styles.resetButton} onPress={handleCancel}>
-                <Text style={styles.resetButtonText}>Reset</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Previously Holidays Added Data Card */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Previously Holidays Added Data</Text>
-            
-            {/* Table */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.table}>
-                {/* Table Header */}
-                <View style={styles.tableHeader}>
-                  <Text style={[styles.tableHeaderText, { width: 60 }]}>S.No</Text>
-                  <Text style={[styles.tableHeaderText, { width: 150 }]}>Holiday Type</Text>
-                  <Text style={[styles.tableHeaderText, { width: 150 }]}>Holiday Name</Text>
-                  <Text style={[styles.tableHeaderText, { width: 150 }]}>Status</Text>
-                  <Text style={[styles.tableHeaderText, { width: 120 }]}>Date</Text>
-                  <Text style={[styles.tableHeaderText, { width: 150 }]}>National Holiday</Text>
-                  <Text style={[styles.tableHeaderText, { width: 100 }]}>Manage</Text>
-                </View>
-
-                {/* Table Rows */}
-                {(loading || isSubmitting) ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#5aaf57" />
-                    <Text style={styles.loadingText}>Loading holidays...</Text>
+              {/* Table */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={styles.table}>
+                  {/* Table Header */}
+                  <View style={styles.tableHeader}>
+                    <Text style={[styles.tableHeaderText, { width: 60 }]}>S.No</Text>
+                    <Text style={[styles.tableHeaderText, { width: 150 }]}>Holiday Type</Text>
+                    <Text style={[styles.tableHeaderText, { width: 150 }]}>Holiday Name</Text>
+                    <Text style={[styles.tableHeaderText, { width: 150 }]}>Status</Text>
+                    <Text style={[styles.tableHeaderText, { width: 120 }]}>Date</Text>
+                    <Text style={[styles.tableHeaderText, { width: 150 }]}>National Holiday</Text>
+                    <Text style={[styles.tableHeaderText, { width: 100 }]}>Manage</Text>
                   </View>
-                ) : holidays && Array.isArray(holidays) && holidays.length > 0 ? (
-                  holidays.map((item, index) => (
-                    <View key={item.id} style={styles.tableRow}>
-                      <Text style={[styles.tableCell, { width: 60 }]}>{index + 1}</Text>
-                      <Text style={[styles.tableCell, { width: 150 }]}>{item.holidayType || 'N/A'}</Text>
-                      <Text style={[styles.tableCell, { width: 150 }]}>{item.holidayName}</Text>
-                      <Text style={[styles.tableCell, { width: 150 }]}>{item.duration || 'N/A'}</Text>
-                      <Text style={[styles.tableCell, { width: 120 }]}>
-                        {item.holidayDate ? formatDate(item.holidayDate) : ''}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: 150 }]}>
-                        {item.day && item.month ? `${item.day}-${item.month}` : ''}
-                      </Text>
-                      <View style={[styles.actionCell, { width: 100 }]}>
-                        <TouchableOpacity 
-                          onPress={() => handleEdit(item)} 
-                          style={styles.actionButton}
-                          disabled={isSubmitting}
-                        >
-                          <Feather name="edit" size={18} color="#5aaf57" />
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                          onPress={() => handleDelete(item.id)} 
-                          style={styles.actionButton}
-                          disabled={isSubmitting}
-                        >
-                          <Ionicons name="trash" size={18} color="#d32f2f" />
-                        </TouchableOpacity>
-                      </View>
+
+                  {/* Table Rows */}
+                  {(loading || isSubmitting) ? (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="large" color="#5aaf57" />
+                      <Text style={styles.loadingText}>Loading holidays...</Text>
                     </View>
-                  ))
-                ) : (
-                  <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>No holidays found</Text>
-                  </View>
-                )}
-              </View>
-            </ScrollView>
-          </View>
-        </ScrollView>
+                  ) : holidays && Array.isArray(holidays) && holidays.length > 0 ? (
+                    holidays.map((item, index) => (
+                      <View key={item.id} style={styles.tableRow}>
+                        <Text style={[styles.tableCell, { width: 60 }]}>{index + 1}</Text>
+                        <Text style={[styles.tableCell, { width: 150 }]}>{item.holidayType || 'N/A'}</Text>
+                        <Text style={[styles.tableCell, { width: 150 }]}>{item.holidayName}</Text>
+                        <Text style={[styles.tableCell, { width: 150 }]}>{item.duration || 'N/A'}</Text>
+                        <Text style={[styles.tableCell, { width: 120 }]}>
+                          {item.holidayDate ? formatDate(item.holidayDate) : ''}
+                        </Text>
+                        <Text style={[styles.tableCell, { width: 150 }]}>
+                          {item.day && item.month ? `${item.day}-${item.month}` : ''}
+                        </Text>
+                        <View style={[styles.actionCell, { width: 100 }]}>
+                          <TouchableOpacity
+                            onPress={() => handleEdit(item)}
+                            style={styles.actionButton}
+                            disabled={isSubmitting}
+                          >
+                            <Feather name="edit" size={18} color="#5aaf57" />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => handleDelete(item.id)}
+                            style={styles.actionButton}
+                            disabled={isSubmitting}
+                          >
+                            <Ionicons name="trash" size={18} color="#d32f2f" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))
+                  ) : (
+                    <View style={styles.emptyContainer}>
+                      <Text style={styles.emptyText}>No holidays found</Text>
+                    </View>
+                  )}
+                </View>
+              </ScrollView>
+            </View>
+          </ScrollView>
         )}
       </View>
     </SafeAreaView>
@@ -376,43 +377,43 @@ export default function HolidaySetup() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f8f9fa' },
-  container: { flex: 1, backgroundColor: '#f8f9fa', padding: 20 },
+  container: { flex: 1, backgroundColor: '#f8f9fa', padding: wp('5%') },
   header: {
-    paddingVertical: 18,
-    marginBottom: 8,
+    paddingVertical: hp('2%'),
+    marginBottom: hp('1%'),
   },
   title: {
-    fontSize: 32,
+    fontSize: hp('4%'),
     fontFamily: 'PlusSB',
     color: '#333',
-    marginLeft: 16,
+    marginLeft: wp('4%'),
   },
   fullScreenLoading: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 50,
+    paddingVertical: hp('5%'),
   },
   card: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    padding: wp('4%'),
+    marginBottom: hp('2%'),
     elevation: 3,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: hp('2.2%'),
     fontFamily: 'PlusSB',
     color: '#333',
-    marginBottom: 12,
+    marginBottom: hp('1.5%'),
   },
   formRow: {
-    marginBottom: 12,
+    marginBottom: hp('1.5%'),
   },
   label: {
     color: '#333',
     fontFamily: 'PlusR',
-    marginBottom: 8,
+    marginBottom: hp('0.8%'),
   },
   required: {
     color: '#e74c3c',
@@ -432,8 +433,8 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
     borderRadius: 8,
     backgroundColor: '#f5f5f5',
-    padding: 12,
-    fontSize: 14,
+    padding: wp('3%'),
+    fontSize: hp('1.7%'),
     color: '#333',
   },
   dateInput: {
@@ -444,46 +445,46 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
     borderRadius: 8,
     backgroundColor: '#f5f5f5',
-    padding: 12,
+    padding: wp('3%'),
   },
   dateText: {
-    fontSize: 14,
+    fontSize: hp('1.7%'),
     color: '#333',
   },
   submitButton: {
     backgroundColor: '#5aaf57',
-    paddingVertical: 10,
+    paddingVertical: hp('1.2%'),
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: hp('1%'),
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: hp('2%'),
     fontFamily: 'PlusSB',
   },
   cancelButton: {
     backgroundColor: '#666',
-    paddingVertical: 10,
+    paddingVertical: hp('1.2%'),
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: hp('1%'),
   },
   cancelButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: hp('2%'),
     fontFamily: 'PlusSB',
   },
   resetButton: {
     backgroundColor: '#dc3545',
-    paddingVertical: 10,
+    paddingVertical: hp('1.2%'),
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: hp('1%'),
   },
   resetButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: hp('2%'),
     fontFamily: 'PlusSB',
   },
   disabledButton: {
@@ -495,19 +496,19 @@ const styles = StyleSheet.create({
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#5aaf57',
-    padding: 8,
+    padding: wp('2%'),
     borderRadius: 8,
-    marginBottom: 4,
+    marginBottom: hp('0.5%'),
   },
   tableHeaderText: {
     color: '#fff',
     textAlign: 'center',
     fontFamily: 'PlusSB',
-    fontSize: 13,
+    fontSize: hp('1.7%'),
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 8,
+    padding: wp('2%'),
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
     backgroundColor: '#fff',
@@ -517,34 +518,34 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#333',
     fontFamily: 'PlusR',
-    fontSize: 12,
+    fontSize: hp('1.6%'),
   },
   actionCell: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    gap: wp('2%'),
   },
   actionButton: {
-    padding: 4,
+    padding: wp('1%'),
   },
   loadingContainer: {
-    padding: 20,
+    padding: wp('5%'),
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 10,
+    marginTop: hp('1%'),
     color: '#666',
     fontFamily: 'PlusR',
-    fontSize: 14,
+    fontSize: hp('1.7%'),
   },
   emptyContainer: {
-    padding: 20,
+    padding: wp('5%'),
     alignItems: 'center',
   },
   emptyText: {
     color: '#999',
     fontFamily: 'PlusR',
-    fontSize: 14,
+    fontSize: hp('1.7%'),
   },
 });

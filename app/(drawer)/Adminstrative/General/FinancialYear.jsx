@@ -4,17 +4,18 @@ import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import useGeneral from '../../../../hooks/useGeneral';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 export default function FinancialYear() {
   const navigation = useNavigation();
-  const { 
-    getAllFinancialYears, 
-    saveFinancialYear, 
-    updateFinancialYear, 
+  const {
+    getAllFinancialYears,
+    saveFinancialYear,
+    updateFinancialYear,
     deleteFinancialYear,
     financialYears: apiFinancialYears,
-    loading, 
-    error 
+    loading,
+    error
   } = useGeneral();
 
   const [formData, setFormData] = useState({
@@ -27,7 +28,7 @@ export default function FinancialYear() {
   const [editing, setEditing] = useState(null);
   const [financialYears, setFinancialYears] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  
+
   // Date picker states
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
@@ -88,7 +89,7 @@ export default function FinancialYear() {
       });
       setStartDateObj(new Date());
       setEndDateObj(new Date());
-      
+
       // Refresh the list
       await fetchFinancialYears();
     } catch (err) {
@@ -105,7 +106,7 @@ export default function FinancialYear() {
       endDate: item.endDate,
       currentYear: item.currentYear,
     });
-    
+
     // Set date objects for pickers
     if (item.startDate) {
       setStartDateObj(new Date(item.startDate));
@@ -113,13 +114,13 @@ export default function FinancialYear() {
     if (item.endDate) {
       setEndDateObj(new Date(item.endDate));
     }
-    
+
     setEditing(item);
   };
 
   const handleStartDateChange = (event, selectedDate) => {
     setShowStartDatePicker(Platform.OS === 'ios');
-    
+
     if (selectedDate) {
       setStartDateObj(selectedDate);
       const formattedDate = selectedDate.toISOString().split('T')[0];
@@ -129,7 +130,7 @@ export default function FinancialYear() {
 
   const handleEndDateChange = (event, selectedDate) => {
     setShowEndDatePicker(Platform.OS === 'ios');
-    
+
     if (selectedDate) {
       setEndDateObj(selectedDate);
       const formattedDate = selectedDate.toISOString().split('T')[0];
@@ -165,7 +166,7 @@ export default function FinancialYear() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu" size={28} color="BLACK" />
+            <Ionicons name="menu" size={hp('3.5%')} color="BLACK" />
           </TouchableOpacity>
           <Text style={styles.title}>Financial Year</Text>
         </View>
@@ -202,7 +203,7 @@ export default function FinancialYear() {
                 <Text style={[styles.dateText, !formData.startDate && styles.placeholderText]}>
                   {formData.startDate || 'YYYY-MM-DD'}
                 </Text>
-                <Ionicons name="calendar-outline" size={20} color="#666" />
+                <Ionicons name="calendar-outline" size={hp('2.5%')} color="#666" />
               </TouchableOpacity>
             </View>
 
@@ -227,7 +228,7 @@ export default function FinancialYear() {
                 <Text style={[styles.dateText, !formData.endDate && styles.placeholderText]}>
                   {formData.endDate || 'YYYY-MM-DD'}
                 </Text>
-                <Ionicons name="calendar-outline" size={20} color="#666" />
+                <Ionicons name="calendar-outline" size={hp('2.5%')} color="#666" />
               </TouchableOpacity>
             </View>
 
@@ -280,8 +281,8 @@ export default function FinancialYear() {
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity 
-              style={[styles.submitButton, loading && styles.disabledButton]} 
+            <TouchableOpacity
+              style={[styles.submitButton, loading && styles.disabledButton]}
               onPress={handleSubmit}
               disabled={loading}
             >
@@ -313,7 +314,7 @@ export default function FinancialYear() {
           {/* Existing Financial Year Card */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Existing Financial Year</Text>
-            
+
             {isLoadingData ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#5aaf57" />
@@ -323,53 +324,53 @@ export default function FinancialYear() {
               <Text style={styles.emptyText}>No financial years found</Text>
             ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View>
-                {/* Table Header */}
-                <View style={styles.tableHeader}>
-                  <Text style={[styles.tableHeaderText, { width: 60 }]}>S. No</Text>
-                  <Text style={[styles.tableHeaderText, { width: 120 }]}>Name</Text>
-                  <Text style={[styles.tableHeaderText, { width: 120 }]}>Start Date</Text>
-                  <Text style={[styles.tableHeaderText, { width: 120 }]}>End Date</Text>
-                  <Text style={[styles.tableHeaderText, { width: 80 }]}>Active</Text>
-                  <Text style={[styles.tableHeaderText, { width: 100 }]}>Action</Text>
-                </View>
+                <View>
+                  {/* Table Header */}
+                  <View style={styles.tableHeader}>
+                    <Text style={[styles.tableHeaderText, { width: wp('15%') }]}>S. No</Text>
+                    <Text style={[styles.tableHeaderText, { width: wp('30%') }]}>Name</Text>
+                    <Text style={[styles.tableHeaderText, { width: wp('30%') }]}>Start Date</Text>
+                    <Text style={[styles.tableHeaderText, { width: wp('30%') }]}>End Date</Text>
+                    <Text style={[styles.tableHeaderText, { width: wp('20%') }]}>Active</Text>
+                    <Text style={[styles.tableHeaderText, { width: wp('25%') }]}>Action</Text>
+                  </View>
 
-                {/* Table Rows */}
-                {financialYears.map((item, idx) => (
-                  <View key={item.id} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { width: 60 }]}>{idx + 1}</Text>
-                    <Text style={[styles.tableCell, { width: 120 }]}>{item.name}</Text>
-                    <Text style={[styles.tableCell, { width: 120 }]}>{item.startDate}</Text>
-                    <Text style={[styles.tableCell, { width: 120 }]}>{item.endDate}</Text>
-                    <View style={[styles.tableCell, { width: 80 }]}>
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          item.currentYear ? styles.statusBadgeActive : styles.statusBadgeInactive,
-                        ]}
-                      >
-                        <Text
+                  {/* Table Rows */}
+                  {financialYears.map((item, idx) => (
+                    <View key={item.id} style={styles.tableRow}>
+                      <Text style={[styles.tableCell, { width: wp('15%') }]}>{idx + 1}</Text>
+                      <Text style={[styles.tableCell, { width: wp('30%') }]}>{item.name}</Text>
+                      <Text style={[styles.tableCell, { width: wp('30%') }]}>{item.startDate}</Text>
+                      <Text style={[styles.tableCell, { width: wp('30%') }]}>{item.endDate}</Text>
+                      <View style={[styles.tableCell, { width: wp('20%') }]}>
+                        <View
                           style={[
-                            styles.statusText,
-                            item.currentYear ? styles.statusTextActive : styles.statusTextInactive,
+                            styles.statusBadge,
+                            item.currentYear ? styles.statusBadgeActive : styles.statusBadgeInactive,
                           ]}
                         >
-                          {item.currentYear ? 'Yes' : 'No'}
-                        </Text>
+                          <Text
+                            style={[
+                              styles.statusText,
+                              item.currentYear ? styles.statusTextActive : styles.statusTextInactive,
+                            ]}
+                          >
+                            {item.currentYear ? 'Yes' : 'No'}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={[styles.actionCell, { width: wp('25%') }]}>
+                        <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
+                          <Feather name="edit" size={hp('2.2%')} color="#5aaf57" />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
+                          <Ionicons name="trash" size={hp('2.2%')} color="#d32f2f" />
+                        </TouchableOpacity>
                       </View>
                     </View>
-                    <View style={[styles.actionCell, { width: 100 }]}>
-                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                        <Feather name="edit" size={18} color="#5aaf57" />
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                        <Ionicons name="trash" size={18} color="#d32f2f" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </ScrollView>
+                  ))}
+                </View>
+              </ScrollView>
             )}
           </View>
         </ScrollView>
@@ -380,37 +381,37 @@ export default function FinancialYear() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f8f9fa' },
-  container: { flex: 1, backgroundColor: '#f8f9fa', padding: 20 },
+  container: { flex: 1, backgroundColor: '#f8f9fa', padding: wp('5%') },
   header: {
-    paddingVertical: 18,
-    marginBottom: 8,
+    paddingVertical: hp('2%'),
+    marginBottom: hp('1%'),
   },
   title: {
-    fontSize: 32,
+    fontSize: hp('4%'),
     fontFamily: 'PlusSB',
     color: '#333',
-    marginLeft: 16,
+    marginLeft: wp('4%'),
   },
   card: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    padding: wp('4%'),
+    marginBottom: hp('2%'),
     elevation: 3,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: hp('2.2%'),
     fontFamily: 'PlusSB',
     color: '#333',
-    marginBottom: 12,
+    marginBottom: hp('1.5%'),
   },
   formRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: hp('1.5%'),
   },
   label: {
-    width: 120,
+    width: wp('30%'),
     color: '#333',
     fontFamily: 'PlusR',
   },
@@ -422,7 +423,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 8,
-    padding: 8,
+    padding: wp('2%'),
     backgroundColor: '#f5f5f5',
     color: '#333',
     fontFamily: 'PlusR',
@@ -435,13 +436,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 8,
-    padding: 8,
+    padding: wp('2%'),
     backgroundColor: '#f5f5f5',
   },
   dateText: {
     color: '#333',
     fontFamily: 'PlusR',
-    fontSize: 14,
+    fontSize: hp('1.7%'),
   },
   placeholderText: {
     color: '#999',
@@ -456,7 +457,7 @@ const styles = StyleSheet.create({
   },
   toggleButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: hp('1%'),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -468,7 +469,7 @@ const styles = StyleSheet.create({
   },
   toggleText: {
     fontFamily: 'PlusSB',
-    fontSize: 14,
+    fontSize: hp('1.7%'),
   },
   toggleTextActive: {
     color: '#fff',
@@ -478,44 +479,44 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: '#5aaf57',
-    paddingVertical: 10,
+    paddingVertical: hp('1.2%'),
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: hp('1%'),
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: hp('2%'),
     fontFamily: 'PlusSB',
   },
   cancelButton: {
     backgroundColor: '#666',
-    paddingVertical: 10,
+    paddingVertical: hp('1.2%'),
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: hp('1%'),
   },
   cancelButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: hp('2%'),
     fontFamily: 'PlusSB',
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#5aaf57',
-    padding: 8,
+    padding: wp('2%'),
     borderRadius: 8,
-    marginBottom: 4,
+    marginBottom: hp('0.5%'),
   },
   tableHeaderText: {
     color: '#fff',
     textAlign: 'center',
     fontFamily: 'PlusSB',
-    fontSize: 14,
+    fontSize: hp('1.7%'),
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 8,
+    padding: wp('2%'),
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
     backgroundColor: '#fff',
@@ -525,13 +526,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#333',
     fontFamily: 'PlusR',
-    fontSize: 13,
+    fontSize: hp('1.6%'),
     justifyContent: 'center',
     alignItems: 'center',
   },
   statusBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
+    paddingVertical: hp('0.5%'),
+    paddingHorizontal: wp('3%'),
     borderRadius: 12,
     alignSelf: 'center',
   },
@@ -542,7 +543,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8d7da',
   },
   statusText: {
-    fontSize: 12,
+    fontSize: hp('1.5%'),
     fontFamily: 'PlusSB',
   },
   statusTextActive: {
@@ -555,26 +556,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
+    gap: wp('3%'),
   },
   iconBtn: {
-    padding: 4,
+    padding: wp('1%'),
   },
   loadingContainer: {
-    paddingVertical: 40,
+    paddingVertical: hp('5%'),
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 12,
-    fontSize: 16,
+    marginTop: hp('1.5%'),
+    fontSize: hp('2%'),
     color: '#666',
     fontFamily: 'PlusR',
   },
   emptyText: {
     textAlign: 'center',
-    padding: 20,
-    fontSize: 16,
+    padding: wp('5%'),
+    fontSize: hp('2%'),
     color: '#999',
     fontFamily: 'PlusR',
   },

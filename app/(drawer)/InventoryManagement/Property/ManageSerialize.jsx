@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '../../../../services/api';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const ProjectListItem = ({ project, index, onSerialize, onView }) => (
     <View style={filterStyles.projectRow}>
@@ -148,24 +149,24 @@ export default function ManageSerializeScreen() {
 // --- STYLES (Adjusted for projects list) ---
 const filterStyles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#f8f9fa' },
-    scrollContent: { padding: 5, paddingTop: 30, paddingBottom: 40 },
-    header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+    scrollContent: { padding: wp('1.5%'), paddingTop: hp('4%'), paddingBottom: hp('5%') },
+    header: { flexDirection: 'row', alignItems: 'center', marginBottom: hp('2.5%') },
     title: { 
-        fontSize: 24,
+        fontSize: wp('6.2%'),
         fontFamily: "PlusSB", 
         color: '#333', 
-        marginLeft: 10 
+        marginLeft: wp('2.5%')
     },
     
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 60,
+        paddingVertical: hp('8%'),
     },
     loadingText: {
-        marginTop: 15,
-        fontSize: 16,
+        marginTop: hp('2%'),
+        fontSize: wp('4%'),
         fontFamily: "PlusM",
         color: '#004d40',
     },
@@ -174,126 +175,126 @@ const filterStyles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 60,
+        paddingVertical: hp('8%'),
     },
     errorText: {
-        marginTop: 15,
-        fontSize: 16,
+        marginTop: hp('2%'),
+        fontSize: wp('4%'),
         fontFamily: "PlusM",
         color: '#e53935',
         textAlign: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: wp('5%'),
     },
     retryButton: {
-        marginTop: 20,
+        marginTop: hp('2.5%'),
         backgroundColor: '#004d40',
-        paddingVertical: 12,
-        paddingHorizontal: 30,
-        borderRadius: 10,
+        paddingVertical: hp('1.5%'),
+        paddingHorizontal: wp('8%'),
+        borderRadius: wp('2.5%'),
     },
     retryButtonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: wp('4%'),
         fontFamily: "PlusSB",
     },
     
     card: { 
         backgroundColor: '#fff', 
-        borderRadius: 16, 
-        padding: 16, 
+        borderRadius: wp('4%'), 
+        padding: wp('4%'), 
         elevation: 5, 
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: hp('0.25%') },
         shadowOpacity: 0.1,
-        shadowRadius: 6,
+        shadowRadius: wp('1.5%'),
     },
     cardTitle: { 
-        fontSize: 20, 
+        fontSize: wp('5.2%'), 
         fontFamily: 'PlusSB',
         color: '#1a1a1a', 
-        marginBottom: 15, 
+        marginBottom: hp('2%'), 
         borderBottomWidth: 2, 
         borderBottomColor: '#004d40', 
-        paddingBottom: 10 
+        paddingBottom: hp('1.2%'),
     },
     
     projectRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 8,
+        paddingVertical: hp('1.5%'),
+        paddingHorizontal: wp('2%'),
         backgroundColor: '#f8f9fa',
-        borderRadius: 10,
-        marginBottom: 8,
+        borderRadius: wp('2.5%'),
+        marginBottom: hp('1%'),
     },
     serialNumber: {
-        fontSize: 16,
+        fontSize: wp('4.2%'),
         fontFamily: "PlusSB",
         color: '#004d40',
-        width: 40,
+        width: wp('10%'),
         textAlign: 'center',
     },
     projectInfo: {
         flex: 1,
-        marginLeft: 10,
+        marginLeft: wp('2.5%'),
     },
     projectName: {
-        fontSize: 16,
+        fontSize: wp('4.2%'),
         fontFamily: "PlusSB",
         color: '#1a1a1a',
-        marginBottom: 4,
+        marginBottom: hp('0.5%'),
     },
     builderName: {
-        fontSize: 13,
+        fontSize: wp('3.2%'),
         fontFamily: "PlusL",
         color: '#666',
-        marginBottom: 6,
+        marginBottom: hp('0.8%'),
     },
     statusBadge: {
         backgroundColor: '#10b98130',
-        paddingVertical: 4,
-        paddingHorizontal: 10,
-        borderRadius: 12,
+        paddingVertical: hp('0.5%'),
+        paddingHorizontal: wp('2.5%'),
+        borderRadius: wp('3%'),
         alignSelf: 'flex-start',
     },
     statusText: {
-        fontSize: 11,
+        fontSize: wp('2.8%'),
         fontFamily: "PlusM",
         color: '#10b981',
     },
     
     actionButtons: {
         flexDirection: 'row',
-        gap: 10,
+        gap: wp('2.5%'),
     },
     actionButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: wp('10%'),
+        height: wp('10%'),
+        borderRadius: wp('5%'),
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 2,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: hp('0.12%') },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
+        shadowRadius: wp('0.5%'),
     },
     
     separator: { 
         height: 1, 
         backgroundColor: '#e0e0e0',
-        marginHorizontal: 8,
-        marginVertical: 4,
+        marginHorizontal: wp('2%'),
+        marginVertical: hp('0.5%'),
     },
     
     emptyState: {
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 60,
+        paddingVertical: hp('8%'),
     },
     emptyText: {
-        marginTop: 15,
-        fontSize: 16,
+        marginTop: hp('2%'),
+        fontSize: wp('4%'),
         fontFamily: "PlusM",
         color: '#999',
     },

@@ -4,6 +4,7 @@ import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import useGeneral from '../../../../../hooks/useGeneral';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 export default function District() {
   const navigation = useNavigation();
@@ -121,7 +122,7 @@ export default function District() {
         console.error('Error loading states:', err);
       }
     }
-    
+
     setFormData({
       countryId: item.state?.country?.id || '',
       stateId: item.state?.id || '',
@@ -177,13 +178,13 @@ export default function District() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu" size={28} color="BLACK" />
+            <Ionicons name="menu" size={hp('3.5%')} color="BLACK" />
           </TouchableOpacity>
           <Text style={styles.title}>District</Text>
         </View>
 
         {loading && (
-          <View style={styles.loadingContainer}>
+          <View style={[styles.loadingContainer, { padding: wp('5%') }]}>
             <ActivityIndicator size="large" color="#5aaf57" />
           </View>
         )}
@@ -278,34 +279,34 @@ export default function District() {
           {/* Existing District Card */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Existing District</Text>
-            
+
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View>
                 {/* Table Header */}
                 <View style={styles.tableHeader}>
-                  <Text style={[styles.tableHeaderText, { width: 60 }]}>S. No</Text>
-                  <Text style={[styles.tableHeaderText, { width: 140 }]}>District Name</Text>
-                  <Text style={[styles.tableHeaderText, { width: 80 }]}>Code</Text>
-                  <Text style={[styles.tableHeaderText, { width: 120 }]}>State</Text>
-                  <Text style={[styles.tableHeaderText, { width: 120 }]}>Country</Text>
-                  <Text style={[styles.tableHeaderText, { width: 100 }]}>Action</Text>
+                  <Text style={[styles.tableHeaderText, { width: wp('15%') }]}>S. No</Text>
+                  <Text style={[styles.tableHeaderText, { width: wp('35%') }]}>District Name</Text>
+                  <Text style={[styles.tableHeaderText, { width: wp('20%') }]}>Code</Text>
+                  <Text style={[styles.tableHeaderText, { width: wp('29%') }]}>State</Text>
+                  <Text style={[styles.tableHeaderText, { width: wp('29%') }]}>Country</Text>
+                  <Text style={[styles.tableHeaderText, { width: wp('25%') }]}>Action</Text>
                 </View>
 
                 {/* Table Rows */}
                 {districts && districts.length > 0 ? (
                   districts.map((item, idx) => (
                     <View key={item.id} style={styles.tableRow}>
-                      <Text style={[styles.tableCell, { width: 60 }]}>{idx + 1}</Text>
-                      <Text style={[styles.tableCell, { width: 140 }]}>{item.district || 'N/A'}</Text>
-                      <Text style={[styles.tableCell, { width: 80 }]}>{item.districtCode || 'N/A'}</Text>
-                      <Text style={[styles.tableCell, { width: 120 }]}>{item.state?.state || 'N/A'}</Text>
-                      <Text style={[styles.tableCell, { width: 120 }]}>{item.state?.country?.country || 'N/A'}</Text>
-                      <View style={[styles.actionCell, { width: 100 }]}>
+                      <Text style={[styles.tableCell, { width: wp('15%') }]}>{idx + 1}</Text>
+                      <Text style={[styles.tableCell, { width: wp('35%') }]}>{item.district || 'N/A'}</Text>
+                      <Text style={[styles.tableCell, { width: wp('20%') }]}>{item.districtCode || 'N/A'}</Text>
+                      <Text style={[styles.tableCell, { width: wp('29%') }]}>{item.state?.state || 'N/A'}</Text>
+                      <Text style={[styles.tableCell, { width: wp('29%') }]}>{item.state?.country?.country || 'N/A'}</Text>
+                      <View style={[styles.actionCell, { width: wp('25%') }]}>
                         <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                          <Feather name="edit" size={18} color="#5aaf57" />
+                          <Feather name="edit" size={hp('2.2%')} color="#5aaf57" />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                          <Ionicons name="trash" size={18} color="#d32f2f" />
+                          <Ionicons name="trash" size={hp('2.2%')} color="#d32f2f" />
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -326,16 +327,16 @@ export default function District() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f8f9fa' },
-  container: { flex: 1, backgroundColor: '#f8f9fa', padding: 20 },
+  container: { flex: 1, backgroundColor: '#f8f9fa', padding: wp('5%') },
   header: {
-    paddingVertical: 18,
-    marginBottom: 8,
+    paddingVertical: hp('2%'),
+    marginBottom: hp('1%'),
   },
   title: {
-    fontSize: 32,
+    fontSize: hp('4%'),
     fontFamily: 'PlusSB',
     color: '#333',
-    marginLeft: 16,
+    marginLeft: wp('4%'),
   },
   loadingContainer: {
     flex: 1,
@@ -345,23 +346,23 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    padding: wp('4%'),
+    marginBottom: hp('2%'),
     elevation: 3,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: hp('2.2%'),
     fontFamily: 'PlusSB',
     color: '#333',
-    marginBottom: 12,
+    marginBottom: hp('1.5%'),
   },
   formRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: hp('1.5%'),
   },
   label: {
-    width: 120,
+    width: wp('30%'),
     color: '#333',
     fontFamily: 'PlusR',
   },
@@ -373,7 +374,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 8,
-    padding: 8,
+    padding: wp('2%'),
     backgroundColor: '#f5f5f5',
     color: '#333',
     fontFamily: 'PlusR',
@@ -387,49 +388,49 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   picker: {
-    height: 40,
+    height: hp('5.5%'),
     color: '#333',
   },
   submitButton: {
     backgroundColor: '#5aaf57',
-    paddingVertical: 10,
+    paddingVertical: hp('1.2%'),
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: hp('1%'),
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: hp('2%'),
     fontFamily: 'PlusSB',
   },
   cancelButton: {
     backgroundColor: '#666',
-    paddingVertical: 10,
+    paddingVertical: hp('1.2%'),
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: hp('1%'),
   },
   cancelButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: hp('2%'),
     fontFamily: 'PlusSB',
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#5aaf57',
-    padding: 8,
+    padding: wp('2%'),
     borderRadius: 8,
-    marginBottom: 4,
+    marginBottom: hp('0.5%'),
   },
   tableHeaderText: {
     color: '#fff',
     textAlign: 'center',
     fontFamily: 'PlusSB',
-    fontSize: 14,
+    fontSize: hp('1.7%'),
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 8,
+    padding: wp('2%'),
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
     backgroundColor: '#fff',
@@ -439,24 +440,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#333',
     fontFamily: 'PlusR',
-    fontSize: 13,
+    fontSize: hp('1.6%'),
   },
   actionCell: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
+    gap: wp('3%'),
   },
   iconBtn: {
-    padding: 4,
+    padding: wp('1%'),
   },
   emptyRow: {
-    padding: 20,
+    padding: wp('5%'),
     alignItems: 'center',
   },
   emptyText: {
     color: '#999',
     fontFamily: 'PlusR',
-    fontSize: 14,
+    fontSize: hp('1.7%'),
   },
 });

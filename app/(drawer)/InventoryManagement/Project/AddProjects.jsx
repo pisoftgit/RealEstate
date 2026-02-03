@@ -29,6 +29,8 @@ import useSaveProject from '../../../../hooks/useSaveProject';
 import useMeasurementUnits from '../../../../hooks/useMeasurements';
 import { getAllPlc, getAllbuilderbyid } from '../../../../services/api';
 
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+
 const BANNER_IMAGE_URL = 'https://images.pexels.com/photos/17693722/pexels-photo-17693722.jpeg';
 
 // --- ADVANCED COLOR PALETTE ---
@@ -52,22 +54,22 @@ const STYLES = StyleSheet.create({
   },
   scrollViewContent: {
     flexGrow: 1,
-    paddingBottom: 20,
+    paddingBottom: hp('2.5%'),
   },
 
   bannerContainer: {
-    height: 250,
+    height: hp('30%'),
     width: '100%',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderBottomLeftRadius: wp('7%'),
+    borderBottomRightRadius: wp('7%'),
     overflow: 'hidden',
     position: 'relative',
-    marginBottom: 10,
+    marginBottom: hp('1.2%'),
 
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4, // Increased shadow opacity for a thicker effect
-    shadowRadius: 15, // Increased shadow radius for a thicker effect
-    elevation: 15, // Increased elevation for a thicker effect
+    shadowOffset: { width: 0, height: hp('1%') },
+    shadowOpacity: 0.4,
+    shadowRadius: wp('4%'),
+    elevation: 15,
   },
 
   bannerImage: {
@@ -82,7 +84,7 @@ const STYLES = StyleSheet.create({
     alignItems: 'center',
   },
   headerText: {
-    fontSize: 32,
+    fontSize: wp('8%'),
     fontFamily: 'PlusSB',
     color: COLORS.card,
     textAlign: 'center',
@@ -92,47 +94,44 @@ const STYLES = StyleSheet.create({
   },
   menuButton: {
     position: 'absolute',
-    left: 20,
-    top: 50,
+    left: wp('5%'),
+    top: hp('6%'),
     zIndex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 20,
-    padding: 8,
+    borderRadius: wp('5%'),
+    padding: wp('2%'),
   },
 
   card: {
     backgroundColor: COLORS.card,
-    borderRadius: 16,
-
-    padding: 10,
-    marginHorizontal: 10,
-    marginBottom: 20,
+    borderRadius: wp('4%'),
+    padding: wp('2.5%'),
+    marginHorizontal: wp('2.5%'),
+    marginBottom: hp('2.5%'),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: hp('0.5%') },
     shadowOpacity: 0.1,
-
-
-    shadowRadius: 6,
+    shadowRadius: wp('1.5%'),
     elevation: 5,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: hp('1.5%'),
   },
   cardTitle: {
-    fontSize: 22,
+    fontSize: wp('5.5%'),
     fontFamily: 'PlusSB',
     color: COLORS.primary,
-    marginLeft: 10,
+    marginLeft: wp('2%'),
   },
 
   // Form element styles
   labelContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5,
-    marginTop: 10,
+    marginBottom: hp('0.5%'),
+    marginTop: hp('1%'),
   },
   label: {
     fontFamily: 'PlusR',
@@ -140,53 +139,53 @@ const STYLES = StyleSheet.create({
   },
   requiredMark: {
     color: COLORS.error,
-    marginLeft: 4,
+    marginLeft: wp('1%'),
   },
   input: {
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 5,
+    borderRadius: wp('2%'),
+    padding: wp('3%'),
+    marginBottom: hp('0.5%'),
     backgroundColor: COLORS.input,
     color: COLORS.text,
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusL',
   },
   textArea: {
-    height: 100,
+    height: hp('12%'),
     textAlignVertical: 'top',
   },
   errorText: {
     color: COLORS.error,
-    fontSize: 12,
+    fontSize: wp('3.2%'),
     fontFamily: 'PlusR',
-    marginTop: -10,
-    marginBottom: 10,
+    marginTop: -hp('1%'),
+    marginBottom: hp('1%'),
   },
   dropdown: {
     borderColor: COLORS.border,
-    borderRadius: 8,
+    borderRadius: wp('2%'),
     backgroundColor: COLORS.input,
-    marginBottom: 15,
-    fontFamily: 'PlusR', // Added font family for dropdown
+    marginBottom: hp('1.5%'),
+    fontFamily: 'PlusR',
   },
   dropdownContainer: {
     borderColor: COLORS.border,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: wp('2%'),
     backgroundColor: COLORS.card,
-    fontFamily: 'PlusR', // Added font family for dropdown container
+    fontFamily: 'PlusR',
   },
 
   // Image picker styles
   imagePicker: {
-    height: 180,
+    height: hp('13%'),
     backgroundColor: COLORS.input,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 15,
-    borderRadius: 10,
+    marginBottom: hp('1.5%'),
+    borderRadius: wp('2.5%'),
     borderWidth: 2,
     borderColor: COLORS.secondary,
     borderStyle: 'dashed',
@@ -203,31 +202,31 @@ const STYLES = StyleSheet.create({
   },
   imagePlaceholderText: {
     color: COLORS.primary,
-    marginTop: 10,
-    fontSize: 14,
+    marginTop: hp('1%'),
+    fontSize: wp('3.5%'),
     fontFamily: 'PlusR',
   },
 
   // Submit button styles
   submitButton: {
-    marginHorizontal: 20,
-    borderRadius: 12,
+    marginHorizontal: wp('5%'),
+    borderRadius: wp('3%'),
     overflow: 'hidden',
     shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: hp('0.7%') },
     shadowOpacity: 0.4,
-    shadowRadius: 8,
+    shadowRadius: wp('2%'),
     elevation: 12,
   },
   submitButtonGradient: {
-    padding: 18,
+    padding: hp('2.2%'),
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: wp('4.5%'),
     fontFamily: 'PlusSB',
     textTransform: 'uppercase',
   },
@@ -235,11 +234,11 @@ const STYLES = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
-    paddingVertical: 8,
+    marginBottom: hp('1.5%'),
+    paddingVertical: hp('1%'),
   },
   switchLabel: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     fontFamily: 'PlusR',
     color: COLORS.text,
     flex: 1,
@@ -648,7 +647,7 @@ const AddProject = () => {
               />
             )}
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp('2%'), marginBottom: hp('1%') }}>
               <View style={{ flex: 1 }}>
                 <RequiredLabel text="Area" isRequired={false} />
                 <TextInput
@@ -860,12 +859,12 @@ const AddProject = () => {
               <Text style={STYLES.cardTitle}>Media Files</Text>
             </View>
             <RequiredLabel text="Media Files (Images/PDFs)" isRequired={true} />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
-              <TouchableOpacity onPress={pickMediaFiles} style={[STYLES.imagePicker, { flex: 1, marginRight: 5 }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: hp('1%') }}>
+              <TouchableOpacity onPress={pickMediaFiles} style={[STYLES.imagePicker, { flex: 1, marginRight: wp('1%') }]}>
                 <Ionicons name="image-outline" size={24} color={COLORS.primary} />
                 <Text style={STYLES.imagePlaceholderText}>Pick Images</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={pickPdfFiles} style={[STYLES.imagePicker, { flex: 1, marginLeft: 5 }]}>
+              <TouchableOpacity onPress={pickPdfFiles} style={[STYLES.imagePicker, { flex: 1, marginLeft: wp('1%') }]}>
                 <Ionicons name="document-outline" size={24} color={COLORS.primary} />
                 <Text style={STYLES.imagePlaceholderText}>Pick PDFs</Text>
               </TouchableOpacity>
@@ -874,18 +873,18 @@ const AddProject = () => {
               <ScrollView horizontal>
                 {mediaFiles.map((file, idx) => (
                   file.type.startsWith('image') ? (
-                    <Image key={idx} source={{ uri: file.uri }} style={{ width: 80, height: 80, margin: 5, borderRadius: 8 }} />
+                    <Image key={idx} source={{ uri: file.uri }} style={{ width: wp('20%'), height: wp('20%'), margin: wp('1.2%'), borderRadius: wp('2%') }} />
                   ) : (
-                    <View key={idx} style={{ margin: 5, alignItems: 'center' }}>
-                      <Ionicons name="document-outline" size={32} color={COLORS.primary} />
-                      <Text style={{ fontSize: 12, color: COLORS.text }}>{file.name}</Text>
+                    <View key={idx} style={{ margin: wp('1.2%'), alignItems: 'center' }}>
+                      <Ionicons name="document-outline" size={wp('8%')} color={COLORS.primary} />
+                      <Text style={{ fontSize: wp('3%'), color: COLORS.text }}>{file.name}</Text>
                     </View>
                   )
                 ))}
               </ScrollView>
             ) : (
               <View style={STYLES.imagePlaceholder}>
-                <Ionicons name="cloud-upload-outline" size={40} color={COLORS.primary} />
+                <Ionicons name="cloud-upload-outline" size={wp('10%')} color={COLORS.primary} />
                 <Text style={STYLES.imagePlaceholderText}>Tap to Upload Media Files</Text>
               </View>
             )}

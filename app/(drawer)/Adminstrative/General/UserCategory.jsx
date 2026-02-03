@@ -3,17 +3,18 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Aler
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import useGeneral from '../../../../hooks/useGeneral';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 export default function UserCategory() {
   const navigation = useNavigation();
-  const { 
-    getAllUsersCategories, 
-    saveUserCategory, 
-    updateUserCategory, 
+  const {
+    getAllUsersCategories,
+    saveUserCategory,
+    updateUserCategory,
     deleteUserCategory,
     usersCategories: apiUsersCategories,
-    loading, 
-    error 
+    loading,
+    error
   } = useGeneral();
 
   const [formData, setFormData] = useState({
@@ -75,7 +76,7 @@ export default function UserCategory() {
         categoryName: '',
         categoryCode: '',
       });
-      
+
       // Refresh the list
       await fetchUsersCategories();
     } catch (err) {
@@ -129,7 +130,7 @@ export default function UserCategory() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu" size={28} color="BLACK" />
+            <Ionicons name="menu" size={hp('3.5%')} color="BLACK" />
           </TouchableOpacity>
           <Text style={styles.title}>User Category</Text>
         </View>
@@ -169,8 +170,8 @@ export default function UserCategory() {
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity 
-              style={[styles.submitButton, loading && styles.disabledButton]} 
+            <TouchableOpacity
+              style={[styles.submitButton, loading && styles.disabledButton]}
               onPress={handleSubmit}
               disabled={loading}
             >
@@ -190,7 +191,7 @@ export default function UserCategory() {
           {/* Existing Added Category Card */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Existing Added Category</Text>
-            
+
             {isLoadingData ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#5aaf57" />
@@ -216,10 +217,10 @@ export default function UserCategory() {
                     <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.categoryCode}</Text>
                     <View style={[styles.actionCell, { flex: 1 }]}>
                       <TouchableOpacity style={styles.iconBtn} onPress={() => handleEdit(item)}>
-                        <Feather name="edit" size={18} color="#5aaf57" />
+                        <Feather name="edit" size={hp('2.2%')} color="#5aaf57" />
                       </TouchableOpacity>
                       <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                        <Ionicons name="trash" size={18} color="#d32f2f" />
+                        <Ionicons name="trash" size={hp('2.2%')} color="#d32f2f" />
                       </TouchableOpacity>
                     </View>
                   </View>

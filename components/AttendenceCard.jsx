@@ -9,6 +9,7 @@ import useFetchAttendance from '../hooks/useFetchAttendance';
 import useSaveLocation from '../hooks/useSaveLocation';
 import * as SecureStore from 'expo-secure-store';
 import '../tasks/backgroundLocationTask'; // Import to register the task
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const { width, height } = Dimensions.get('window');
 
@@ -357,51 +358,51 @@ const AttendanceCard = () => {
 
 const styles = StyleSheet.create({
   card: {
-    width: width - 70,
-    height: height / 2.5,
-    marginHorizontal: 14,
+    width: wp('85%'),
+    height: hp('40%'),
+    marginHorizontal: wp('3.5%'),
     backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 16,
+    borderRadius: wp('5%'),
+    padding: wp('4%'),
     alignItems: 'center',
     elevation: 4,
     shadowColor: '#5aaf57',
-    shadowOffset: { width: 1, height: 9 },
+    shadowOffset: { width: 1, height: hp('1.2%') },
     shadowOpacity: 0.4,
-    shadowRadius: 8,
-    marginTop: 10,
+    shadowRadius: wp('2%'),
+    marginTop: hp('1.2%'),
     justifyContent: 'center',
   },
-  clock: { fontSize: 26, fontFamily: 'PlusSB', marginBottom: 6 },
-  date: { fontSize: 14, fontFamily: 'PlusR', color: '#444', marginBottom: 10 },
-  button: { alignItems: 'center', marginBottom: 12 },
-  lottie: { width: 100, height: 100 },
+  clock: { fontSize: wp('6.8%'), fontFamily: 'PlusSB', marginBottom: hp('0.8%') },
+  date: { fontSize: wp('3.5%'), fontFamily: 'PlusR', color: '#444', marginBottom: hp('1.2%') },
+  button: { alignItems: 'center', marginBottom: hp('1.5%') },
+  lottie: { width: wp('25%'), height: wp('25%') },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    paddingHorizontal: 6,
-    marginTop: 8,
+    paddingHorizontal: wp('1.5%'),
+    marginTop: hp('1%'),
   },
   footerItem: { alignItems: 'center', flex: 1 },
-  footerLabel: { fontSize: 13, color: '#666', fontFamily: 'PlusR' },
-  footerValue: { fontSize: 16, fontFamily: 'PlusSB', color: '#222', marginTop: 4 },
+  footerLabel: { fontSize: wp('3.2%'), color: '#666', fontFamily: 'PlusR' },
+  footerValue: { fontSize: wp('4%'), fontFamily: 'PlusSB', color: '#222', marginTop: hp('0.5%') },
   errorText: {
-    fontSize: 16,
+    fontSize: wp('4%'),
     color: '#FF0000',
     fontFamily: 'PlusR',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: hp('1.2%'),
   },
   retryButton: {
     backgroundColor: '#5aaf57',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    paddingVertical: hp('1.2%'),
+    paddingHorizontal: wp('5%'),
+    borderRadius: wp('2%'),
   },
-  mark: { padding: 10, color: "#333", fontSize: 22, fontFamily: "PlusSB" },
-  mark1: { padding: 10, color: "#5aaf57", fontSize: 22, fontFamily: "PlusSB" },
-  retryButtonText: { color: '#fff', fontSize: 16, fontFamily: 'PlusSB' },
+  mark: { padding: wp('2.5%'), color: "#333", fontSize: wp('5.5%'), fontFamily: "PlusSB" },
+  mark1: { padding: wp('2.5%'), color: "#5aaf57", fontSize: wp('5.5%'), fontFamily: "PlusSB" },
+  retryButtonText: { color: '#fff', fontSize: wp('4%'), fontFamily: 'PlusSB' },
 });
 
 export default AttendanceCard;

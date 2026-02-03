@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const AddFlat = () => {
     const { propertyData } = useLocalSearchParams();
@@ -100,13 +101,13 @@ const styles = StyleSheet.create({
     {
         flex: 1,
         backgroundColor: '#f5f5f5',
-        padding: 20
+        padding: wp('5%')
     },
     header:
     {
-        paddingHorizontal: 1,
-        paddingTop: 10,
-        paddingBottom: 20
+        paddingHorizontal: wp('0.5%'),
+        paddingTop: hp('1.2%'),
+        paddingBottom: hp('2.5%')
     },
     content:
     {
@@ -114,70 +115,78 @@ const styles = StyleSheet.create({
     },
     title:
     {
-        fontSize: 26,
+        fontSize: wp('6.8%'),
         fontWeight: 'bold',
-        color: '#333', marginBottom: 20,
+        color: '#333', marginBottom: hp('2.5%'),
         textAlign: 'center'
     },
     detailsContainer:
     {
         backgroundColor: '#fff',
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 20,
-        borderLeftWidth: 4,
+        padding: wp('4%'),
+        borderRadius: wp('2.5%'),
+        marginBottom: hp('2.5%'),
+        borderLeftWidth: wp('1%'),
         borderLeftColor: '#5aaf57',
         elevation: 2
     },
     detailTitle:
     {
-        fontSize: 18,
+        fontSize: wp('4.5%'),
         fontWeight: 'bold',
-        marginBottom: 5,
+        marginBottom: hp('0.6%'),
         color: '#555'
     },
     detailText:
     {
-        fontSize: 14,
+        fontSize: wp('3.5%'),
         color: '#777',
-        lineHeight: 20
+        lineHeight: hp('2.5%')
     },
     formContainer:
     {
         backgroundColor: '#fff',
-        padding: 20,
-        borderRadius: 10,
+        padding: wp('5%'),
+        borderRadius: wp('2.5%'),
         elevation: 2
     },
     label:
     {
-        fontSize: 16,
+        fontSize: wp('4%'),
         fontWeight: '600',
         color: '#333',
-        marginBottom: 5,
-        marginTop: 10
+        marginBottom: hp('0.6%'),
+        marginTop: hp('1.2%')
     },
     input:
     {
         borderWidth: 1,
         borderColor: '#ddd',
-        borderRadius: 8,
-        padding: 10,
-        fontSize: 16,
+        borderRadius: wp('2%'),
+        padding: wp('2.5%'),
+        fontSize: wp('4%'),
+        color: '#333'
+    },
+    textArea: {
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: wp('2%'),
+        padding: wp('2.5%'),
+        fontSize: wp('4%'),
         color: '#333'
     },
     saveButton:
     {
-        marginTop: 30,
+        marginTop: hp('3.7%'),
         backgroundColor: '#5aaf57',
-        padding: 15,
-        borderRadius: 10,
+        padding: hp('2%'),
+        borderRadius: wp('2.5%'),
         alignItems: 'center'
     },
     saveButtonText:
     {
         color: '#fff',
-        fontSize: 18,
+        fontSize: wp('4.8%'),
         fontWeight: 'bold'
     },
 });
